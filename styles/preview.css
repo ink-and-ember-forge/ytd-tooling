@@ -1,11 +1,38 @@
-/* Side panel cards: live preview and generated code. */
+/* Side pane cards: live preview and generated code. Together they fill the pane's height
+   (preview a little taller than the code), so neither needs scrolling to reach. */
 .preview-card,
 .output-card {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 10px;
-  padding: 0.8rem 1rem 1rem;
+  padding: 0.7rem 1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
+.preview-card { flex: 1.5 1 0; min-height: 240px; }
+.output-card { flex: 1 1 0; min-height: 200px; }
+
+/* Collapsed code card: just its header (with Copy HTML) so the preview gets the pane. */
+.output-card.is-collapsed { flex: none; min-height: 0; padding-bottom: 0.7rem; }
+.output-card.is-collapsed .card-head { margin-bottom: 0; }
+.output-card.is-collapsed .output-tabs,
+.output-card.is-collapsed .output-bodies,
+.output-card.is-collapsed .output-warning { display: none; }
+
+.head-copy { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+.collapse-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--navy);
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0.3rem 0.55rem;
+  border-radius: 6px;
+}
+.collapse-btn:hover { background: var(--light-grey); }
 
 .card-head {
   display: flex;
@@ -22,6 +49,41 @@
   color: var(--dark-grey);
   margin: 0;
 }
+
+.preview-hint { text-transform: none; letter-spacing: 0; font-weight: 500; color: #7a7a7a; }
+.card-tools { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+
+.popout-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--navy);
+  background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+}
+.popout-btn:hover { background: var(--navy); color: #fff; }
+
+/* When the preview lives in its own window, this card says so instead. */
+.popout-note {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+  background: var(--paper);
+  color: var(--dark-grey);
+}
+.preview-card.is-popped .live-preview { visibility: hidden; }
+
+/* A field flashes briefly when you jump to it from the preview. */
+@keyframes pick-flash { from { box-shadow: 0 0 0 4px rgba(0, 145, 127, 0.55); } to { box-shadow: 0 0 0 4px rgba(0, 145, 127, 0); } }
+.pick-flash { animation: pick-flash 1.4s ease-out; border-radius: 6px; }
 
 .device-toggle { display: inline-flex; border: 1px solid var(--navy); border-radius: 6px; overflow: hidden; }
 .device-toggle button {
@@ -40,8 +102,8 @@
 /* The iframe is laid out at the device width, then scaled to fit (see preview.js). */
 .preview-stage {
   position: relative;
-  /* Grows with the window; at its widest the preview can show real desktop layouts. */
-  height: clamp(380px, 58vh, 760px);
+  flex: 1;
+  min-height: 180px;
   overflow: hidden;
   border: 1px solid #d7d2c8;
   border-radius: 8px;
@@ -72,8 +134,11 @@
 }
 .output-tab.active { color: var(--navy); border-bottom-color: var(--green); }
 
+.output-bodies { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.output-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .output-heading { margin: 0 0 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--dark-grey); }
-.output-wrap { position: relative; }
+.output-wrap { position: relative; flex: 1; min-height: 0; }
+.output-wrap textarea { height: 100%; resize: none; }
 .output-warning {
   margin: 0 0 0.6rem;
   padding: 0.6rem 0.8rem;
@@ -86,6 +151,11 @@
 
 .live-preview, .output-wrap textarea { max-width: none; }
 
+/* Stacked layout (narrow windows): the page scrolls, so give each card a fixed height. */
 @media (max-width: 1000px) {
-  .preview-stage { height: 420px; }
+  .preview-card { flex: none; }
+  .output-card { flex: none; }
+  .preview-stage { flex: none; height: 420px; }
+  .output-wrap { flex: none; }
+  .output-wrap textarea { height: 220px; }
 }

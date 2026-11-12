@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Preview · Gwella Page Builder</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #fff; font-family: "Noto Sans", sans-serif; }
+  iframe { display: block; width: 100%; height: 100%; border: 0; }
+  #waiting { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+             text-align: center; color: #545454; padding: 2rem; }
+  #waiting[hidden] { display: none; }
+</style>
+</head>
+<body>
+<!-- The pop-out preview: shows whatever block is active in the builder, live.
+     Resize this window to test real responsive behaviour. Close it any time. -->
+<div id="waiting"><p>Waiting for the builder…<br />Keep the builder open in its own window; this preview follows the block you are editing.</p></div>
+<iframe id="frame" title="Live preview"></iframe>
+<script>
+  const frame = document.getElementById("frame");
+  const waiting = document.getElementById("waiting");
+  const channel = new BroadcastChannel("gwella-preview");
+
+  channel.onmessage = (e) => {
+    if (!e.data || e.data.type !== "doc") return;
+    waiting.hidden = true;
+    document.title = "Preview · " + (e.data.title || "Gwella Page Builder");
+    frame.srcdoc = e.data.html;
+  };
+
+  // Links inside the preview must not navigate the preview away.
+  frame.addEventListener("load", () => {
+    const doc = frame.contentDocument;
+    if (doc) doc.addEventListener("click", (e) => { if (e.target.closest && e.target.closest("a[href]")) e.preventDefault(); }, true);
+  });
+
+  channel.postMessage({ type: "ready" });
+  window.addEventListener("pagehide", () => channel.postMessage({ type: "closed" }));
+</script>
+</body>
+</html>

@@ -58,10 +58,12 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.focus("#tabbar .tab-btn[aria-selected=true]");
   await page.keyboard.press("ArrowRight");
   ok("2 arrow-key moves tab", (await page.$eval("#tabbar .tab-btn[aria-selected=true]", b => b.textContent)) === "At a glance");
-  const tb = await page.$eval("#tabbar", e => e.getBoundingClientRect().top);
-  await page.evaluate(() => window.scrollTo(0, 400));
-  ok("2 tab bar sticky", Math.abs((await page.$eval("#tabbar", e => e.getBoundingClientRect().top)) - (await page.$eval("#topbar", e => e.getBoundingClientRect().bottom))) < 2);
-  await page.evaluate(() => window.scrollTo(0, 0));
+  // workbench: the block list is a left rail under the header, and the page itself never scrolls
+  const rail = await page.$eval("#tabbar", (e) => { const r = e.getBoundingClientRect(); return { left: r.left, top: r.top, w: r.width, h: r.height }; });
+  const hdr = await page.$eval("#topbar", (e) => e.getBoundingClientRect().bottom);
+  ok("2 block list is a left rail under the header", rail.left === 0 && Math.abs(rail.top - hdr) < 2 && rail.w > 150 && rail.w < 260, JSON.stringify(rail));
+  ok("2 the page itself does not scroll (panes scroll on their own)", await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight + 1));
+  ok("2 header is a single slim row", (await page.$eval("#topbar", (e) => e.offsetHeight)) < 70, (await page.$eval("#topbar", (e) => e.offsetHeight)) + "px");
 
   // 7. live output (no Generate button)
   await page.click('#tabbar .tab-btn:has-text("Section")');
@@ -77,8 +79,6 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.click('#panel-section .device-toggle button:has-text("Phone")');
   const w2 = await page.$eval(frame, f => f.style.width);
   ok("3 device widths change", w1 === "1000px" && w2 === "375px", w1 + " -> " + w2);
-  const pos = await page.$eval("#panel-section .panel-side", e => getComputedStyle(e).position);
-  ok("3 side panel sticky", pos === "sticky");
   await page.click('#panel-section .device-toggle button:has-text("Desktop")');
 
   // 6. list ergonomics on accordion
@@ -186,9 +186,12 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const widthOf = (sel) => page.$eval(sel, (e) => e.getBoundingClientRect().width);
   const side0 = await widthOf("#panel-two-column .panel-side");
   const form0 = await widthOf("#panel-two-column .panel-form");
-  ok("preview: gets about half the width by default", side0 > 520 && Math.abs(side0 - form0) < 80, `preview ${Math.round(side0)}px, form ${Math.round(form0)}px`);
+  ok("preview: gets the larger share of the width by default", side0 > 600 && side0 > form0, `preview ${Math.round(side0)}px, form ${Math.round(form0)}px`);
   const stageH = await page.$eval("#panel-two-column .preview-stage", (e) => e.getBoundingClientRect().height);
-  ok("preview: taller than before (380px)", stageH > 450, Math.round(stageH) + "px");
+  const vh = await page.evaluate(() => window.innerHeight);
+  const copyBottom = await page.$eval("#panel-two-column .head-copy", (e) => e.getBoundingClientRect().bottom);
+  const stageBottom = await page.$eval("#panel-two-column .preview-stage", (e) => e.getBoundingClientRect().bottom);
+  ok("preview: the preview, and Copy HTML, are both on screen without scrolling", stageBottom <= vh && copyBottom <= vh && stageH > 200, `stage ${Math.round(stageH)}px tall, ends at ${Math.round(stageBottom)}/${vh}px`);
   const scaleOf = () => page.$eval("#panel-two-column .live-preview", (f) => parseFloat(f.style.transform.replace("scale(", "")));
   await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
   const sDesk = await scaleOf();
@@ -217,8 +220,8 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const side1 = await widthOf("#panel-two-column .panel-side");
   ok("preview: dragging the divider widens it", side1 > side0 + 120, `${Math.round(side0)} -> ${Math.round(side1)}px`);
   await page.focus("#panel-two-column .panel-split");
-  await page.keyboard.press("ArrowLeft");
-  ok("preview: divider works from the keyboard", (await widthOf("#panel-two-column .panel-side")) > side1);
+  await page.keyboard.press("ArrowRight"); // the drag above may already be at the widest allowed, so go narrower
+  ok("preview: divider works from the keyboard", (await widthOf("#panel-two-column .panel-side")) < side1);
   const widthBefore = Math.round(await widthOf("#panel-two-column .panel-side"));
   await page.reload({ waitUntil: "networkidle" });
   await page.click('#tabbar .tab-btn:has-text("Media beside text")');
@@ -233,6 +236,81 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.keyboard.type("This is body text in the preview. At the default layout it should look the same size as the text in the form beside it.");
   await page.waitForTimeout(500);
   await page.locator("#panel-two-column .preview-card").screenshot({ path: path.join(OUT, "preview-true-size.png") });
+
+  // ---- workbench round: collapsing lists, click-to-edit, pop-out, code collapse, rail, narrow --------
+  await page.evaluate(() => localStorage.clear());
+  await page.goto(BASE + "/index.html", { waitUntil: "networkidle" });
+  await page.click('#tabbar .tab-btn:has-text("Resource cards")');
+  const card = (n) => `#panel-resource-cards .item-card:nth-child(${n})`;
+  const isOpen = (sel) => page.$eval(sel, (e) => e.classList.contains("is-open"));
+  ok("lists: first card open, second collapsed", (await isOpen(card(1))) && !(await isOpen(card(2))) && !(await page.isVisible(card(2) + " .card-title")));
+  await page.fill(card(1) + " .card-title", "Alpha");
+  await page.click(card(2) + " .item-toggle");
+  ok("lists: opening one card closes the other (one at a time)", (await isOpen(card(2))) && !(await isOpen(card(1))));
+  await page.fill(card(2) + " .card-title", "Beta");
+  ok("lists: a collapsed card shows its title", (await page.textContent(card(1) + " .item-summary")) === "Alpha");
+  await page.click("#panel-resource-cards .item-add");
+  ok("lists: + Add opens the new card and closes the others", (await isOpen(card(3))) && !(await isOpen(card(2))));
+  ok("lists: an empty card says so", (await page.textContent(card(3) + " .item-summary")).startsWith("Empty"));
+  await page.click('#tabbar .tab-btn:has-text("Navigation cards")');
+  const navH = await page.$eval("#panel-nav-cards .panel-form", (e) => e.scrollHeight);
+  ok("lists: Navigation cards form is far shorter than before (was 1769px)", navH < 1100, navH + "px");
+
+  // click-to-edit
+  await page.click('#tabbar .tab-btn:has-text("Resource cards")');
+  const pv = page.frameLocator("#panel-resource-cards .live-preview");
+  await pv.locator("text=Alpha").first().hover();
+  ok("click-to-edit: hovering something editable outlines it", (await pv.locator("[data-pick-hover]").count()) === 1);
+  await pv.locator("text=Beta").first().click();
+  const focused = await page.evaluate(() => ({ cls: document.activeElement.className, value: document.activeElement.value, open: !!document.activeElement.closest(".item-card.is-open") }));
+  ok("click-to-edit: clicking a card in the preview opens its fields and focuses its title", focused.value === "Beta" && focused.open && /card-title/.test(focused.cls), JSON.stringify(focused));
+  await page.click('#tabbar .tab-btn:has-text("Intro text")');
+  await page.click("#panel-hero-text .ql-editor");
+  await page.keyboard.type("Hello rich world");
+  await page.waitForTimeout(400);
+  await page.click("#panel-hero-text .panel-title");
+  await page.frameLocator("#panel-hero-text .live-preview").locator("text=Hello rich world").click();
+  ok("click-to-edit: clicking rich text in the preview focuses the editor", await page.evaluate(() => !!document.activeElement.closest(".ql-editor")));
+
+  // pop-out preview
+  await page.click('#tabbar .tab-btn:has-text("Resource cards")');
+  const [popup] = await Promise.all([ctx.waitForEvent("page"), page.click("#panel-resource-cards .popout-btn")]);
+  await popup.waitForLoadState();
+  await popup.waitForFunction(() => document.getElementById("frame").srcdoc.includes("Beta"), null, { timeout: 5000 });
+  ok("pop-out: opens its own window showing the live preview", /preview\.html/.test(popup.url()));
+  ok("pop-out: the builder's preview says it has moved", await page.isVisible("#panel-resource-cards .popout-note"));
+  await page.click(card(3) + " .item-toggle").catch(() => {});
+  await page.fill(card(3) + " .card-title", "Gamma");
+  await popup.waitForFunction(() => document.getElementById("frame").srcdoc.includes("Gamma"), null, { timeout: 5000 });
+  ok("pop-out: follows edits live", true);
+  await page.click('#tabbar .tab-btn:has-text("Buttons")');
+  await popup.waitForFunction(() => document.title.includes("Buttons"), null, { timeout: 5000 });
+  ok("pop-out: follows the block you switch to", true);
+  await page.click('#tabbar .tab-btn:has-text("Resource cards")');
+  await page.click("#panel-resource-cards .popout-return");
+  await popup.waitForEvent("close", { timeout: 5000 }).catch(() => {});
+  ok("pop-out: 'Bring it back' closes the window and restores the preview", popup.isClosed() && !(await page.isVisible("#panel-resource-cards .popout-note")));
+
+  // code card collapses; Copy HTML stays in reach
+  const stage0 = await page.$eval("#panel-resource-cards .preview-stage", (e) => e.getBoundingClientRect().height);
+  await page.click("#panel-resource-cards .collapse-btn");
+  const stage1 = await page.$eval("#panel-resource-cards .preview-stage", (e) => e.getBoundingClientRect().height);
+  ok("code: collapsing hides the code but keeps Copy HTML visible", !(await page.isVisible("#panel-resource-cards .output-bodies")) && (await page.isVisible("#panel-resource-cards .head-copy")));
+  ok("code: collapsing gives the preview the room", stage1 > stage0 + 80, `${Math.round(stage0)} -> ${Math.round(stage1)}px`);
+  await page.click("#panel-resource-cards .collapse-btn");
+
+  // rail toggle
+  await page.click("#rail-toggle");
+  ok("rail: the Blocks button hides the block list", !(await page.isVisible("#tabbar")));
+  await page.click("#rail-toggle");
+  ok("rail: and shows it again", await page.isVisible("#tabbar"));
+
+  // narrow window: stacks, the rail becomes a row, the page scrolls
+  await page.setViewportSize({ width: 820, height: 900 });
+  await page.waitForTimeout(300);
+  const narrow = await page.evaluate(() => ({ dir: getComputedStyle(document.getElementById("tabbar")).flexDirection, scrolls: document.documentElement.scrollHeight > window.innerHeight, overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth, toggle: getComputedStyle(document.getElementById("rail-toggle")).display }));
+  ok("narrow: the rail becomes a row, the page scrolls, nothing overflows sideways", narrow.dir === "row" && narrow.scrolls && narrow.overflowX <= 0 && narrow.toggle === "none", JSON.stringify(narrow));
+  await page.setViewportSize({ width: 1400, height: 900 });
 
   // screenshots
   await page.click('#tabbar .tab-btn:has-text("Resource cards")');

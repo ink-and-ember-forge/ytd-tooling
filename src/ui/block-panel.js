@@ -12,6 +12,8 @@ import { snapshotForm, restoreForm } from "./form-state.js";
 import { getBlockState, setBlockState, clearBlockState, debounce } from "./storage.js";
 import { toast } from "./toast.js";
 import { initSplitter } from "./splitter.js";
+import { openOnly } from "./list-actions.js";
+import { findControl, reveal } from "./pick.js";
 
 export function buildBlockPanel(block) {
   const panel = document.createElement("div");
@@ -34,12 +36,19 @@ export function buildBlockPanel(block) {
       <div class="panel-side"></div>
     </div>`;
   panel.querySelector(".panel-title").textContent = block.tabLabel || block.label;
-  panel.querySelector(".panel-desc").textContent = block.description || "";
+  const desc = panel.querySelector(".panel-desc");
+  desc.textContent = block.description || "";
+  desc.title = "Click to show or hide the full description";
+  desc.addEventListener("click", () => desc.classList.toggle("is-open"));
   const formCol = panel.querySelector(".panel-form");
   const sideCol = panel.querySelector(".panel-side");
   initSplitter(panel.querySelector(".panel-split"), panel.querySelector(".panel-grid"));
 
-  const preview = createPreview(block.tabLabel || block.label);
+  // Click-to-edit: clicking something in the preview reveals the field that produced it.
+  const preview = createPreview(block.tabLabel || block.label, {
+    resolve: (el, pageRoot) => findControl(el, formCol, pageRoot),
+    onPick: reveal,
+  });
   const output = createOutputPanel(block);
   sideCol.append(preview.el, output.el);
 
@@ -92,8 +101,15 @@ export function buildBlockPanel(block) {
   fieldEls.forEach((el) => { if (el._quillInstance) el._quillInstance.on("text-change", onEdit); });
   onThemeChange(refresh);
 
+  // After loading saved state (or resetting), open just the first item of each list.
+  const openFirstItems = () => formCol.querySelectorAll(".item-cards").forEach((c) => {
+    const first = c.querySelector(".item-card");
+    if (first) openOnly(c, first);
+  });
+
   // Load saved state, then render once.
   restoreForm(fieldEls, getBlockState(block.id));
+  openFirstItems();
   restoring = false;
   refresh();
 
@@ -101,6 +117,7 @@ export function buildBlockPanel(block) {
     const before = snapshotForm(fieldEls);
     restoring = true;
     restoreForm(fieldEls, defaults);
+    openFirstItems();
     restoring = false;
     clearBlockState(block.id);
     refresh();
@@ -109,6 +126,7 @@ export function buildBlockPanel(block) {
       onAction: () => {
         restoring = true;
         restoreForm(fieldEls, before);
+        openFirstItems();
         restoring = false;
         refresh();
         setBlockState(block.id, before);
