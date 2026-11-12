@@ -24,11 +24,6 @@ textarea {
   resize: vertical;
 }
 
-select:focus, input:focus, textarea:focus, button:focus {
-  outline: 2px solid var(--green);
-  outline-offset: 1px;
-}
-
 .field { margin-bottom: 1.25rem; }
 
 .field-help {

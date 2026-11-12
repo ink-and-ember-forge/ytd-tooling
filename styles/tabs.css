@@ -8,7 +8,7 @@
   display: flex;
   gap: 0.25rem 0.75rem;
   flex-wrap: wrap; /* wrap rather than hide tabs off-screen; scrolls instead on phones (below) */
-  padding: 0.45rem max(1.5rem, calc((100% - 1320px) / 2 + 1.5rem));
+  padding: 0.45rem max(1.5rem, calc((100% - 1600px) / 2 + 1.5rem));
 }
 
 .tab-group {
@@ -43,14 +43,17 @@
 }
 .tab-btn:hover { background: var(--light-grey); color: var(--navy); }
 .tab-btn.active { background: #fff; color: var(--navy); box-shadow: inset 0 -3px 0 var(--green), 0 0 0 1px var(--line); }
+/* When the active tab has keyboard focus, the focus ring replaces its outer 1px edge: two
+   rings side by side looked like a doubled border. The green underline stays. */
+.tab-btn.active:focus-visible { box-shadow: inset 0 -3px 0 var(--green); }
 
 /* Views and block panels */
-.view { max-width: 1320px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
+.view { max-width: 1600px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
 #view-build { max-width: none; padding: 0; }
 
 .view-title { margin: 0 0 0.25rem; font-size: 1.4rem; color: var(--navy); }
 
-.panel { max-width: 1320px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
+.panel { max-width: 1600px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
 
 .panel-head {
   display: flex;
@@ -78,10 +81,45 @@
 /* Form on the left, sticky preview and code on the right. */
 .panel-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(380px, 520px);
-  gap: 2rem;
+  /* form | divider | preview. --side-w is set by the divider (src/ui/splitter.js); default is half. */
+  grid-template-columns: minmax(0, 1fr) 20px var(--side-w, calc(50% - 10px));
+  gap: 0;
   align-items: start;
 }
+
+/* The draggable divider: a thin line with a grip. */
+.panel-split {
+  align-self: stretch;
+  cursor: col-resize;
+  touch-action: none;
+  position: relative;
+}
+.panel-split::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 9px;
+  width: 2px;
+  background: var(--line);
+  transition: background 0.15s;
+}
+.panel-split::after {
+  content: "⋮";
+  position: absolute;
+  top: 12px;
+  left: 0;
+  width: 20px;
+  text-align: center;
+  color: var(--dark-grey);
+  font-size: 1.1rem;
+  line-height: 1.6rem;
+  background: var(--paper);
+}
+.panel-split:hover::before,
+.panel-split.is-dragging::before,
+.panel-split:focus-visible::before { background: var(--green); }
+.panel-split:focus-visible { outline-offset: -2px; }
 
 .panel-side {
   position: sticky;
@@ -96,6 +134,7 @@
 
 @media (max-width: 1000px) {
   .panel-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .panel-split { display: none; }
   .panel-side { position: static; max-height: none; overflow: visible; order: -1; }
   .panel, .view { padding-left: 1rem; padding-right: 1rem; }
   .tabbar { padding-left: 1rem; padding-right: 1rem; }
@@ -108,3 +147,5 @@
   .panel-head { flex-direction: column; gap: 0.5rem; }
   .panel-side { top: auto; }
 }
+
+.panel-form { min-width: 0; padding-right: 0.5rem; }

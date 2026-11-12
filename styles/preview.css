@@ -40,7 +40,8 @@
 /* The iframe is laid out at the device width, then scaled to fit (see preview.js). */
 .preview-stage {
   position: relative;
-  height: 380px;
+  /* Grows with the window; at its widest the preview can show real desktop layouts. */
+  height: clamp(380px, 58vh, 760px);
   overflow: hidden;
   border: 1px solid #d7d2c8;
   border-radius: 8px;
@@ -84,3 +85,7 @@
 }
 
 .live-preview, .output-wrap textarea { max-width: none; }
+
+@media (max-width: 1000px) {
+  .preview-stage { height: 420px; }
+}

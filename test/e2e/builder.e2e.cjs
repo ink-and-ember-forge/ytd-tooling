@@ -76,7 +76,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const w1 = await page.$eval(frame, f => f.style.width);
   await page.click('#panel-section .device-toggle button:has-text("Phone")');
   const w2 = await page.$eval(frame, f => f.style.width);
-  ok("3 device widths change", w1 === "960px" && w2 === "375px", w1 + " -> " + w2);
+  ok("3 device widths change", w1 === "1000px" && w2 === "375px", w1 + " -> " + w2);
   const pos = await page.$eval("#panel-section .panel-side", e => getComputedStyle(e).position);
   ok("3 side panel sticky", pos === "sticky");
   await page.click('#panel-section .device-toggle button:has-text("Desktop")');
@@ -153,8 +153,68 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.check(".change-done input >> nth=1");
   ok("9 finish appears when all done", await page.isVisible(".upgrade-finish"));
   await page.click('.mode-btn[data-view="changelog"]');
-  ok("9 changelog view", (await page.textContent(".changelog-check")).includes("passed"));
+  ok("9 changelog view: visible, and no data warning when the changelog is valid", (await page.isVisible("#view-changelog")) && (await page.$$(".changelog-check")).length === 0);
   await page.click('.mode-btn[data-view="build"]');
+
+
+  // ---- round 2 feedback ------------------------------------------------------
+  // 1. changelog shows release notes only, no schema
+  await page.click('.mode-btn[data-view="changelog"]');
+  ok("changelog: no schema section", (await page.$$(".schema-section")).length === 0 && !(await page.textContent("#view-changelog")).includes("Changelog schema"));
+  ok("changelog: release notes shown", (await page.$$("#view-changelog .release")).length >= 3);
+  await page.click('.mode-btn[data-view="build"]');
+
+  // 2. the three side-by-side blocks have distinct, descriptive names and descriptions
+  const names = await page.$$eval("#tabbar .tab-btn", (b) => b.map((x) => x.textContent));
+  ok("blocks: clear distinct names", ["Text around media", "Equal columns", "Media beside text"].every((n) => names.includes(n)), names.join(" | "));
+  ok("blocks: no ambiguous 'Text + media' / 'Media + text'", !names.includes("Text + media") && !names.includes("Media + text"));
+  await page.click('#tabbar .tab-btn:has-text("Equal columns")');
+  ok("blocks: description says how it differs", /Media beside text/.test(await page.textContent("#panel-flex-section .panel-desc")));
+
+  // 3. one focus ring: a mouse click leaves no outline; keyboard focus gets exactly one
+  await page.click('#tabbar .tab-btn:has-text("Section")');
+  const clicked = await page.$eval("#tabbar .tab-btn[aria-selected=true]", (b) => { const c = getComputedStyle(b); return c.outlineStyle + "/" + c.outlineWidth; });
+  ok("focus: no ring after a mouse click", /^none|\/0px$/.test(clicked), clicked);
+  await page.focus("#tabbar .tab-btn[aria-selected=true]");
+  await page.keyboard.press("ArrowRight");
+  const kb = await page.$eval("#tabbar .tab-btn[aria-selected=true]", (b) => { const c = getComputedStyle(b); return { style: c.outlineStyle, width: c.outlineWidth, shadow: c.boxShadow }; });
+  ok("focus: keyboard ring is single (outline, no extra box-shadow)", kb.style === "solid" && kb.width === "3px" && kb.shadow.endsWith("inset") && !kb.shadow.includes("), "), JSON.stringify(kb));
+  await page.screenshot({ path: path.join(OUT, "focus-ring.png"), clip: { x: 0, y: 60, width: 700, height: 80 } });
+
+  // 4. preview space: wide by default, draggable, remembered, desktop vs tablet clearly different
+  await page.click('#tabbar .tab-btn:has-text("Media beside text")');
+  const widthOf = (sel) => page.$eval(sel, (e) => e.getBoundingClientRect().width);
+  const side0 = await widthOf("#panel-two-column .panel-side");
+  const form0 = await widthOf("#panel-two-column .panel-form");
+  ok("preview: gets about half the width by default", side0 > 520 && Math.abs(side0 - form0) < 80, `preview ${Math.round(side0)}px, form ${Math.round(form0)}px`);
+  const stageH = await page.$eval("#panel-two-column .preview-stage", (e) => e.getBoundingClientRect().height);
+  ok("preview: taller than before (380px)", stageH > 450, Math.round(stageH) + "px");
+  const scaleOf = () => page.$eval("#panel-two-column .live-preview", (f) => parseFloat(f.style.transform.replace("scale(", "")));
+  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
+  const sDesk = await scaleOf();
+  await page.click('#panel-two-column .device-toggle button:has-text("Tablet")');
+  const sTab = await scaleOf();
+  ok("preview: desktop and tablet are clearly different scales", sDesk > 0.5 && sTab - sDesk > 0.15, `desktop ${sDesk.toFixed(2)} vs tablet ${sTab.toFixed(2)}`);
+  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
+  const hb = await (await page.$("#panel-two-column .panel-split")).boundingBox();
+  await page.mouse.move(hb.x + 10, hb.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(hb.x - 190, hb.y + 200, { steps: 6 });
+  await page.mouse.up();
+  const side1 = await widthOf("#panel-two-column .panel-side");
+  ok("preview: dragging the divider widens it", side1 > side0 + 120, `${Math.round(side0)} -> ${Math.round(side1)}px`);
+  await page.focus("#panel-two-column .panel-split");
+  await page.keyboard.press("ArrowLeft");
+  ok("preview: divider works from the keyboard", (await widthOf("#panel-two-column .panel-side")) > side1);
+  const widthBefore = Math.round(await widthOf("#panel-two-column .panel-side"));
+  await page.reload({ waitUntil: "networkidle" });
+  await page.click('#tabbar .tab-btn:has-text("Media beside text")');
+  const widthAfter = Math.round(await widthOf("#panel-two-column .panel-side"));
+  ok("preview: width is remembered after reload", Math.abs(widthAfter - widthBefore) <= 2, `${widthBefore} -> ${widthAfter}px`);
+  await page.dblclick("#panel-two-column .panel-split");
+  const widthReset = await widthOf("#panel-two-column .panel-side");
+  ok("preview: double-click resets", Math.abs(widthReset - side0) <= 2, Math.round(widthReset) + "px");
+  await page.screenshot({ path: path.join(OUT, "ui-wide-preview.png") });
 
   // screenshots
   await page.click('#tabbar .tab-btn:has-text("Resource cards")');
@@ -171,4 +231,4 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await browser.close();
   server.close();
   process.exit(failures ? 1 : 0);
-})().catch((e) => { console.error("SCRIPT ERROR", e.message.split("\n")[0]); server.close(); process.exit(1); });
+})().catch((e) => { console.error("SCRIPT ERROR", e.message.split("\n")[0], "\n" + (e.stack || "").split("\n").slice(1, 4).join("\n")); server.close(); process.exit(1); });

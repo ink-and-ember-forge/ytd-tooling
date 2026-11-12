@@ -7,8 +7,8 @@ export default {
   label: "Image-text-section",
   // How the block appears in the builder's tab bar (display only).
   group: "Content",
-  tabLabel: "Text with media",
-  description: "Free-form content — headings, lists, paragraphs, whatever the page needs — with an optional image or video floated alongside it. The content always flows around the media correctly; you don't need to manage that yourself.",
+  tabLabel: "Text around media",
+  description: "Text that wraps around a small image or video and flows underneath it once it passes the media's height. Use it when the writing is the main thing and the media is a supporting extra. The media is optional. If you want a clean side-by-side split instead, use Equal columns or Media beside text.",
   fields: [
     { type: "media-picker", id: "media", label: "Media", allowSize: true },
     { type: "rich-text", id: "content", label: "Content", placeholder: "Write the content that sits alongside the image or video..." }

@@ -4,11 +4,10 @@
 import { getPref, setPref } from "./storage.js";
 
 export const DEVICES = [
-  { id: "desktop", label: "Desktop", width: 960 },
+  { id: "desktop", label: "Desktop", width: 1000 },
   { id: "tablet", label: "Tablet", width: 700 },
   { id: "phone", label: "Phone", width: 375 },
 ];
-const STAGE_HEIGHT = 380;
 
 let device = DEVICES.find((d) => d.id === getPref("device", "desktop")) || DEVICES[0];
 const previews = new Set();
@@ -48,7 +47,7 @@ export function createPreview(title) {
     const avail = stage.clientWidth || device.width;
     const scale = Math.min(1, avail / device.width);
     frame.style.width = device.width + "px";
-    frame.style.height = STAGE_HEIGHT / scale + "px";
+    frame.style.height = (stage.clientHeight || 380) / scale + "px";
     frame.style.transform = `scale(${scale})`;
     frame.style.left = Math.max(0, (avail - device.width * scale) / 2) + "px";
   }

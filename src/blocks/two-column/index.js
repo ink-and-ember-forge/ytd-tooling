@@ -7,8 +7,8 @@ export default {
   label: "Two-column layout",
   // How the block appears in the builder's tab bar (display only).
   group: "Content",
-  tabLabel: "Media + text",
-  description: "One media item in one column, free text (and buttons, or other blocks pasted into the text) in the other. Media sits on the left by default; switch the layout to flip it. Top-aligned on desktop, and stacked with media first on mobile.",
+  tabLabel: "Media beside text",
+  description: "Media in one column and text in the other, both lined up at the top, with the text column a little wider. You choose which side the media sits on. Best for longer text with a smaller picture beside it. For a balanced, centred, equal split use Equal columns instead.",
   fields: [
     { type: "select", id: "flip", label: "Layout", default: "media-left",
       options: [

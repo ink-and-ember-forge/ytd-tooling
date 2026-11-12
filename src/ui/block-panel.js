@@ -11,6 +11,7 @@ import { validateForm } from "./validation.js";
 import { snapshotForm, restoreForm } from "./form-state.js";
 import { getBlockState, setBlockState, clearBlockState, debounce } from "./storage.js";
 import { toast } from "./toast.js";
+import { initSplitter } from "./splitter.js";
 
 export function buildBlockPanel(block) {
   const panel = document.createElement("div");
@@ -27,12 +28,16 @@ export function buildBlockPanel(block) {
     </div>
     <div class="panel-grid">
       <div class="panel-form"></div>
+      <div class="panel-split" role="separator" aria-orientation="vertical" tabindex="0"
+        aria-label="Resize the preview. Use the left and right arrow keys, or double-click to reset."
+        title="Drag to resize the preview (double-click to reset)"></div>
       <div class="panel-side"></div>
     </div>`;
   panel.querySelector(".panel-title").textContent = block.tabLabel || block.label;
   panel.querySelector(".panel-desc").textContent = block.description || "";
   const formCol = panel.querySelector(".panel-form");
   const sideCol = panel.querySelector(".panel-side");
+  initSplitter(panel.querySelector(".panel-split"), panel.querySelector(".panel-grid"));
 
   const preview = createPreview(block.tabLabel || block.label);
   const output = createOutputPanel(block);
