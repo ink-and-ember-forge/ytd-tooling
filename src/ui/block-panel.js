@@ -14,6 +14,7 @@ import { toast } from "./toast.js";
 import { initSplitter } from "./splitter.js";
 import { openOnly } from "./list-actions.js";
 import { findControl, reveal } from "./pick.js";
+import { openGuide } from "./guide-dialog.js";
 
 export function buildBlockPanel(block) {
   const panel = document.createElement("div");
@@ -26,7 +27,10 @@ export function buildBlockPanel(block) {
         <h2 class="panel-title"></h2>
         <p class="panel-desc"></p>
       </div>
-      <button type="button" class="reset-btn">Reset this block</button>
+      <div class="panel-actions">
+        <button type="button" class="guide-btn" hidden>ⓘ How it works</button>
+        <button type="button" class="reset-btn">Reset this block</button>
+      </div>
     </div>
     <div class="panel-grid">
       <div class="panel-form"></div>
@@ -58,11 +62,11 @@ export function buildBlockPanel(block) {
     return el;
   });
 
+  // "How it works" opens in a lightbox, from a button that is always in view in the panel header.
   if (block.guide) {
-    const guide = document.createElement("details");
-    guide.className = "how-it-works";
-    guide.innerHTML = `<summary>How it works</summary><div class="how-it-works-body">${block.guide}</div>`;
-    formCol.appendChild(guide);
+    const guideBtn = panel.querySelector(".guide-btn");
+    guideBtn.hidden = false;
+    guideBtn.addEventListener("click", () => openGuide(block.tabLabel || block.label, block.guide));
   }
 
   let restoring = true; // suppress refreshes while loading saved state

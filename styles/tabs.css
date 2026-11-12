@@ -93,6 +93,8 @@ body.rail-collapsed .rail { display: none; }
 }
 .panel-desc.is-open { -webkit-line-clamp: unset; }
 
+.panel-actions { display: flex; gap: 0.5rem; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+
 .reset-btn {
   font-family: inherit;
   cursor: pointer;
