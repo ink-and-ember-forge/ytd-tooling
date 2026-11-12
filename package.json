@@ -1,0 +1,10 @@
+{
+  "name": "ytd-tooling",
+  "private": true,
+  "description": "Gwella page builder and reference template (static site, no build step)",
+  "scripts": {
+    "check": "node scripts/check-sync.js && node --check builder.js && node --check template/template.js",
+    "serve": "npx --yes serve ."
+  },
+  "engines": { "node": ">=18" }
+}
