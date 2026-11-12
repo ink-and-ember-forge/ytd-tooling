@@ -15,6 +15,7 @@ import { initSplitter } from "./splitter.js";
 import { openOnly } from "./list-actions.js";
 import { findControl, reveal } from "./pick.js";
 import { openGuide } from "./guide-dialog.js";
+import { createExplainPanel } from "./explain-panel.js";
 
 export function buildBlockPanel(block) {
   const panel = document.createElement("div");
@@ -48,12 +49,28 @@ export function buildBlockPanel(block) {
   const sideCol = panel.querySelector(".panel-side");
   initSplitter(panel.querySelector(".panel-split"), panel.querySelector(".panel-grid"));
 
-  // Click-to-edit: clicking something in the preview reveals the field that produced it.
-  const preview = createPreview(block.tabLabel || block.label, {
+  // Blocks with an explain.json get an Explain tab (their own code, annotated) and an X-ray
+  // on the preview. The three pieces talk to each other through these callbacks.
+  let preview, output;
+  const explainPanel = block.explain
+    ? createExplainPanel(block, { onHighlight: (i) => preview && preview.highlight(i) })
+    : null;
+
+  // Click-to-edit: clicking something in the preview reveals the field that produced it
+  // (while X-ray is on, clicking explains instead).
+  preview = createPreview(block.tabLabel || block.label, {
     resolve: (el, pageRoot) => findControl(el, formCol, pageRoot),
     onPick: reveal,
+    xray: explainPanel ? { onHover: (i) => explainPanel.hover(i), onSelect: (i) => explainPanel.pin(i) } : null,
   });
-  const output = createOutputPanel(block);
+  output = createOutputPanel(block, {
+    explainEl: explainPanel && explainPanel.el,
+    // The Explain tab gets more of the pane and switches the X-ray on; leaving it switches X-ray off.
+    onTab: (key) => {
+      sideCol.classList.toggle("is-explaining", key === "explain");
+      if (explainPanel && preview) preview.setXray(key === "explain");
+    },
+  });
   sideCol.append(preview.el, output.el);
 
   const fieldEls = block.fields.map((field) => {
@@ -66,7 +83,8 @@ export function buildBlockPanel(block) {
   if (block.guide) {
     const guideBtn = panel.querySelector(".guide-btn");
     guideBtn.hidden = false;
-    guideBtn.addEventListener("click", () => openGuide(block.tabLabel || block.label, block.guide));
+    guideBtn.addEventListener("click", () => openGuide(block.tabLabel || block.label, block.guide,
+      explainPanel ? { onExplore: () => output.selectTab("explain") } : {}));
   }
 
   let restoring = true; // suppress refreshes while loading saved state
@@ -79,7 +97,7 @@ export function buildBlockPanel(block) {
   };
 
   const save = debounce(() => setBlockState(block.id, snapshotForm(fieldEls)), 400);
-  const showPreview = debounce((html) => preview.setDoc(html), 120);
+  const showPreview = debounce((html, model) => preview.setDoc(html, model), 120);
 
   function refresh() {
     if (restoring) return;
@@ -92,7 +110,8 @@ export function buildBlockPanel(block) {
         secondary: block.secondaryHTML ? block.secondaryHTML.generate(values) : null,
         warnings: block.warnings ? block.warnings(values) : [],
       });
-      showPreview(buildPreviewDoc(block, html, block.css, block.js, getTheme(), BASE_CSS));
+      const model = explainPanel ? explainPanel.update(html) : null;
+      showPreview(buildPreviewDoc(block, html, block.css, block.js, getTheme(), BASE_CSS), model);
     } catch (err) {
       // A field mid-edit (e.g. an incomplete media URL) shouldn't break the
       // tool; the next keystroke will try again. The last good output stays.

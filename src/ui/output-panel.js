@@ -5,7 +5,9 @@ import { copyToClipboard } from "../lib/dom.js";
 import { toast } from "./toast.js";
 import { getPref, setPref } from "./storage.js";
 
-export function createOutputPanel(block) {
+// `explainEl` (optional): the Explain panel's element; it becomes an "Explain" tab beside HTML.
+// `onTab(key)` is told whenever a tab is selected ("html", "explain", "css"...).
+export function createOutputPanel(block, { explainEl, onTab } = {}) {
   const el = document.createElement("section");
   el.className = "output-card";
   el.setAttribute("aria-label", "Generated code");
@@ -13,6 +15,7 @@ export function createOutputPanel(block) {
   const outputs = [
     { key: "html", tab: "HTML", copy: "Copy HTML", heading: block.htmlOutputLabel || "HTML for this block — paste into .content-body" },
   ];
+  if (explainEl) outputs.push({ key: "explain", tab: "Explain", custom: explainEl });
   if (block.secondaryHTML) {
     outputs.push({ key: "secondary", tab: "Contents entry", copy: "Copy entry", heading: block.secondaryHTML.label });
   }
@@ -50,9 +53,17 @@ export function createOutputPanel(block) {
     tab.textContent = o.tab;
     tablist.appendChild(tab);
 
+    tab._key = o.key;
     const body = document.createElement("div");
     body.className = "output-body";
     body.id = `out-${block.id}-${o.key}`;
+    if (o.custom) {
+      body.classList.add("output-body--explain");
+      body.appendChild(o.custom);
+      bodies.appendChild(body);
+      tab._body = body;
+      return;
+    }
     body.innerHTML = `
       <p class="output-heading"></p>
       <div class="output-wrap"><button type="button" class="copy-btn"></button><textarea rows="8" readonly spellcheck="false"></textarea></div>
@@ -75,7 +86,7 @@ export function createOutputPanel(block) {
   });
 
   const tabs = Array.from(tablist.children);
-  initTabs({ tabs, panelFor: (t) => t._body });
+  const tabsApi = initTabs({ tabs, panelFor: (t) => t._body, onSelect: (t) => { if (onTab) onTab(t._key); } });
   if (tabs.length === 1) tablist.hidden = true;
 
   // Header "Copy HTML" (always visible) and the collapse toggle. Collapsed state is shared by
@@ -101,6 +112,7 @@ export function createOutputPanel(block) {
 
   return {
     el,
+    selectTab(key) { const t = tabs.find((x) => x._key === key); if (t) tabsApi.select(t); },
     // { html, secondary, warnings } from the generator; css/js are static.
     update({ html, secondary, warnings = [] }) {
       areas.html.value = html;

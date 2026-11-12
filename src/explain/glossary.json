@@ -1,0 +1,18 @@
+{
+  "_about": "Plain-English notes for HTML attributes, shared by every block's Explain tab. A block's own explain.json can override any of these.",
+  "class": "Names the kind of thing this is, so the CSS knows how to style it. The same names appear in the CSS tab.",
+  "id": "A unique name for this one element. Other parts of the page point to it by name, which is why the same text can appear more than once. No two elements on a page may share an id.",
+  "href": "Where the link goes when it is clicked.",
+  "src": "The address of the image or video to show.",
+  "alt": "A text description of the image for screen readers, and for when the image can't load. Leave it empty for purely decorative images.",
+  "target": "`_blank` opens the link in a new tab.",
+  "rel": "`noopener noreferrer` is a safety measure for links that open another website in a new tab.",
+  "type": "What kind of control a button is. `button` means “just a button”, not a form submit.",
+  "title": "A short name for the embedded content. Screen readers read it out.",
+  "allow": "Which features the embedded video may use, such as full screen and autoplay.",
+  "allowfullscreen": "Lets the video go full screen.",
+  "referrerpolicy": "How much information is shared with the video's website about where it is shown.",
+  "frameborder": "Old way of removing the border around an embedded video. The CSS now does this.",
+  "aria-*": "Extra information for screen readers. It changes nothing you can see.",
+  "data-bs-*": "An instruction for Bootstrap's script, which handles the opening and closing for us."
+}

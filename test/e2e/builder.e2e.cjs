@@ -21,8 +21,12 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(file).pipe(res);
 });
 
-const stubCdn = (ctx) => ctx.route(/cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com/, (route) => {
+// A 1x1 transparent PNG, standing in for any image address typed into the forms (example.org).
+const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64");
+
+const stubCdn = (ctx) => ctx.route(/cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|example\.org/, (route) => {
   const u = route.request().url();
+  if (u.includes("example.org")) return route.fulfill({ body: PIXEL, contentType: "image/png" });
   if (u.includes("quill.js")) return route.fulfill({ path: path.join(QUILL, "quill.js"), contentType: "text/javascript" });
   if (u.includes("quill.snow.css")) return route.fulfill({ path: path.join(QUILL, "quill.snow.css"), contentType: "text/css" });
   return route.fulfill({ body: "", contentType: u.endsWith(".css") ? "text/css" : "text/javascript" });
@@ -366,6 +370,96 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("guide: fits a phone screen", pbox.left >= 0 && pbox.right <= pbox.vw, JSON.stringify(pbox));
   await page.keyboard.press("Escape");
   await page.setViewportSize({ width: 1400, height: 900 });
+
+  // ---- Explain tab + X-ray (pilot blocks: Accordion, Text around media) ----------------------------
+  const tabNames = (panel) => page.$$eval(`${panel} .output-tab`, (t) => t.map((x) => x.textContent));
+  const xrayOn = (panel) => page.$eval(`${panel} .xray-btn`, (b) => b.getAttribute("aria-pressed") === "true");
+  await page.click('#tabbar .tab-btn:has-text("Buttons")');
+  ok("explain: blocks without an explain.json show no Explain tab (pilot)", !(await tabNames("#panel-buttons")).includes("Explain"));
+  await page.click('#tabbar .tab-btn:has-text("Accordion")');
+  ok("explain: the Accordion has an Explain tab", (await tabNames("#panel-accordion")).includes("Explain"));
+  await page.fill("#panel-accordion .text-field-input", "Demo group");
+  const arows = await page.$$("#panel-accordion .bullet-row input");
+  await arows[0].fill("Getting started");
+  await arows[1].fill("Staying safe");
+  await page.waitForTimeout(500);
+  ok("explain: X-ray is off until you ask for it", !(await xrayOn("#panel-accordion")));
+  await page.click('#panel-accordion .output-tab:has-text("Explain")');
+  await page.waitForTimeout(600);
+  ok("explain: opening the tab switches the X-ray on", await xrayOn("#panel-accordion"));
+  const codeText = await page.textContent("#panel-accordion .explain-code");
+  ok("explain: it shows YOUR code (your names and titles)", codeText.includes("accordion-demo-group") && codeText.includes("Getting started") && codeText.includes("collapse-staying-safe"));
+  const apv = page.frameLocator("#panel-accordion .live-preview");
+  ok("explain: X-ray puts numbered chips on the preview", (await apv.locator(".xray-chip").count()) >= 5, String(await apv.locator(".xray-chip").count()));
+  ok("explain: code and X-ray use the same numbers", (await page.$$eval("#panel-accordion .explain-code .tk-badge", (b) => b.map((x) => x.textContent))).includes("4") && (await apv.locator(".xray-chip", { hasText: /^4$/ }).count()) >= 1);
+
+  // hover a line of code -> its element lights up in the preview, and the card explains it
+  await page.hover('#panel-accordion .explain-code .tk-tag[data-el="3"] >> nth=0');
+  ok("explain: hovering code outlines that element in the preview", (await apv.locator("button.accordion-button[data-xray-hover]").count()) === 1);
+  ok("explain: hovering code explains it in plain English", (await page.textContent("#panel-accordion .explain-label")) === "The title you click" && (await page.textContent("#panel-accordion .explain-what")).includes("real button"));
+  ok("explain: the card has layered detail (how it's built, developer detail)", (await page.$$("#panel-accordion .explain-more")).length === 2);
+
+  // hover something in the preview -> the code lights up and the card explains it
+  await apv.locator("h3.accordion-header").nth(1).hover({ position: { x: 300, y: 4 } }); // the heading's empty right side
+  await page.waitForTimeout(200);
+  ok("explain: hovering the preview explains that part", (await page.textContent("#panel-accordion .explain-label")) === "The heading");
+  ok("explain: hovering the preview highlights its code", (await page.$$("#panel-accordion .explain-code .is-tag")).length >= 2);
+  await apv.locator(".xray-chip", { hasText: /^4$/ }).nth(1).hover();   // a numbered chip is hoverable too
+  await page.waitForTimeout(200);
+  ok("explain: hovering a numbered chip explains that part", (await page.textContent("#panel-accordion .explain-label")) === "The title you click");
+
+  // hover an attribute: its note, and every identical value lights up (ids that must match)
+  await page.hover('#panel-accordion .explain-code .tk-val[data-attr="data-bs-target"] >> nth=0');
+  ok("explain: hovering an attribute explains it", (await page.textContent("#panel-accordion .explain-attr")).includes("must match") || (await page.textContent("#panel-accordion .explain-attr")).includes("match the panel"));
+  const same = await page.$$eval("#panel-accordion .explain-code .is-same", (s) => s.map((x) => x.textContent));
+  ok("explain: every copy of the same id/target lights up (3: target, controls, id)", same.length === 3, same.join(" | "));
+  ok("explain: and it says how many there are", (await page.textContent("#panel-accordion .explain-same")).includes("3 times"));
+
+  // click pins an explanation; Escape unpins
+  await page.click('#panel-accordion .explain-code .tk-tag[data-el="5"] >> nth=0');
+  await page.mouse.move(5, 300);
+  await page.waitForTimeout(150);
+  ok("explain: clicking pins it, even when the pointer leaves", (await page.textContent("#panel-accordion .explain-label")) === "The hidden panel" && (await page.isVisible("#panel-accordion .explain-unpin")));
+  await page.keyboard.press("Escape");
+  ok("explain: Escape unpins and returns to the overview", (await page.isVisible("#panel-accordion .explain-legend")) && !(await page.isVisible("#panel-accordion .explain-unpin")));
+  ok("explain: the overview lists every part, numbered", (await page.$$("#panel-accordion .legend-item")).length === 7);
+
+  // it follows your edits
+  await arows[0].fill("A brand new title");
+  await page.waitForTimeout(600);
+  ok("explain: editing the form updates the explained code", (await page.textContent("#panel-accordion .explain-code")).includes("A brand new title"));
+
+  // leaving the tab switches X-ray off (and click-to-edit comes back)
+  await page.click('#panel-accordion .output-tab:has-text("HTML")');
+  await page.waitForTimeout(400);
+  ok("explain: leaving the Explain tab switches the X-ray off", !(await xrayOn("#panel-accordion")) && (await apv.locator(".xray-chip").count()) === 0);
+
+  // the lightbox leads into it
+  await page.click("#panel-accordion .guide-btn");
+  ok("explain: the guide is layered: a 30-second summary, a pointer to Explain, and a Deep dive fold", (await page.isVisible(".guide-tldr")) && (await page.isVisible(".guide-try")) && (await page.textContent(".guide-body details summary")).includes("Deep dive") && !(await page.$eval(".guide-body details", (d) => d.open)));
+  ok("explain: the Deep dive opens to show the detail", await (async () => { await page.click(".guide-body details summary"); return (await page.textContent(".guide-body details")).includes("aria-expanded"); })());
+  ok("explain: the How it works lightbox offers to explore on your block", await page.isVisible(".guide-explore"));
+  await page.click(".guide-explore");
+  ok("explain: 'Explore it on my block' closes the lightbox and opens Explain with X-ray on", (await page.evaluate(() => !document.querySelector(".guide-dialog").open)) && (await xrayOn("#panel-accordion")) && (await page.$eval('#panel-accordion .output-tab:has-text("Explain")', (t) => t.getAttribute("aria-selected"))) === "true");
+  await page.click('#tabbar .tab-btn:has-text("Buttons")');
+  await page.click("#panel-buttons .guide-btn");
+  ok("explain: blocks without Explain do not offer the button", !(await page.isVisible(".guide-explore")));
+  await page.keyboard.press("Escape");
+
+  // the visual pilot
+  await page.click('#tabbar .tab-btn:has-text("Text around media")');
+  ok("explain: Text around media has an Explain tab", (await tabNames("#panel-image-text-section")).includes("Explain"));
+  await page.fill("#panel-image-text-section .media-image-url", "https://example.org/pic.png");
+  await page.click("#panel-image-text-section .ql-editor");
+  await page.keyboard.type("Some words beside the picture.");
+  await page.waitForTimeout(600);
+  await page.click('#panel-image-text-section .output-tab:has-text("Explain")');
+  await page.waitForTimeout(400);
+  const legend = await page.$$eval("#panel-image-text-section .legend-label", (l) => l.map((x) => x.textContent));
+  ok("explain: Text around media explains its parts (wrapper, image, text, paragraph)", ["The wrapper", "The image", "Your text", "A paragraph"].every((n) => legend.includes(n)), legend.join(" | "));
+  await page.hover('#panel-image-text-section .explain-code .tk-tag[data-el="1"] >> nth=0');
+  ok("explain: the image part teaches the float idea", (await page.textContent("#panel-image-text-section .explain-what")).includes("float"));
+  await page.click('#panel-image-text-section .output-tab:has-text("HTML")');
 
   // screenshots
   await page.click('#tabbar .tab-btn:has-text("Resource cards")');

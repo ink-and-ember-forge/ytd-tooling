@@ -44,4 +44,5 @@ ${itemsHTML}
   },
   css: await loadBlockAsset(import.meta.url, "block.css"),
   guide: await loadBlockAsset(import.meta.url, "how-it-works.html"),
+  explain: JSON.parse(await loadBlockAsset(import.meta.url, "explain.json")),
 };

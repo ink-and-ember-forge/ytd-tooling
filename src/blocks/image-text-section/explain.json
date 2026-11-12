@@ -1,0 +1,79 @@
+{
+  "intro": "This is the code for your text and media, exactly as it will be pasted. Turn on X-ray over the preview to see which part is which.",
+  "parts": [
+    {
+      "selector": ".image-text-section",
+      "label": "The wrapper",
+      "what": "Holds the media and your text. The CSS finds this box by its class name and makes the media sit to one side.",
+      "how": "Inside there are just two things, in this order: the image or video, then a `div` holding your text. The media comes first so it can float beside the text that follows.",
+      "deep": "A small clearing rule (`::after { clear: both }`) closes the wrapper so a floated image can never spill out of its box and overlap whatever comes next."
+    },
+    {
+      "selector": ".image-text-section > img",
+      "label": "The image",
+      "what": "The picture. It is told to `float: right`, which pulls it to the right-hand side and lets the text flow around it.",
+      "how": "It works like a photo in a newspaper: the text wraps round it, then runs underneath once it is past the bottom of the picture. Choosing “Large” adds the class `media-large` for a bigger picture.",
+      "deep": "`float` takes the image out of the normal flow but not out of the text's wrapping. On phones the CSS switches the float off and shows the picture full width above the text."
+    },
+    {
+      "selector": ".image-text-section > iframe",
+      "label": "The video",
+      "what": "A YouTube video embedded in the page, floated beside the text in the same way as an image.",
+      "how": "The video address you paste is converted to the `embed` form that YouTube allows on other websites.",
+      "deep": "The CSS keeps it a 16:9 shape with `aspect-ratio`. `allowfullscreen` and the long `allow` list permit full screen and the player's own features."
+    },
+    {
+      "selector": ".image-text-section > div",
+      "label": "Your text",
+      "what": "Everything you write goes in this box. Because the media floats, the text wraps around it and runs underneath once it is past the media.",
+      "how": "It is a plain `div` with no styling of its own. It only exists to group your writing as one block next to the media.",
+      "deep": "Its `min-width: 0` stops a very long word or web address from forcing the layout wider than the page."
+    },
+    {
+      "selector": ".image-text-section > div h3",
+      "label": "A heading",
+      "what": "A sub-heading inside your text.",
+      "how": "Headings are real `h3` elements, not just big bold text, so screen readers and search engines understand how the page is organised. The CSS colours them in the page's main colour."
+    },
+    {
+      "selector": ".image-text-section > div p",
+      "label": "A paragraph",
+      "what": "A paragraph of text.",
+      "how": "Each paragraph is its own `p`. The editor starts a new one every time you press Enter."
+    },
+    {
+      "selector": ".image-text-section > div ul, .image-text-section > div ol",
+      "label": "A list",
+      "what": "A bulleted list (`ul`) or a numbered list (`ol`).",
+      "how": "The editor builds real list elements, so screen readers can announce “list of 3 items”."
+    },
+    {
+      "selector": ".image-text-section > div li",
+      "label": "A list item",
+      "what": "One point in a list."
+    },
+    {
+      "selector": ".image-text-section > div a i",
+      "label": "The new-tab arrow",
+      "what": "A small arrow icon that appears on links that open in a new tab.",
+      "how": "It is an icon from the Font Awesome set. It is added automatically whenever “Open in a new tab” is ticked, so the arrow and the new-tab behaviour can never disagree."
+    },
+    {
+      "selector": ".image-text-section > div a",
+      "label": "A link",
+      "what": "A link you made with the link button.",
+      "how": "If you ticked “Open in a new tab” it gets `target=\"_blank\"`, and for links to other websites a safety attribute (`rel`) as well."
+    },
+    {
+      "selector": ".image-text-section > div strong, .image-text-section > div em",
+      "label": "Bold or italic",
+      "what": "Bold (`strong`) or italic (`em`) words.",
+      "how": "These say the words are important or stressed, not just that they look different. Screen readers can use that, which plain styling would not give them."
+    }
+  ],
+  "attributes": {
+    "src": "The address of the picture or video. This is the web address you entered.",
+    "alt": "Describes the picture for screen readers, and for when it can't load. If the picture is only decoration, leave it empty so screen readers skip it.",
+    "class": "Names the kind of thing this is, so the CSS knows how to style it. `media-large` is the “Large” image option."
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "intro": "This is the code for your accordion, exactly as it will be pasted. Notice that the same text appears in several places: hover any value and every copy lights up.",
+  "parts": [
+    {
+      "selector": ".accordion",
+      "label": "The whole accordion",
+      "what": "The outer box that holds every item. It gets a name (its `id`) so the items can say “we belong to this group”.",
+      "how": "Bootstrap's accordion script uses that shared name to make “only one open at a time” work: when one panel opens, it closes the other panels that name the same group.",
+      "deep": "The group's `id` is repeated as `data-bs-parent=\"#…\"` on every panel. Remove it from a panel and that panel opens and closes on its own, ignoring the others."
+    },
+    {
+      "selector": ".accordion-item",
+      "label": "One item",
+      "what": "One title together with its hidden panel, kept as a pair.",
+      "how": "Adding or removing an item in the builder adds or removes a whole pair, with the names inside it kept in step for you.",
+      "deep": "`accordion-item` is a Bootstrap class. Our CSS removes its default border so the items look like plain links with an arrow."
+    },
+    {
+      "selector": ".accordion-header",
+      "label": "The heading",
+      "what": "Wraps the title in a real heading (`h3`), so screen readers can jump from title to title.",
+      "how": "The heading has its own `id`. The panel points back to it (`aria-labelledby`), so a screen reader announces the panel together with its title.",
+      "deep": "Using a real heading element rather than styled text keeps the page's structure correct for assistive technology."
+    },
+    {
+      "selector": ".accordion-button",
+      "label": "The title you click",
+      "what": "A real button, so it works with a mouse and with the keyboard (Tab to reach it, Enter or Space to open it).",
+      "how": "Three attributes make it work. `data-bs-toggle` says “I open and close something”. `data-bs-target` says which panel, by its `id`. `aria-expanded` tells screen readers whether it is open right now.",
+      "deep": "Bootstrap flips `aria-expanded` and the `collapsed` class each time it is clicked. The `collapsed` class is why the arrow points right when closed; our CSS rotates it when the class is removed."
+    },
+    {
+      "selector": ".accordion-button-text",
+      "label": "The title text",
+      "what": "Your title. It sits in its own `span` so our CSS can underline it, and remove the underline on hover."
+    },
+    {
+      "selector": ".accordion-collapse",
+      "label": "The hidden panel",
+      "what": "The part that opens and closes. It stays hidden until its button is clicked.",
+      "how": "It has an `id`, and its button's `data-bs-target` has the same text. That match is how a click finds its panel. If they differ by even one letter, clicking does nothing and there is no error message.",
+      "deep": "The `collapse` class hides it and Bootstrap adds `show` while it is open. `data-bs-parent` names the accordion, so opening this one closes the others."
+    },
+    {
+      "selector": ".accordion-body",
+      "label": "Where your content goes",
+      "what": "An empty slot. Build another block on its own tab, then paste its HTML in place of the comment.",
+      "how": "Anything works in here: text, a list, buttons, even another block.",
+      "deep": "`<!-- Content goes here -->` is only a placeholder comment. Delete it when you paste your content."
+    }
+  ],
+  "attributes": {
+    "data-bs-target": "Names the panel this button opens. The `#` means “the element with this id”. It has to match the panel's `id` exactly: one wrong letter and the button silently does nothing.",
+    "data-bs-parent": "Names the accordion this panel belongs to, so that opening this panel closes the others.",
+    "data-bs-toggle": "Tells Bootstrap's script “this button opens and closes something”. `collapse` is the kind of opening.",
+    "aria-expanded": "Tells screen readers whether the panel is open. Bootstrap changes it for you each click.",
+    "aria-controls": "Tells screen readers which panel this button controls.",
+    "aria-labelledby": "Tells screen readers that this panel is described by its heading."
+  }
+}

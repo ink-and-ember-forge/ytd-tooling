@@ -51,10 +51,22 @@ The Build view is a **workbench** that fills the window under a one-row header: 
 | `storage.js` | Autosave to `localStorage`, plus project save/load as a JSON file. All wrapped in try/catch. |
 | `tabs.js` | Accessible tabs (roles, arrow keys) used for the block rail, code tabs and the Build / Upgrade / What's changed views. |
 | `upgrade-panel.js`, `changelog-panel.js` | The Upgrade (three steps + checklist) and What's changed views. |
-| `guide-dialog.js` | The "How it works" lightbox: one shared native `<dialog>` that shows a block's `how-it-works.html` (focus trap, Esc, click-outside and ✕ to close, focus returns to the button). Opened from the "ⓘ How it works" button in each panel header. |
+| `guide-dialog.js` | The "How it works" lightbox: one shared native `<dialog>` that shows a block's `how-it-works.html` (focus trap, Esc, click-outside and ✕ to close, focus returns to the button). Opened from the "ⓘ How it works" button in each panel header. For blocks with an Explain tab it ends with "Explore it on my block →". |
+| `explain-panel.js` | The **Explain** tab: the block's own generated code, annotated. Hovering a line lights it up in the preview and explains it; hovering an attribute explains it and highlights every identical value; clicking pins. Numbered badges match the X-ray chips. |
+| `preview.js` (X-ray) | The **X-ray** toggle: numbered chips and outlines over every explained part of the preview. It switches on with the Explain tab and off when you leave it. |
 | `toast.js` | Non-blocking messages and Undo; replaces `alert()`. |
 
 Blocks choose where they appear in the tab bar with `group` and `tabLabel` (display only: the registry order still decides CSS order).
+
+### How the Explain tab links code to preview
+
+Nothing is added to the generated HTML. Instead:
+
+1. `lib/code-map.js` splits the HTML string into tokens without changing a character and numbers every element in document order. That number N is also the Nth element inside the preview's `#page-container`, so a line of code and the thing it draws can find each other. It is pure (no DOM) and is tested against every block's fixtures to prove the mapping is 1:1.
+2. `explain/engine.js` parses the same HTML and gives each element the first part from the block's `explain.json` whose selector matches (`partOf[N]`). Attribute notes come from the block's own list, then the shared `explain/glossary.json`.
+3. `explain-panel.js` renders the tokens as annotated code and `preview.js` draws the X-ray chips, both from that one model, and they pass hover/click events to each other by element number.
+
+Only blocks with an `explain.json` have the tab (currently Accordion and Text around media). See [ADDING-A-BLOCK.md](ADDING-A-BLOCK.md#writing-an-explainjson).
 
 ## Version and changelog
 
