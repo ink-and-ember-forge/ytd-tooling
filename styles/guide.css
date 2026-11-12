@@ -1,79 +1,106 @@
-.how-it-works {
-  margin-top: 2rem;
-  border: 1px solid #e4dfd4;
-  border-radius: 8px;
+/* "How it works": each block's explanation, in a lightbox (native <dialog>; see src/ui/guide-dialog.js). */
+
+.guide-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--navy);
   background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.guide-btn:hover { background: var(--navy); color: #fff; }
+
+.guide-dialog {
+  /* The card fills the dialog, so only a click on the backdrop reaches the <dialog> itself. */
+  padding: 0;
+  border: none;
+  background: transparent;
+  width: min(92vw, 700px);
+  max-width: none;
+  max-height: min(86vh, 900px);
+  overflow: visible;
+  color: #1a1a1a;
+}
+.guide-dialog::backdrop { background: rgba(20, 28, 45, 0.55); }
+.guide-dialog[open] { animation: guide-in 0.15s ease-out; }
+@keyframes guide-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.guide-card {
+  display: flex;
+  flex-direction: column;
+  max-height: min(86vh, 900px);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
 }
 
-.how-it-works summary {
-  cursor: pointer;
-  padding: 0.9rem 1.1rem;
-  font-weight: 700;
-  color: var(--navy);
-  font-size: 0.95rem;
-  list-style: none;
+.guide-head {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--line);
 }
+.guide-head h2 { margin: 0; font-size: 1.1rem; color: var(--navy); }
 
-.how-it-works summary::-webkit-details-marker {
-  display: none;
-}
-
-.how-it-works summary::before {
-  content: "▸";
-  color: var(--green);
-  display: inline-block;
-  transition: transform 0.15s;
-}
-
-.how-it-works[open] summary::before {
-  transform: rotate(90deg);
-}
-
-.how-it-works-body {
-  padding: 0 1.1rem 1.1rem;
-  color: #1a1a1a;
-  font-size: 0.92rem;
-  line-height: 1.6;
-  border-top: 1px solid #e4dfd4;
-  padding-top: 1rem;
-}
-
-.how-it-works-body h4 {
-  margin: 1.2rem 0 0.4rem;
-  font-size: 0.85rem;
+.guide-close {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
   color: var(--dark-grey);
+  font-size: 1.6rem;
+  line-height: 1;
+  padding: 0.1rem 0.5rem;
+  border-radius: 6px;
 }
+.guide-close:hover { background: var(--light-grey); color: #000; }
 
-.how-it-works-body h4:first-child {
-  margin-top: 0;
+.guide-body {
+  overflow-y: auto;
+  padding: 1.1rem 1.4rem 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.65;
+  overscroll-behavior: contain;
 }
+.guide-body:focus { outline: none; }
 
-.how-it-works-body p {
-  margin: 0 0 0.9rem;
-}
+.guide-body h4 { margin: 1.4rem 0 0.4rem; font-size: 0.9rem; color: var(--navy); }
+.guide-body h4:first-child { margin-top: 0; }
+.guide-body p { margin: 0 0 0.9rem; }
 
-.how-it-works-body pre {
+.guide-body pre {
   background: #f4f2ed;
-  border: 1px solid #e4dfd4;
+  border: 1px solid var(--line);
   border-radius: 6px;
   padding: 0.8rem 1rem;
   overflow-x: auto;
   margin: 0 0 0.9rem;
 }
-
-.how-it-works-body pre code {
+.guide-body pre code {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.78rem;
   line-height: 1.5;
 }
-
-.how-it-works-body :not(pre) > code {
+.guide-body :not(pre) > code {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 0.82rem;
   background: #f4f2ed;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+  .guide-dialog { width: 96vw; max-height: 92vh; }
+  .guide-card { max-height: 92vh; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .guide-dialog[open] { animation: none; }
 }

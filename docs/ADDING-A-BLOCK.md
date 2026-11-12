@@ -8,7 +8,7 @@
 2. Set `group` (Structure, Content, Interactive or Links) and a plain-English `tabLabel`: they decide where the block appears in the tab bar. Write `fields` and `generateHTML` in `index.js`. Reuse helpers from `src/lib/` (`escapeHTML`, `slugify`, `uniqueSlug`, `indentLines`, `newTabAttrs`, `mediaInner`...). Always escape user text.
 3. Write `block.css`, indented as nested rules (it is placed inside `#page-container`). Use the theme variables (`--primary-colour`, `--secondary-colour`...).
 4. If it needs script, add `block.js` and uncomment the `js:` line in `index.js`. It is appended to the base script, so keep functions global and idempotent.
-5. Write `how-it-works.html` for the box under the tab.
+5. Write `how-it-works.html`: plain-English HTML (headings `<h4>`, paragraphs, `<pre><code>` for examples) shown in the "ⓘ How it works" lightbox from the panel header.
 6. Add fixtures to `test/fixtures.js`: several variants covering each branch of `generateHTML` (empty values, optional parts, special characters).
 7. Add an example section to `template/index.html` (and a table-of-contents entry). Paste the builder's output, so the template shows exactly what the tool produces. A test fails if a block has no example.
 8. Build and accept the new snapshot:

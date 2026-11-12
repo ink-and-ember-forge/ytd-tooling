@@ -336,6 +336,37 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("narrow: the rail becomes a row, the page scrolls, nothing overflows sideways", narrow.dir === "row" && narrow.scrolls && narrow.overflowX <= 0 && narrow.toggle === "none", JSON.stringify(narrow));
   await page.setViewportSize({ width: 1400, height: 900 });
 
+  // ---- "How it works" lightbox ---------------------------------------------------------------
+  await page.click('#tabbar .tab-btn:has-text("Accordion")');
+  ok("guide: no inline toggle block any more", (await page.$$(".how-it-works")).length === 0);
+  ok("guide: a How it works button sits in the panel header", await page.isVisible("#panel-accordion .panel-head .guide-btn"));
+  await page.click("#panel-accordion .guide-btn");
+  ok("guide: opens as a modal dialog", await page.evaluate(() => { const d = document.querySelector(".guide-dialog"); return !!d && d.open && d.matches(":modal"); }));
+  ok("guide: shows this block's explanation under its name", (await page.textContent(".guide-dialog")).includes("filing cabinet") && (await page.textContent("#guide-title")).includes("Accordion"), await page.textContent("#guide-title"));
+  ok("guide: keyboard focus moves inside the dialog", await page.evaluate(() => !!document.activeElement.closest(".guide-dialog")));
+  await page.keyboard.press("Escape");
+  ok("guide: Escape closes it", await page.evaluate(() => !document.querySelector(".guide-dialog").open));
+  ok("guide: focus returns to the button that opened it", await page.evaluate(() => document.activeElement.classList.contains("guide-btn")));
+  await page.click("#panel-accordion .guide-btn");
+  await page.click(".guide-close");
+  ok("guide: the close button closes it", await page.evaluate(() => !document.querySelector(".guide-dialog").open));
+  await page.click("#panel-accordion .guide-btn");
+  await page.mouse.click(8, 8); // on the backdrop, outside the card
+  ok("guide: clicking outside closes it", await page.evaluate(() => !document.querySelector(".guide-dialog").open));
+  await page.click('#tabbar .tab-btn:has-text("Navigation cards")');
+  await page.click("#panel-nav-cards .guide-btn");
+  const gbox = await page.evaluate(() => { const b = document.querySelector(".guide-body"); const c = document.querySelector(".guide-card").getBoundingClientRect(); return { text: b.textContent.includes("Two styles live in this one block"), scrolls: b.scrollHeight > b.clientHeight, cardH: c.height, vh: innerHeight }; });
+  ok("guide: each block shows its own explanation", gbox.text);
+  ok("guide: long explanations scroll inside the dialog and never outgrow the window", gbox.scrolls && gbox.cardH <= gbox.vh * 0.9, JSON.stringify(gbox));
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 390, height: 800 });
+  await page.waitForTimeout(200);
+  await page.click("#panel-nav-cards .guide-btn");
+  const pbox = await page.evaluate(() => { const c = document.querySelector(".guide-card").getBoundingClientRect(); return { left: c.left, right: c.right, vw: innerWidth }; });
+  ok("guide: fits a phone screen", pbox.left >= 0 && pbox.right <= pbox.vw, JSON.stringify(pbox));
+  await page.keyboard.press("Escape");
+  await page.setViewportSize({ width: 1400, height: 900 });
+
   // screenshots
   await page.click('#tabbar .tab-btn:has-text("Resource cards")');
   await page.screenshot({ path: path.join(OUT, "ui-desktop.png") });

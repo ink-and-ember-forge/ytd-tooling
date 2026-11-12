@@ -51,6 +51,7 @@ The Build view is a **workbench** that fills the window under a one-row header: 
 | `storage.js` | Autosave to `localStorage`, plus project save/load as a JSON file. All wrapped in try/catch. |
 | `tabs.js` | Accessible tabs (roles, arrow keys) used for the block rail, code tabs and the Build / Upgrade / What's changed views. |
 | `upgrade-panel.js`, `changelog-panel.js` | The Upgrade (three steps + checklist) and What's changed views. |
+| `guide-dialog.js` | The "How it works" lightbox: one shared native `<dialog>` that shows a block's `how-it-works.html` (focus trap, Esc, click-outside and ✕ to close, focus returns to the button). Opened from the "ⓘ How it works" button in each panel header. |
 | `toast.js` | Non-blocking messages and Undo; replaces `alert()`. |
 
 Blocks choose where they appear in the tab bar with `group` and `tabLabel` (display only: the registry order still decides CSS order).
