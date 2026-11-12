@@ -10,7 +10,7 @@ export function buildPreviewDoc(block, html, css, js, theme, baseCss) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
 <style>
   :root { --thinqi-navbar-height: 0px; --anchor-section-offset: 0px; }
-  body { margin: 0; padding: 1.25rem; background: #fff; }
+  body { margin: 0; padding: 0.5rem; background: #fff; }
   /* On a real desktop page a block sits in a ~600px column (3fr of the page grid in
      .main-grid), not the full width, so show it that wide. Below 769px the base CSS goes
      single column and fills the width, which is also what happens here. */

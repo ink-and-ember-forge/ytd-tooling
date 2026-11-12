@@ -2,12 +2,14 @@
 // breakpoints at 768px and 576px, so the width toggle is how editors check the
 // mobile layout.
 //
-// Text must stay readable, so the preview is only shrunk when the panel is narrower
-// than the part of the page worth seeing. `width` is the iframe's viewport (what the
-// media queries see); `shown` is how much of it to display. On desktop a block sits in
-// a ~600px column (see preview-doc.js), so the viewport is 1000px (desktop layout) but
-// only the left 620px are shown (the column plus its left margin), at true size, and the
-// empty remainder is clipped.
+// The preview is NEVER scaled: text is always at its true size. (An earlier version
+// shrank the page to fit the panel, which made 16px text look like 10px.) If the panel
+// is narrower than the page being shown, the preview scrolls sideways instead.
+//
+// `width` is the iframe's viewport (what the media queries see); `shown` is how much of
+// it to display. On desktop a block sits in a ~600px column (see preview-doc.js), so the
+// viewport is 1000px (desktop layout) but only the left 616px are shown (the column plus
+// the preview's 8px margins) and the empty remainder is clipped.
 //
 // Two extras:
 //  - click-to-edit: hovering outlines what you can edit; clicking calls onPick(hit),
@@ -17,7 +19,7 @@ import { getPref, setPref } from "./storage.js";
 import { openPopout, closePopout, postDoc, isPoppedOut, onPopoutChange, setResender } from "./popout.js";
 
 export const DEVICES = [
-  { id: "desktop", label: "Desktop", width: 1000, shown: 620, hint: "page column, about 600px wide" },
+  { id: "desktop", label: "Desktop", width: 1000, shown: 616, hint: "page column, about 600px wide" }, // 600px column + the preview's 8px margins
   { id: "tablet", label: "Tablet", width: 640 }, // between the 576px and 768px breakpoints
   { id: "phone", label: "Phone", width: 375 },
 ];
@@ -55,13 +57,16 @@ export function createPreview(title, { resolve, onPick } = {}) {
       </div>
     </div>
     <div class="preview-stage">
-      <iframe class="live-preview" title="${title} preview"></iframe>
+      <div class="preview-page"><iframe class="live-preview" title="${title} preview"></iframe></div>
       <div class="popout-note" hidden>
         <p>The preview is open in another window.</p>
         <button type="button" class="primary-btn popout-return">Bring it back here</button>
       </div>
-    </div>`;
+    </div>
+    <p class="clip-note" hidden>↔ This pane is narrower than the page, so the preview scrolls sideways at true size. Drag the divider to widen it.</p>`;
   const stage = el.querySelector(".preview-stage");
+  const page = el.querySelector(".preview-page");
+  const clipNote = el.querySelector(".clip-note");
   const frame = el.querySelector("iframe");
   const toggle = el.querySelector(".device-toggle");
   const popBtn = el.querySelector(".popout-btn");
@@ -79,13 +84,15 @@ export function createPreview(title, { resolve, onPick } = {}) {
 
   function layout() {
     buttons.forEach(([d, b]) => b.setAttribute("aria-pressed", String(d === device)));
+    // Real pixels only: no transform, no zoom. The page is `shown` px wide and sits centred
+    // when the panel is wider; when the panel is narrower the stage scrolls sideways.
     const shown = device.shown || device.width;
     const avail = stage.clientWidth || shown;
-    const scale = Math.min(1, avail / shown); // 1 (true size) unless the panel is narrower than `shown`
+    page.style.width = shown + "px";
+    page.style.left = Math.max(0, (avail - shown) / 2) + "px";
     frame.style.width = device.width + "px";
-    frame.style.height = (stage.clientHeight || 380) / scale + "px";
-    frame.style.transform = `scale(${scale})`;
-    frame.style.left = Math.max(0, (avail - shown * scale) / 2) + "px";
+    // Say so when part of the page is off to the side, since the scrollbar may be hidden.
+    clipNote.hidden = !(stage.scrollWidth > stage.clientWidth + 1);
   }
 
   // ---- click to edit --------------------------------------------------------

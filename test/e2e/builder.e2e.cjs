@@ -192,21 +192,45 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const copyBottom = await page.$eval("#panel-two-column .head-copy", (e) => e.getBoundingClientRect().bottom);
   const stageBottom = await page.$eval("#panel-two-column .preview-stage", (e) => e.getBoundingClientRect().bottom);
   ok("preview: the preview, and Copy HTML, are both on screen without scrolling", stageBottom <= vh && copyBottom <= vh && stageH > 200, `stage ${Math.round(stageH)}px tall, ends at ${Math.round(stageBottom)}/${vh}px`);
-  const scaleOf = () => page.$eval("#panel-two-column .live-preview", (f) => parseFloat(f.style.transform.replace("scale(", "")));
-  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
-  const sDesk = await scaleOf();
-  await page.click('#panel-two-column .device-toggle button:has-text("Tablet")');
-  const sTab = await scaleOf();
-  // Text must be readable: on-screen size = the page's CSS font size x the preview's scale.
-  const bodyPx = () => page.$eval("#panel-two-column .live-preview", (f) => parseFloat(getComputedStyle(f.contentDocument.body).fontSize));
   const containerMax = () => page.$eval("#panel-two-column .live-preview", (f) => getComputedStyle(f.contentDocument.getElementById("page-container")).maxWidth);
-  const tabletText = (await bodyPx()) * sTab;
-  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
+
+  // Text is NEVER scaled. For every device, at the default pane width and at a very narrow one, the
+  // preview must render 1:1: no transform or zoom on the iframe or any ancestor, rendered size equal to
+  // layout size, and 16px text really is 16px on screen.
+  const trueSize = () => page.$eval("#panel-two-column .live-preview", (f) => {
+    const transforms = [];
+    let zoom = 1;
+    for (let n = f; n && n.nodeType === 1; n = n.parentElement) {
+      const cs = getComputedStyle(n);
+      if (cs.transform !== "none") transforms.push(n.className || n.tagName);
+      if (cs.zoom && cs.zoom !== "1") zoom *= parseFloat(cs.zoom);
+    }
+    const r = f.getBoundingClientRect();
+    const px = parseFloat(getComputedStyle(f.contentDocument.body).fontSize);
+    return { ratioW: r.width / f.offsetWidth, ratioH: r.height / f.offsetHeight, transforms, zoom, px, onScreen: px * (r.width / f.offsetWidth) };
+  });
+  const checkTrueSize = async (label) => {
+    for (const d of ["Desktop", "Tablet", "Phone"]) {
+      await page.click(`#panel-two-column .device-toggle button:has-text("${d}")`);
+      await page.waitForTimeout(250);
+      const t = await trueSize();
+      ok(`preview: ${label}, ${d}: true size, no scaling anywhere`, t.ratioW === 1 && Math.abs(t.ratioH - 1) < 0.005 /* sub-pixel rounding of a flex height, not scaling */ && t.transforms.length === 0 && t.zoom === 1 && t.onScreen === 16, JSON.stringify(t));
+    }
+  };
+  await checkTrueSize("default pane width");
+  await page.evaluate(() => document.documentElement.style.setProperty("--side-w", "400px"));
   await page.waitForTimeout(300);
-  const deskScale = await scaleOf();
-  const deskText = (await bodyPx()) * deskScale;
-  ok("preview: desktop text is at (near) true size, not shrunk", deskText >= 15, `16px text renders at ${deskText.toFixed(1)}px (scale ${deskScale.toFixed(2)})`);
-  ok("preview: tablet text is also readable", tabletText >= 14, `renders at ${tabletText.toFixed(1)}px`);
+  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
+  await page.waitForTimeout(250);
+  const narrowStage = await page.$eval("#panel-two-column .preview-stage", (e) => ({ client: e.clientWidth, scroll: e.scrollWidth }));
+  ok("preview: in a narrow pane the page scrolls sideways instead of shrinking", narrowStage.client < 620 && narrowStage.scroll > narrowStage.client, JSON.stringify(narrowStage));
+  ok("preview: a narrow pane says the preview is clipped", await page.isVisible("#panel-two-column .clip-note"));
+  await checkTrueSize("narrow pane (400px)");
+  await page.evaluate(() => document.documentElement.style.removeProperty("--side-w"));
+  await page.waitForTimeout(250);
+  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
+  await page.waitForTimeout(250);
+  ok("preview: the clipped-preview note is gone once the pane is wide enough", !(await page.isVisible("#panel-two-column .clip-note")));
   ok("preview: desktop shows the real ~600px page column", (await containerMax()) === "600px", await containerMax());
   await page.click('#panel-two-column .device-toggle button:has-text("Tablet")');
   await page.waitForTimeout(300);

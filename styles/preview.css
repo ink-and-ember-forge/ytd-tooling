@@ -99,23 +99,34 @@
 .device-toggle button + button { border-left: 1px solid var(--navy); }
 .device-toggle button[aria-pressed="true"] { background: var(--navy); color: #fff; }
 
-/* The iframe is laid out at the device width, then scaled to fit (see preview.js). */
+/* The preview is never scaled (text is always its true size). The iframe sits in a fixed-width
+   "page"; if the pane is narrower than the page, the stage scrolls sideways (see preview.js). */
 .preview-stage {
   position: relative;
   flex: 1;
   min-height: 180px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid #d7d2c8;
   border-radius: 8px;
   background: #fff;
 }
 
-.live-preview {
+.clip-note { margin: 0.4rem 0 0; font-size: 0.78rem; color: #7a4a00; }
+.preview-card.is-popped .clip-note { display: none; }
+
+.preview-page {
   position: absolute;
   top: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+.live-preview {
+  display: block;
+  height: 100%;
   border: 0;
   background: #fff;
-  transform-origin: top left;
 }
 
 /* Code tabs */

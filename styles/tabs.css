@@ -114,7 +114,7 @@ body.rail-collapsed .rail { display: none; }
   display: grid;
   /* --side-w is set by the divider (src/ui/splitter.js). The default favours the preview:
      the Desktop preview needs about 680px to show the page column at true size. */
-  grid-template-columns: minmax(0, 1fr) 20px var(--side-w, clamp(440px, calc(56% - 10px), 720px));
+  grid-template-columns: minmax(0, 1fr) 20px var(--side-w, clamp(440px, calc(58% - 10px), 760px));
   gap: 0;
   align-items: stretch;
 }

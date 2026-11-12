@@ -68,7 +68,7 @@ function setRail(open) {
 }
 railToggle.addEventListener("click", () => setRail(railToggle.getAttribute("aria-pressed") !== "true"));
 // On small laptop windows the rail starts hidden, so the preview can show the page at true size.
-setRail(getPref("railOpen", window.innerWidth >= 1320));
+setRail(getPref("railOpen", window.innerWidth >= 1400));
 
 // ---- views: build / upgrade / what's changed ----------------------------------
 const main = document.getElementById("main");
