@@ -1,6 +1,8 @@
 // Accessible tabs: roles, aria-selected, roving tabindex, arrow/Home/End keys.
 // The caller supplies the tab buttons and a function that returns each one's panel.
-export function initTabs({ tabs, panelFor, onSelect, initial = 0 }) {
+// `bothAxes`: also move with Up/Down (for the block rail, which is a column on wide
+// screens and a row on narrow ones).
+export function initTabs({ tabs, panelFor, onSelect, initial = 0, bothAxes = false }) {
   const list = Array.from(tabs);
 
   function select(tab, { focus = false } = {}) {
@@ -27,7 +29,7 @@ export function initTabs({ tabs, panelFor, onSelect, initial = 0 }) {
     }
     tab.addEventListener("click", () => select(tab));
     tab.addEventListener("keydown", (e) => {
-      const keys = { ArrowRight: 1, ArrowLeft: -1, Home: "first", End: "last" };
+      const keys = { ArrowRight: 1, ArrowLeft: -1, Home: "first", End: "last", ...(bothAxes ? { ArrowDown: 1, ArrowUp: -1 } : {}) };
       if (!(e.key in keys)) return;
       e.preventDefault();
       const k = keys[e.key];

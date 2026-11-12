@@ -6,13 +6,12 @@
   border-bottom: 1px solid var(--line);
 }
 
+/* One slim row: every pixel of height here is taken from the workbench below. */
 .topbar-row {
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0.65rem 1.5rem;
+  padding: 0.4rem 1rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.9rem;
   flex-wrap: wrap;
 }
 

@@ -10,6 +10,7 @@ import { initTabs } from "./ui/tabs.js";
 import { initLayout, initMenus } from "./ui/layout.js";
 import { getPref, setPref } from "./ui/storage.js";
 import { restoreSplitWidth } from "./ui/splitter.js";
+import { broadcastActive } from "./ui/preview.js";
 
 restoreSplitWidth(); // before the panels are built, so each starts at the saved width
 
@@ -53,9 +54,21 @@ const lastBlock = blockTabs.findIndex((t) => t.dataset.block === getPref("lastBl
 initTabs({
   tabs: blockTabs,
   panelFor: (t) => t._panel,
-  onSelect: (t) => setPref("lastBlock", t.dataset.block),
+  onSelect: (t) => { setPref("lastBlock", t.dataset.block); broadcastActive(); }, // the pop-out follows the active block
   initial: Math.max(0, lastBlock),
+  bothAxes: true,
 });
+
+// ---- show/hide the block rail (wide screens) ------------------------------------
+const railToggle = document.getElementById("rail-toggle");
+function setRail(open) {
+  document.body.classList.toggle("rail-collapsed", !open);
+  railToggle.setAttribute("aria-pressed", String(open));
+  setPref("railOpen", open);
+}
+railToggle.addEventListener("click", () => setRail(railToggle.getAttribute("aria-pressed") !== "true"));
+// On small laptop windows the rail starts hidden, so the preview can show the page at true size.
+setRail(getPref("railOpen", window.innerWidth >= 1400));
 
 // ---- views: build / upgrade / what's changed ----------------------------------
 const main = document.getElementById("main");
@@ -67,7 +80,10 @@ const fromHash = modeTabs.findIndex((b) => "#" + b.dataset.view === location.has
 const modes = initTabs({
   tabs: modeTabs,
   panelFor: viewOf,
-  onSelect: (btn) => history.replaceState(null, "", btn.dataset.view === "build" ? location.pathname + location.search : "#" + btn.dataset.view),
+  onSelect: (btn) => {
+    document.body.classList.toggle("view-other", btn.dataset.view !== "build"); // the Blocks button only matters while building
+    history.replaceState(null, "", btn.dataset.view === "build" ? location.pathname + location.search : "#" + btn.dataset.view);
+  },
   initial: Math.max(0, fromHash),
 });
 window.addEventListener("hashchange", () => {

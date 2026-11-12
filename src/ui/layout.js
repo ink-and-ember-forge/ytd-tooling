@@ -1,15 +1,11 @@
-// Publishes the heights of the sticky header and block tab bar as CSS variables,
-// so the sticky preview panel can sit just below them.
+// Publishes the header's height as a CSS variable: the workbench fills the window
+// below it (see tabs.css), and the stacked layout sticks the block row under it.
 export function initLayout() {
-  const root = document.documentElement;
-  const watch = (el, name) => {
-    if (!el) return;
-    const set = () => root.style.setProperty(name, el.offsetHeight + "px");
-    new ResizeObserver(set).observe(el);
-    set();
-  };
-  watch(document.getElementById("topbar"), "--topbar-h");
-  watch(document.getElementById("tabbar"), "--tabbar-h");
+  const topbar = document.getElementById("topbar");
+  if (!topbar) return;
+  const set = () => document.documentElement.style.setProperty("--topbar-h", topbar.offsetHeight + "px");
+  new ResizeObserver(set).observe(topbar);
+  set();
 }
 
 // Closes a <details class="menu"> when you click elsewhere or press Escape; one open at a time.

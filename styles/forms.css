@@ -163,21 +163,45 @@ textarea {
 }
 .item-up:hover, .item-down:hover, .item-dup:hover, .bullet-up:hover, .bullet-down:hover { background: var(--light-grey); }
 .item-up:disabled, .item-down:disabled, .bullet-up:disabled, .bullet-down:disabled { opacity: 0.35; cursor: default; }
-.item-card-header { gap: 0.35rem; }
-.item-card-title { margin-right: auto; }
+.item-card-header { gap: 0.35rem; margin-bottom: 0; }
 
 /* "Card 1", "Card 2"... follow the order on screen, so reordering renumbers them. */
 .item-cards { counter-reset: item; }
 .item-card { counter-increment: item; }
 .item-card-title::after { content: " " counter(item); }
 
-.item-card.is-empty::after {
-  content: "Empty: this one is left out of the output.";
-  display: block;
-  margin-top: 0.7rem;
-  font-size: 0.78rem;
-  color: #7a4a00;
+/* ---- collapsing: a closed card is one line, "▸ Card 2  My article" ---------------- */
+.item-card { padding: 0.55rem 0.75rem; }
+.item-toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: none;
+  border: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.3rem 0;
+  color: inherit;
 }
+.item-chevron { color: var(--green); font-size: 0.9rem; transition: transform 0.15s; flex: none; }
+.item-card.is-open .item-chevron { transform: rotate(90deg); }
+.item-card .item-card-title { flex: none; }
+.item-summary {
+  min-width: 0;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.item-summary.is-empty { color: #7a4a00; font-style: italic; font-weight: 400; }
+.item-card:not(.is-open) .item-card-body { display: none; }
+.item-card.is-open .item-card-body { padding-top: 0.5rem; border-top: 1px solid var(--line); margin-top: 0.4rem; }
+.item-card.is-open { border-color: var(--green); box-shadow: 0 0 0 1px var(--green); }
 
 /* ---- inline validation ---------------------------------------------------- */
 .is-invalid { border-color: var(--burgundy) !important; }

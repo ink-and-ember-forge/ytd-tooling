@@ -3,6 +3,7 @@
 import { initTabs } from "./tabs.js";
 import { copyToClipboard } from "../lib/dom.js";
 import { toast } from "./toast.js";
+import { getPref, setPref } from "./storage.js";
 
 export function createOutputPanel(block) {
   const el = document.createElement("section");
@@ -24,8 +25,16 @@ export function createOutputPanel(block) {
       note: "Doesn't include its own <script> tags: add it inside the script block from Base JS, not as a separate one. Only needed once even if this block appears several times on the page." });
   }
 
+  // The header keeps "Copy HTML" in reach even when the code is collapsed away, so the
+  // preview can have the whole pane without losing the most common action.
   el.innerHTML = `
-    <div class="card-head"><h3>Code to paste</h3></div>
+    <div class="card-head">
+      <h3>Code to paste</h3>
+      <div class="card-tools">
+        <button type="button" class="primary-btn head-copy">Copy HTML</button>
+        <button type="button" class="collapse-btn" aria-expanded="true" title="Show or hide the code">▾</button>
+      </div>
+    </div>
     <div class="output-warning" role="status" hidden></div>
     <div class="output-tabs" role="tablist" aria-label="Code type"></div>
     <div class="output-bodies"></div>`;
@@ -52,6 +61,7 @@ export function createOutputPanel(block) {
     if (o.note) body.querySelector(".note").textContent = o.note;
     const copyBtn = body.querySelector(".copy-btn");
     copyBtn.textContent = o.copy;
+    if (o.key === "html") copyBtn.hidden = true; // the card header's "Copy HTML" is always in view
     const area = body.querySelector("textarea");
     area.setAttribute("aria-label", o.heading);
     copyBtn.addEventListener("click", async () => {
@@ -67,6 +77,27 @@ export function createOutputPanel(block) {
   const tabs = Array.from(tablist.children);
   initTabs({ tabs, panelFor: (t) => t._body });
   if (tabs.length === 1) tablist.hidden = true;
+
+  // Header "Copy HTML" (always visible) and the collapse toggle. Collapsed state is shared by
+  // every block and remembered.
+  const headCopy = el.querySelector(".head-copy");
+  headCopy.addEventListener("click", async () => {
+    try { await copyToClipboard(areas.html.value, headCopy); toast("HTML copied"); }
+    catch (e) { toast("Couldn't copy. Open the code and press Ctrl+C."); }
+  });
+  const collapseBtn = el.querySelector(".collapse-btn");
+  const setCollapsed = (collapsed) => {
+    el.classList.toggle("is-collapsed", collapsed);
+    collapseBtn.setAttribute("aria-expanded", String(!collapsed));
+    collapseBtn.textContent = collapsed ? "▸" : "▾";
+  };
+  collapseBtn.addEventListener("click", () => {
+    const collapsed = !el.classList.contains("is-collapsed");
+    setPref("codeCollapsed", collapsed);
+    document.querySelectorAll(".output-card").forEach((card) => card._setCollapsed && card._setCollapsed(collapsed));
+  });
+  el._setCollapsed = setCollapsed;
+  setCollapsed(getPref("codeCollapsed", false));
 
   return {
     el,
