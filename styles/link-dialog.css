@@ -1,0 +1,72 @@
+.link-dialog-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.link-dialog-overlay.visible {
+  display: flex;
+}
+
+.link-dialog {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.link-dialog label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark-grey);
+  margin-bottom: 0.3rem;
+}
+
+.link-dialog-checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500 !important;
+  cursor: pointer;
+  margin-top: 0.85rem;
+}
+
+.link-dialog-checkbox-label input {
+  width: auto;
+}
+
+.link-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.link-dialog-actions button {
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border: none;
+}
+
+.link-dialog-cancel {
+  background: none;
+  color: var(--dark-grey);
+  border: 1px solid #d7d2c8 !important;
+}
+
+.link-dialog-insert {
+  background: var(--green);
+  color: #fff;
+  font-weight: 600;
+}
+

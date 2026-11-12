@@ -1,0 +1,21 @@
+<p>Picture a book lying open — content on the left-hand page, a picture or video on the right-hand page, side by side, both taking up roughly equal space. That's the whole idea of this block, and it's genuinely different from image-text-section: nothing wraps around anything here, it's a clean two-column split.</p>
+<h4>The HTML</h4>
+<pre><code>&lt;div class="flex-section"&gt;
+  &lt;div class="text-content"&gt;
+    (your content goes here)
+  &lt;/div&gt;
+  &lt;div class="video-content"&gt;
+    &lt;iframe src="..."&gt;&lt;/iframe&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<h4>The CSS</h4>
+<p><code>display: flex</code> on the outer wrapper lines the two inner boxes up side by side. <code>flex: 1</code> on both of them means "split the available space evenly between us" — like cutting a sandwich exactly in half, regardless of how wide the page actually is.</p>
+<p>On phones, <code>flex-direction: column</code> switches that same layout from side-by-side to stacked — the same two boxes, just rearranged vertically once the screen gets too narrow for two columns to sit comfortably next to each other.</p>
+<h4>Why media is required here</h4>
+<p>Unlike image-text-section, there's no "None" option for the right column — an empty second column wouldn't make sense in a layout whose entire point is two columns side by side.</p>
+<h4>The "Another content block" option</h4>
+<p>Picking this for the right column doesn't generate any media at all — it just leaves a marker instead:</p>
+<pre><code>&lt;div class="video-content"&gt;
+  &lt;!-- CONTENT BLOCK GOES HERE --&gt;
+&lt;/div&gt;</code></pre>
+<p>Same idea as the placeholder used in accordion and icon-toggle panels: build whatever you actually need on another tab (buttons, for instance) and paste its generated HTML in place of that comment. This block only ever handles the two-column structure itself — it doesn't try to generate every possible thing that could go in the right column.</p>

@@ -1,0 +1,16 @@
+<p>Picture a stack of business cards laid out in a neat grid — each one clickable, each one the same height as its neighbours in the same row, however short or long its title happens to be.</p>
+<h4>The HTML</h4>
+<pre><code>&lt;div class="card"&gt;
+  &lt;img src="..." class="resource-card__img" /&gt;
+  &lt;div&gt;
+    &lt;a href="..." class="stretched-link" target="_blank"&gt;
+      &lt;strong&gt;Title text &lt;i class="fa-solid fa-up-right-from-square"&gt;&lt;/i&gt;&lt;/strong&gt;
+    &lt;/a&gt;
+    &lt;p&gt;&lt;strong&gt;Type&lt;/strong&gt;&lt;span&gt;Duration&lt;/span&gt;&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>The <code>stretched-link</code> class is a neat CSS trick: it stretches the clickable area of that link invisibly to cover the <em>entire</em> card, even though the actual link text is only a few words. That's why clicking anywhere on the card — the image, the empty space, not just the title — opens the link.</p>
+<h4>Why every card in a row matches height</h4>
+<p>By default, a grid lets each item size itself to fit its own content — so a card with a two-line title would end up shorter than one with a three-line title next to it. Telling the grid to <code>stretch</code> instead makes every card fill the full height of its row, and then the card's own layout (a flexbox column with <code>justify-content: space-between</code>) pushes the type/duration line down to the bottom either way — like a bookend holding the price tag at the bottom of the shelf no matter how thick the book is.</p>
+<h4>The new-tab checkbox</h4>
+<p>Ticking it adds <code>target="_blank"</code> and the little arrow icon, tied to the one checkbox so neither can be forgotten. The builder also adds <code>rel="noopener noreferrer"</code> (a safety measure for links that open a new tab) but only to external links. Relative links and links to our own domains (listed in <code>INTERNAL_HOSTS</code>) keep just <code>target="_blank"</code>.</p>

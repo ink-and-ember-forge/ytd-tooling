@@ -1,0 +1,14 @@
+<p>Think of a filing cabinet: each drawer has a label, you click the label to slide it open, and — because this is a well-behaved cabinet — opening one drawer closes whichever one was already open.</p>
+<h4>The HTML — and why the ids matter so much</h4>
+<pre><code>&lt;button data-bs-target="#collapse-digital-literacy" ...&gt;
+  Digital literacy
+&lt;/button&gt;
+
+&lt;div id="collapse-digital-literacy" ...&gt;
+  (content goes here)
+&lt;/div&gt;</code></pre>
+<p>The button doesn't know what "digital literacy" means — it just knows to look for an element whose id exactly matches its <code>data-bs-target</code>, like dialling a phone number. If those two ids don't match <em>exactly</em> — a typo, a missing letter — clicking the button does nothing at all, with no error message telling you why. That's precisely why this tool generates both ids together automatically from your item's title, so they can never drift apart.</p>
+<h4>How "only one open at a time" works</h4>
+<p>Every panel also carries <code>data-bs-parent="#accordion-..."</code>, pointing back at the outer wrapper. This is Bootstrap's own JavaScript (already loaded by Base HTML) reading that attribute as an instruction: "when I open, ask every other panel sharing this same parent to close." That's the whole mechanism — no custom code needed for this block.</p>
+<h4>The "Group name" field</h4>
+<p>This just gives the outer wrapper's id something readable to be built from (e.g. "digital-literacy-resources" instead of a random string) — purely for humans reading the pasted code later, it doesn't change how anything behaves.</p>

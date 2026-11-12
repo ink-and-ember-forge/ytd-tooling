@@ -1,39 +1,60 @@
 # YTD tools
 
-Static site for the Gwella page builder and its reference template. Hosted with GitHub Pages. No build step, no runtime dependencies.
+Everything needed to build pages in the Gwella template style, and to bring older pages up to the latest version.
 
-## Layout
+- **Builder** (`index.html`): one tab per block. Fill in the form, get HTML/CSS/JS to paste into a thinqi page, with a live preview.
+- **Upgrade checker** (Tools drawer in the builder): paste an old page's code, get a list of what it needs to reach the current version, with the replacement code one click away.
+- **Template** (`template/`): the reference page showing every block, using the current base code.
+- **Changelog** (`changelog/changelog.json`): the version history, as data. The newest release *is* the current version.
+
+Static site, hosted on GitHub Pages. The builder has no build step: the browser loads `src/` directly as ES modules.
+
+## Run it
+
+```bash
+npm install     # only needed for the tests
+npm run serve   # then open http://localhost:3000
+```
+
+The builder must be served over http(s) (browsers block ES modules and `fetch` on `file://`). GitHub Pages does this for you.
+
+## Repo map
 
 | Path | What it is |
 |------|------------|
-| `index.html`, `builder.css`, `builder.js` | The page builder (root of the site). `builder.js` holds the base HTML/CSS/JS strings, every block definition (`BLOCKS`), the changelog and the upgrade checker. |
-| `template/index.html`, `template/template.css`, `template/template.js` | The reference template page, opened from the builder's "Open template" button. It is the base code plus one example of every block. |
-| `scripts/check-sync.js` | Parity check between the builder and the template (see below). |
+| `src/base/` | The base HTML, CSS and JS every page starts with (`base.html`, `base.css`, `base.js`). |
+| `src/blocks/<id>/` | One folder per block: `index.js` (fields + HTML generator), `block.css`, optional `block.js`, `how-it-works.html`. |
+| `src/blocks/index.js` | Block registry. Order = tab order = order in the template CSS/JS. |
+| `src/lib/` | Shared helpers (HTML escaping, links, rich text cleaning, media markup, file loading). No DOM except `dom.js`. |
+| `src/changelog/` | Changelog loader, validator, upgrade checker and guided-fix logic. No DOM. |
+| `src/ui/` | The builder's interface (tabs, forms, preview, tools drawer). |
+| `styles/` | The builder's own CSS, one file per area. |
+| `changelog/` | `changelog.json` (the history) and `SCHEMA.md` (its rules). |
+| `baseline/<version>/` | Frozen copy of the base and block code as released. |
+| `template/` | Reference page. `template.css` / `template.js` are **generated**; `index.html` is hand-written. |
+| `scripts/` | `build.js`, `release.js`, `new-block.js`. |
+| `test/` | Golden snapshots of every block's output, template/baseline/changelog checks. |
+| `docs/` | How the pieces fit together, and the recipes below. |
 
-## Keeping the builder and template in step
+## Everyday commands
 
-The base HTML, CSS and JS that the builder produces are copied into thinqi pages by hand, and the template is the reference for them. The builder holds its own copy of that code, so the two can drift.
+| Command | Does |
+|---------|------|
+| `npm test` | Runs all checks. Run before and after any change. |
+| `npm run build` | Regenerates `template/template.css` and `template.js` from `src/`. |
+| `npm run new-block -- my-block "My block"` | Scaffolds a block. See [docs/ADDING-A-BLOCK.md](docs/ADDING-A-BLOCK.md). |
+| `npm run snapshot:update` | Accepts an intended change to a block's output. Review the git diff. |
+| `npm run release` | Freezes the current version into `baseline/`. See [docs/RELEASING.md](docs/RELEASING.md). |
 
-```bash
-npm run check
-```
+## Docs
 
-This fails if any of these disagree:
-
-- the version in `BUILDER_VERSION`, the newest `CHANGELOG` release, the `template.css` / `template.js` headers and `data-base-version` in `template/index.html`;
-- `template/template.css` versus the builder's base CSS plus every block's CSS (comments and whitespace ignored);
-- `template/template.js` versus the builder's base JS plus every block's JS;
-- the CDN includes in the base HTML versus `template/index.html`.
-
-It also syntax-checks `builder.js` and `template/template.js`. Run it before and after every refactoring step.
-
-## Local preview
-
-```bash
-npm run serve
-```
+- [Architecture](docs/ARCHITECTURE.md): how a block becomes a tab, a template section and an upgrade rule.
+- [Adding a block](docs/ADDING-A-BLOCK.md)
+- [Releasing a change](docs/RELEASING.md): changelog entry, version bump, baseline; how upgrades are detected.
 
 ## Publishing
 
-1. In the repository settings, open Pages, choose "Deploy from a branch", select `main` and `/ (root)`, then save.
-2. The builder is served at `https://<user>.github.io/<repo>/` and the template at `.../<repo>/template/`.
+1. Repository settings → Pages → "Deploy from a branch" → `main`, `/ (root)`.
+2. The builder is at `https://<user>.github.io/<repo>/` and the template at `.../template/`.
+
+The base HTML, CSS and JS the builder produces are pasted into thinqi pages by hand. `template/` must stay in step with `src/`; `npm test` checks that.

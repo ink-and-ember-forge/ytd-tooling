@@ -98,4 +98,3 @@ function openAccordionKey(event, tileColumn, contentID) {
     openAccordion(tileColumn, contentID);
   }
 }
-

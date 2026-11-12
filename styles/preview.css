@@ -1,0 +1,27 @@
+.panel-desc {
+  color: var(--dark-grey);
+  font-size: 0.95rem;
+  margin: 0 0 1.25rem;
+  max-width: 65ch;
+}
+
+.preview-wrap {
+  margin-bottom: 1.5rem;
+}
+
+.preview-wrap h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--dark-grey);
+  margin: 0 0 0.5rem;
+}
+
+.live-preview {
+  width: 100%;
+  min-height: 220px;
+  border: 1px solid #d7d2c8;
+  border-radius: 8px;
+  background: #fff;
+}
+

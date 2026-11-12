@@ -1,0 +1,510 @@
+{
+  "base": {
+    "css toc=true": "<style>\n/* Gwella base CSS · version 3.1.1 */\n/* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */\n\nhtml {\n  scroll-behavior: smooth;\n}\n\n.gwella {\n  --primary-colour: #a3195b;\n  --secondary-colour: #faf3f7;\n  --light-grey: #f1f1f1;\n  --mid-grey: #d3d3d3;\n  --dark-grey: #545454;\n}\n\n.ytydysgu {\n  --primary-colour: #325083;\n  --secondary-colour: #f3f6fb;\n  --light-grey: #f1f1f1;\n  --mid-grey: #d3d3d3;\n  --dark-grey: #545454;\n}\n\nbody > main > article.plain-text {\n  overflow: visible !important;\n}\n\n#page-container {\n  --heading-1: 1.625rem;\n  --heading-2: 1.375rem;\n  --heading-3: 1.125rem;\n  --numbered-subheading: 20px;\n\n\n  --bs-font-sans-serif: \"Noto Sans\", \"Noto Sans Arabic\", sans-serif;\n  --bs-body-font-family: \"Noto Sans\", \"Noto Sans Arabic\", sans-serif;\n\n  margin-top: var(--thinqi-navbar-height, 95px);\n  line-height: 160%;\n  background-color: white !important;\n  font-family: var(--bs-font-sans-serif) !important;\n\n  &,\n  *,\n  *::before,\n  *::after {\n    box-sizing: border-box;\n  }\n\n  p {\n    margin-block: 1em;\n  }\n\n  ul {\n    list-style-type: disc;\n    padding-left: 40px;\n  }\n\n  ol {\n    list-style-type: decimal;\n    padding-left: 40px;\n  }\n\n  ol > li {\n    display: list-item;\n  }\n\n  li {\n    line-height: 1.5em;\n  }\n\n  section {\n    /* Padding, not margin, gives the 64px gap between sections. */\n    padding-block: 1.25rem;\n    scroll-margin-top: var(--anchor-section-offset, 145px);\n  }\n\n  h1,\n  h2,\n  h3,\n  h4,\n  h5 {\n    font-weight: bold;\n    margin-block: 1.5rem;\n    /* Keeps anchored headings clear of the navbar. */\n    scroll-margin-top: var(--anchor-section-offset, 145px);\n  }\n\n  a {\n    color: var(--primary-colour);\n    text-decoration: underline;\n\n    &:hover {\n      text-decoration: none;\n    }\n  }\n\n  .standard-container {\n    max-width: 860px;\n    margin-inline: auto;\n\n    @media (max-width: 1200px) {\n      max-width: 750px;\n    }\n\n    @media (max-width: 768px) {\n      max-width: 100%;\n      padding-inline: 1.2rem;\n    }\n  }\n\n  .content-column {\n    h2 {\n      font-size: var(--heading-2);\n      font-weight: bold;\n      margin-block: 1.5rem;\n    }\n\n    h3 {\n      font-size: var(--heading-3);\n      font-weight: 600;\n      color: var(--primary-colour);\n    }\n\n    @media (max-width: 768px) {\n      display: contents;\n    }\n  }\n\n  .button-icon {\n    margin-left: 0.25rem;\n  }\n\n  #breadcrumb-nav {\n    padding: 1rem;\n\n    #breadcrumb-nav__list {\n      display: flex;\n      align-items: center;\n      flex-wrap: wrap;\n      list-style: none;\n      padding: 0;\n      margin: 0;\n      gap: 0.4rem;\n\n      li:not(:last-child)::after {\n        content: \"|\";\n        margin-left: 0.5rem;\n        color: var(--dark-grey);\n      }\n\n      li:last-child {\n        color: var(--dark-grey);\n      }\n    }\n\n    a {\n      color: var(--primary-colour);\n      text-decoration: underline;\n\n      &:hover {\n        text-decoration: none;\n      }\n    }\n  }\n\n  .header {\n    width: 100%;\n  }\n\n  #header-img {\n    width: 100%;\n    object-fit: cover;\n    object-position: center 30%;\n    display: block;\n\n    @media (max-width: 576px) {\n      object-fit: contain;\n    }\n  }\n\n  #header-h1 {\n    font-size: var(--heading-1);\n    color: var(--primary-colour);\n    line-height: 120%;\n    font-weight: bold;\n    margin-block: 1.5rem;\n\n    @media (max-width: 768px) {\n      order: 1;\n    }\n  }\n\n  .main-grid {\n    display: grid;\n    grid-template-columns: 1fr 3fr;\n    gap: 2rem;\n    align-items: start;\n    padding-inline: 1rem;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n      gap: 0;\n    }\n  }\n\n  .content-body {\n    margin-top: 1rem;\n\n    /* The order belongs on .content-body, the grid item on mobile. */\n    @media (max-width: 768px) {\n      order: 4;\n    }\n  }\n\n  #table-of-contents {\n    position: sticky;\n    top: 110px;\n\n    @media (max-width: 768px) {\n      order: 3;\n      padding-top: 0;\n      position: relative;\n      top: 0;\n    }\n\n    #table-of-contents-heading {\n      border-radius: 20px;\n      background-color: var(--primary-colour);\n      color: white;\n      padding: 5px;\n      text-align: center;\n      font-weight: 400;\n      line-height: 1.5;\n      font-size: 1.2em;\n      margin-block: 1.5rem 0.75em;\n    }\n\n    ul {\n      padding-left: 0;\n    }\n\n    li {\n      list-style: none;\n      border-radius: 10px;\n      padding: 10px;\n      background-color: var(--secondary-colour);\n      margin-left: 0;\n\n      &:hover {\n        background-color: var(--light-grey);\n      }\n\n      & + li {\n        margin-top: 1rem;\n      }\n    }\n\n    .toc-link {\n      color: var(--primary-colour);\n\n      &:hover {\n        text-decoration: none;\n      }\n    }\n  }\n\n  .timestamp {\n    margin-top: 2rem;\n    margin-bottom: 1rem;\n    font-style: italic;\n    font-size: 13px;\n    color: var(--dark-grey);\n    padding-inline: 1rem;\n  }\n\n  .back-to-top {\n    display: none;\n    flex-direction: column;\n    position: fixed;\n    right: 2rem;\n    bottom: 2rem;\n    background-color: rgba(255, 255, 255, 0.8);\n    border: none;\n    justify-content: center;\n    align-items: center;\n    gap: 8px;\n    color: var(--primary-colour);\n    font-weight: bold;\n    padding: 0.5rem 0.8rem;\n    border-radius: 10px;\n    cursor: pointer;\n    z-index: 99;\n\n    & > i {\n      font-size: 30px;\n      color: var(--primary-colour);\n    }\n  }\n\n  /* ============================================================\n     PLACE NEW BLOCK CSS ABOVE THIS LINE\n     ============================================================ */\n}\n</style>",
+    "html toc=true gwella": "<!-- Gwella base HTML · version 3.1.1 -->\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css\" rel=\"stylesheet\" />\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css\" />\n<!-- Bundle JS: Popper.js is required for tooltips -->\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js\"></script>\n\n<div id=\"page-container\" class=\"gwella\" data-base-version=\"3.1.1\">\n\n  <!-- One <li><a> per parent level; the last <li> is plain text -->\n  <nav aria-label=\"breadcrumb\" id=\"breadcrumb-nav\">\n    <ol id=\"breadcrumb-nav__list\">\n      <li><a href=\"/\">Home</a></li>\n      <li>Current page title</li>\n    </ol>\n  </nav>\n\n  <header class=\"header\">\n    <img id=\"header-img\"\n      src=\"REPLACE_WITH_HERO_IMAGE_URL\"\n      alt=\"\" />\n  </header>\n\n  <main class=\"main-grid standard-container\">\n\n    <!-- Each ToC href must match a section id below -->\n    <nav id=\"table-of-contents\">\n      <h3 id=\"table-of-contents-heading\">Table of Contents</h3>\n      <ul>\n        <li><a href=\"#section-id\" class=\"toc-link\">Section label</a></li>\n      </ul>\n    </nav>\n\n    <div class=\"content-column\">\n\n      <h1 id=\"header-h1\">Page title</h1>\n\n      <!-- Optional at-a-glance block -->\n\n      <div class=\"content-body\">\n\n        <!-- Content blocks go here, one <section id> each -->\n\n        <p class=\"timestamp\">\n          Webpage last updated on [date].\n        </p>\n\n      </div>\n    </div>\n  </main>\n\n  <button class=\"back-to-top\" aria-label=\"Back to top\">\n    <i class=\"fa-solid fa-circle-chevron-up\" aria-hidden=\"true\"></i>\n    <span>Back to Top</span>\n  </button>\n\n</div>",
+    "html toc=true ytydysgu": "<!-- Gwella base HTML · version 3.1.1 -->\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css\" rel=\"stylesheet\" />\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css\" />\n<!-- Bundle JS: Popper.js is required for tooltips -->\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js\"></script>\n\n<div id=\"page-container\" class=\"ytydysgu\" data-base-version=\"3.1.1\">\n\n  <!-- One <li><a> per parent level; the last <li> is plain text -->\n  <nav aria-label=\"breadcrumb\" id=\"breadcrumb-nav\">\n    <ol id=\"breadcrumb-nav__list\">\n      <li><a href=\"/\">Home</a></li>\n      <li>Current page title</li>\n    </ol>\n  </nav>\n\n  <header class=\"header\">\n    <img id=\"header-img\"\n      src=\"REPLACE_WITH_HERO_IMAGE_URL\"\n      alt=\"\" />\n  </header>\n\n  <main class=\"main-grid standard-container\">\n\n    <!-- Each ToC href must match a section id below -->\n    <nav id=\"table-of-contents\">\n      <h3 id=\"table-of-contents-heading\">Table of Contents</h3>\n      <ul>\n        <li><a href=\"#section-id\" class=\"toc-link\">Section label</a></li>\n      </ul>\n    </nav>\n\n    <div class=\"content-column\">\n\n      <h1 id=\"header-h1\">Page title</h1>\n\n      <!-- Optional at-a-glance block -->\n\n      <div class=\"content-body\">\n\n        <!-- Content blocks go here, one <section id> each -->\n\n        <p class=\"timestamp\">\n          Webpage last updated on [date].\n        </p>\n\n      </div>\n    </div>\n  </main>\n\n  <button class=\"back-to-top\" aria-label=\"Back to top\">\n    <i class=\"fa-solid fa-circle-chevron-up\" aria-hidden=\"true\"></i>\n    <span>Back to Top</span>\n  </button>\n\n</div>",
+    "css toc=false": "<style>\n/* Gwella base CSS · version 3.1.1 */\n/* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */\n\nhtml {\n  scroll-behavior: smooth;\n}\n\n.gwella {\n  --primary-colour: #a3195b;\n  --secondary-colour: #faf3f7;\n  --light-grey: #f1f1f1;\n  --mid-grey: #d3d3d3;\n  --dark-grey: #545454;\n}\n\n.ytydysgu {\n  --primary-colour: #325083;\n  --secondary-colour: #f3f6fb;\n  --light-grey: #f1f1f1;\n  --mid-grey: #d3d3d3;\n  --dark-grey: #545454;\n}\n\nbody > main > article.plain-text {\n  overflow: visible !important;\n}\n\n#page-container {\n  --heading-1: 1.625rem;\n  --heading-2: 1.375rem;\n  --heading-3: 1.125rem;\n  --numbered-subheading: 20px;\n\n\n  --bs-font-sans-serif: \"Noto Sans\", \"Noto Sans Arabic\", sans-serif;\n  --bs-body-font-family: \"Noto Sans\", \"Noto Sans Arabic\", sans-serif;\n\n  margin-top: var(--thinqi-navbar-height, 95px);\n  line-height: 160%;\n  background-color: white !important;\n  font-family: var(--bs-font-sans-serif) !important;\n\n  &,\n  *,\n  *::before,\n  *::after {\n    box-sizing: border-box;\n  }\n\n  p {\n    margin-block: 1em;\n  }\n\n  ul {\n    list-style-type: disc;\n    padding-left: 40px;\n  }\n\n  ol {\n    list-style-type: decimal;\n    padding-left: 40px;\n  }\n\n  ol > li {\n    display: list-item;\n  }\n\n  li {\n    line-height: 1.5em;\n  }\n\n  section {\n    /* Padding, not margin, gives the 64px gap between sections. */\n    padding-block: 1.25rem;\n    scroll-margin-top: var(--anchor-section-offset, 145px);\n  }\n\n  h1,\n  h2,\n  h3,\n  h4,\n  h5 {\n    font-weight: bold;\n    margin-block: 1.5rem;\n    /* Keeps anchored headings clear of the navbar. */\n    scroll-margin-top: var(--anchor-section-offset, 145px);\n  }\n\n  a {\n    color: var(--primary-colour);\n    text-decoration: underline;\n\n    &:hover {\n      text-decoration: none;\n    }\n  }\n\n  .standard-container {\n    max-width: 860px;\n    margin-inline: auto;\n\n    @media (max-width: 1200px) {\n      max-width: 750px;\n    }\n\n    @media (max-width: 768px) {\n      max-width: 100%;\n      padding-inline: 1.2rem;\n    }\n  }\n\n  .content-column {\n    h2 {\n      font-size: var(--heading-2);\n      font-weight: bold;\n      margin-block: 1.5rem;\n    }\n\n    h3 {\n      font-size: var(--heading-3);\n      font-weight: 600;\n      color: var(--primary-colour);\n    }\n\n    @media (max-width: 768px) {\n      display: contents;\n    }\n  }\n\n  .button-icon {\n    margin-left: 0.25rem;\n  }\n\n  #breadcrumb-nav {\n    padding: 1rem;\n\n    #breadcrumb-nav__list {\n      display: flex;\n      align-items: center;\n      flex-wrap: wrap;\n      list-style: none;\n      padding: 0;\n      margin: 0;\n      gap: 0.4rem;\n\n      li:not(:last-child)::after {\n        content: \"|\";\n        margin-left: 0.5rem;\n        color: var(--dark-grey);\n      }\n\n      li:last-child {\n        color: var(--dark-grey);\n      }\n    }\n\n    a {\n      color: var(--primary-colour);\n      text-decoration: underline;\n\n      &:hover {\n        text-decoration: none;\n      }\n    }\n  }\n\n  .header {\n    width: 100%;\n  }\n\n  #header-img {\n    width: 100%;\n    object-fit: cover;\n    object-position: center 30%;\n    display: block;\n\n    @media (max-width: 576px) {\n      object-fit: contain;\n    }\n  }\n\n  #header-h1 {\n    font-size: var(--heading-1);\n    color: var(--primary-colour);\n    line-height: 120%;\n    font-weight: bold;\n    margin-block: 1.5rem;\n\n    @media (max-width: 768px) {\n      order: 1;\n    }\n  }\n\n  .main-grid {\n    display: grid;\n    grid-template-columns: 1fr;\n    gap: 2rem;\n    align-items: start;\n    padding-inline: 1rem;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n      gap: 0;\n    }\n  }\n\n  .content-body {\n    margin-top: 1rem;\n\n    /* The order belongs on .content-body, the grid item on mobile. */\n    @media (max-width: 768px) {\n      order: 4;\n    }\n  }\n\n  \n  .timestamp {\n    margin-top: 2rem;\n    margin-bottom: 1rem;\n    font-style: italic;\n    font-size: 13px;\n    color: var(--dark-grey);\n    padding-inline: 1rem;\n  }\n\n  .back-to-top {\n    display: none;\n    flex-direction: column;\n    position: fixed;\n    right: 2rem;\n    bottom: 2rem;\n    background-color: rgba(255, 255, 255, 0.8);\n    border: none;\n    justify-content: center;\n    align-items: center;\n    gap: 8px;\n    color: var(--primary-colour);\n    font-weight: bold;\n    padding: 0.5rem 0.8rem;\n    border-radius: 10px;\n    cursor: pointer;\n    z-index: 99;\n\n    & > i {\n      font-size: 30px;\n      color: var(--primary-colour);\n    }\n  }\n\n  /* ============================================================\n     PLACE NEW BLOCK CSS ABOVE THIS LINE\n     ============================================================ */\n}\n</style>",
+    "html toc=false gwella": "<!-- Gwella base HTML · version 3.1.1 -->\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css\" rel=\"stylesheet\" />\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css\" />\n<!-- Bundle JS: Popper.js is required for tooltips -->\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js\"></script>\n\n<div id=\"page-container\" class=\"gwella\" data-base-version=\"3.1.1\">\n\n  <!-- One <li><a> per parent level; the last <li> is plain text -->\n  <nav aria-label=\"breadcrumb\" id=\"breadcrumb-nav\">\n    <ol id=\"breadcrumb-nav__list\">\n      <li><a href=\"/\">Home</a></li>\n      <li>Current page title</li>\n    </ol>\n  </nav>\n\n  <header class=\"header\">\n    <img id=\"header-img\"\n      src=\"REPLACE_WITH_HERO_IMAGE_URL\"\n      alt=\"\" />\n  </header>\n\n  <main class=\"main-grid standard-container\">\n\n    <div class=\"content-column\">\n\n      <h1 id=\"header-h1\">Page title</h1>\n\n      <!-- Optional at-a-glance block -->\n\n      <div class=\"content-body\">\n\n        <!-- Content blocks go here, one <section id> each -->\n\n        <p class=\"timestamp\">\n          Webpage last updated on [date].\n        </p>\n\n      </div>\n    </div>\n  </main>\n\n  <button class=\"back-to-top\" aria-label=\"Back to top\">\n    <i class=\"fa-solid fa-circle-chevron-up\" aria-hidden=\"true\"></i>\n    <span>Back to Top</span>\n  </button>\n\n</div>",
+    "html toc=false ytydysgu": "<!-- Gwella base HTML · version 3.1.1 -->\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css\" rel=\"stylesheet\" />\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css\" />\n<!-- Bundle JS: Popper.js is required for tooltips -->\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js\"></script>\n\n<div id=\"page-container\" class=\"ytydysgu\" data-base-version=\"3.1.1\">\n\n  <!-- One <li><a> per parent level; the last <li> is plain text -->\n  <nav aria-label=\"breadcrumb\" id=\"breadcrumb-nav\">\n    <ol id=\"breadcrumb-nav__list\">\n      <li><a href=\"/\">Home</a></li>\n      <li>Current page title</li>\n    </ol>\n  </nav>\n\n  <header class=\"header\">\n    <img id=\"header-img\"\n      src=\"REPLACE_WITH_HERO_IMAGE_URL\"\n      alt=\"\" />\n  </header>\n\n  <main class=\"main-grid standard-container\">\n\n    <div class=\"content-column\">\n\n      <h1 id=\"header-h1\">Page title</h1>\n\n      <!-- Optional at-a-glance block -->\n\n      <div class=\"content-body\">\n\n        <!-- Content blocks go here, one <section id> each -->\n\n        <p class=\"timestamp\">\n          Webpage last updated on [date].\n        </p>\n\n      </div>\n    </div>\n  </main>\n\n  <button class=\"back-to-top\" aria-label=\"Back to top\">\n    <i class=\"fa-solid fa-circle-chevron-up\" aria-hidden=\"true\"></i>\n    <span>Back to Top</span>\n  </button>\n\n</div>",
+    "js": "<script>\n// Gwella base JS · version 3.1.1\n// The closing script tag near the end is escaped. Keep the backslash, or it ends this script early.\n// Set the top margin and anchor offset for the page container.\n// Also offsets for an optional #subnav, if the page has one.\nfunction updateScrollOffset() {\n  try {\n    const thinqiNavbar =\n      document.querySelector(\"div.app-chrome\") ||\n      document.querySelector(\".public-site-header\");\n    const customSubnav = document.querySelector(\"#subnav\");\n    const isMobile = window.innerWidth <= 768;\n    const thinqiNav_height = thinqiNavbar ? thinqiNavbar.offsetHeight : null;\n    const customSubnav_height = customSubnav ? customSubnav.offsetHeight : null;\n    let totalOffset = isMobile\n      ? thinqiNav_height\n      : thinqiNav_height + customSubnav_height;\n    if (!thinqiNav_height && !customSubnav_height) {\n      totalOffset = isMobile ? 137 : 145;\n    }\n    document.documentElement.style.setProperty(\n      \"--anchor-section-offset\",\n      totalOffset + \"px\",\n    );\n    const fallbackHeight = isMobile ? 137 : 95;\n    if (thinqiNav_height > 0) {\n      document.documentElement.style.setProperty(\n        \"--thinqi-navbar-height\",\n        thinqiNav_height + \"px\",\n      );\n    } else {\n      document.documentElement.style.setProperty(\n        \"--thinqi-navbar-height\",\n        fallbackHeight + \"px\",\n      );\n    }\n  } catch (error) {\n    console.log(\"updateScrollOffset failed\", error);\n  }\n}\nwindow.addEventListener(\"DOMContentLoaded\", updateScrollOffset);\nwindow.addEventListener(\"resize\", updateScrollOffset);\n// Tooltips\nconst tooltipList = document.querySelectorAll('[data-bs-toggle=\"tooltip\"]');\nconst tooltipTriggerList = [].slice.call(tooltipList);\ntooltipTriggerList.forEach(\n  (el) =>\n    new bootstrap.Tooltip(el, {\n      container: el,\n    }),\n);\n// Back to top\nconst backToTopBtn = document.querySelector(\".back-to-top\");\nif (backToTopBtn) {\n  window.addEventListener(\"scroll\", () => {\n    const isTabletOrMobileView = window.innerWidth <= 768;\n    const threshold = isTabletOrMobileView\n      ? window.innerHeight\n      : window.innerHeight / 2;\n    backToTopBtn.style.display = window.scrollY < threshold ? \"none\" : \"flex\";\n  });\n  backToTopBtn.addEventListener(\"click\", (e) => {\n    e.stopPropagation();\n    window.scrollTo({ top: 0, behavior: \"smooth\" });\n  });\n}\n</script>"
+  },
+  "blocks": {
+    "section": {
+      "label": "Section",
+      "description": "Start here for every new bit of content — wraps it in a properly-idd <section> with its heading, and generates the matching table-of-contents entry at the same time, so those two ids can never drift apart.",
+      "htmlOutputLabel": "HTML for this section — paste into .content-body, then paste other blocks' content where marked",
+      "secondaryLabel": "Table of contents entry — paste inside &lt;nav id=\"table-of-contents\"&gt;",
+      "fields": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Section title",
+          "placeholder": "e.g. Putting into practice"
+        }
+      ],
+      "css": null,
+      "js": null,
+      "guide": "<p>Think of this as starting a new chapter in a book — before you write anything, you give the chapter a title, add it to the contents page at the front, and set up a blank page for it to live on. That's exactly what this does, in one go.</p> <h4>The HTML — two pieces, two destinations</h4> <p>This is the one block that produces two separate outputs, because a table of contents entry and the actual section live in two different places on the page. The section wrapper:</p> <pre><code>&lt;section id=\"putting-into-practice\"&gt; &lt;h2&gt;Putting into practice&lt;/h2&gt; (content goes here) &lt;/section&gt;</code></pre> <p>...and, separately, the matching table of contents entry:</p> <pre><code>&lt;li&gt;&lt;a href=\"#putting-into-practice\" class=\"toc-link\"&gt;Putting into practice&lt;/a&gt;&lt;/li&gt;</code></pre> <p>Notice the id (<code>putting-into-practice</code>) and the link's <code>href</code> are exactly the same text — that's what makes clicking the table of contents entry actually jump down to this section. Both get built from the same title you type, once, so there's no way for them to quietly drift apart the way hand-typed ids sometimes do.</p> <h4>Where the other blocks fit in</h4> <p>The comment in the middle — <code>&lt;!-- Content goes here --&gt;</code> — is where you paste whatever you build on the other tabs: an image-text-section, an accordion, at-a-glance, anything. One section can hold more than one block if the content calls for it; just paste them one after another in place of the comment.</p> <h4>Why there's no CSS output for this one</h4> <p>Unlike every other tab, this block doesn't need its own CSS — spacing, scroll behaviour and heading styles for sections are already part of the Base CSS every page starts with, so there's nothing extra to add.</p>",
+      "variants": {
+        "basic": {
+          "html": "<section id=\"putting-into-practice\">\n  <h2>Putting into practice</h2>\n\n  <!-- Content goes here -->\n\n</section>",
+          "secondary": "<li><a href=\"#putting-into-practice\" class=\"toc-link\">Putting into practice</a></li>",
+          "warnings": null
+        },
+        "special": {
+          "html": "<section id=\"q-a-what-s-new\">\n  <h2>Q&amp;A: What&#39;s &lt;new&gt;?</h2>\n\n  <!-- Content goes here -->\n\n</section>",
+          "secondary": "<li><a href=\"#q-a-what-s-new\" class=\"toc-link\">Q&amp;A: What&#39;s &lt;new&gt;?</a></li>",
+          "warnings": null
+        }
+      }
+    },
+    "nav-cards": {
+      "label": "Navigation cards",
+      "description": "A row of cards, two styles available: icon + description + button (only the button is clickable, unlike resource-cards), or numbered heading + plain icon with no button at all. Choose the style once — it applies to every card in the row.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "nav-card-items",
+          "id": "cardsData",
+          "label": "Cards",
+          "defaultCount": 3
+        }
+      ],
+      "css": "  .nav-cards-grid {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 1.5rem;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n    }\n  }\n\n  /* Auto-fits 185–210px cards, wrapping as needed. */\n  .nav-cards-grid.nav-cards-grid--numbered {\n    grid-template-columns: repeat(auto-fit, minmax(185px, 210px));\n    justify-content: center;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n    }\n  }\n\n  .nav-card {\n    background-color: var(--secondary-colour);\n    border-top: 6px solid var(--primary-colour);\n    border-radius: 0 0 10px 10px;\n    padding: 1.75rem 1.5rem;\n    text-align: left;\n\n    .nav-card__icon {\n      width: 76px;\n      height: 76px;\n      border-radius: 50%;\n      background-color: var(--primary-colour);\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      margin: 0 auto 1.25rem;\n\n      img {\n        width: 34px;\n        height: 34px;\n        display: block;\n      }\n    }\n\n    p {\n      margin: 0 0 1.25rem;\n      color: #000;\n      font-weight: 500;\n    }\n\n    .nav-card__button {\n      display: block;\n      width: 100%;\n      text-align: center;\n      background: var(--primary-colour);\n      color: #fff !important;\n      font-weight: 700;\n      text-decoration: none !important;\n      padding: 0.6rem 2rem;\n      border-radius: 15px;\n\n      &:hover {\n        background: color-mix(in srgb, var(--primary-colour), black 15%);\n        text-decoration: none;\n      }\n    }\n\n    &.nav-card--numbered {\n      display: flex;\n      flex-direction: column;\n      position: relative;\n      cursor: pointer;\n      transition: transform 0.2s, box-shadow 0.2s;\n      max-width: 210px;\n      min-width: 185px;\n      padding: 16px;\n\n      &:hover {\n        transform: translateY(-3px);\n        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);\n      }\n\n      h3 {\n        font-size: 16px;\n        font-weight: 700;\n        color: #1a1a1a;\n        margin: 0;\n      }\n\n      .nav-card__number {\n        color: var(--primary-colour);\n      }\n\n      .nav-card__icon-plain {\n        margin-top: auto;\n        padding-top: 1.5rem;\n\n        img {\n          width: 78px;\n          height: 78px;\n          object-fit: contain;\n          display: block;\n        }\n      }\n\n      @media (max-width: 768px) {\n        flex-direction: row;\n        align-items: center;\n        max-width: none;\n        min-width: 0;\n\n        h3 {\n          flex: 1;\n        }\n\n        .nav-card__icon-plain {\n          margin-top: 0;\n          padding-top: 0;\n          margin-left: 1rem;\n          flex-shrink: 0;\n        }\n      }\n    }\n  }",
+      "js": null,
+      "guide": "<p>Two styles live in this one block, chosen once for the whole row via \"Card style\":</p> <h4>Style 1 — Icon + description + button</h4> <p>Three (or however many) signposts side by side — an icon, a line explaining what's over there, and a button to actually go. The important bit: only the button is clickable, not the whole card — unlike resource-cards, where the entire card is one big link.</p> <pre><code>&lt;div class=\"nav-card\"&gt; &lt;div class=\"nav-card__icon\"&gt; &lt;img src=\"...\" alt=\"\" /&gt; &lt;/div&gt; &lt;p&gt;Learn what compassionate leadership means&lt;/p&gt; &lt;a href=\"...\" class=\"nav-card__button\"&gt;Understand it&lt;/a&gt; &lt;/div&gt;</code></pre> <p>Notice the &lt;img&gt; and the &lt;a&gt; button are separate elements, not nested inside one another — that's the structural difference from resource-cards, where the whole card is one clickable link. Here, clicking the icon or the description text does nothing; only the green button is an actual link.</p> <h4>The circle behind the icon (style 1 only)</h4> <p>The navy circle isn't part of the icon image at all — it's plain CSS, a box made perfectly round with <code>border-radius: 50%</code>, coloured navy, with the icon centred inside it using flexbox. That's why the icon itself needs to be a <strong>transparent PNG</strong>: the navy circle is the actual background, showing through wherever the icon image is transparent. A white-icon-on-transparent-background PNG is what makes this look right — a PNG with its own solid background would show up as an ugly box over the circle instead of blending in.</p> <h4>New tab, off by default (style 1 only)</h4> <p>Unlike buttons and resource-cards (which default to opening in a new tab), this block defaults to the <strong>same</strong> tab — matching the reference design, where these are meant to feel like in-site navigation rather than links out to something external. Ticking the box adds <code>target=\"_blank\"</code> and the little arrow icon, same as everywhere else.</p> <h4>Style 2 — Numbered heading + plain icon</h4> <p>No visible button — but the whole card is clickable, using the same trick as resource-cards.</p> <pre><code>&lt;div class=\"nav-card nav-card--numbered\"&gt; &lt;a href=\"...\" class=\"stretched-link\" aria-label=\"...\"&gt;&lt;/a&gt; &lt;h3&gt;&lt;span class=\"nav-card__number\"&gt;1.&lt;/span&gt; Agree direction and ensure alignment and commitment&lt;/h3&gt; &lt;div class=\"nav-card__icon-plain\"&gt; &lt;img src=\"...\" alt=\"\" /&gt; &lt;/div&gt; &lt;/div&gt;</code></pre> <p>That empty <code>&lt;a class=\"stretched-link\"&gt;</code> has no visible content of its own — <code>stretched-link</code> is what invisibly expands its clickable area to cover the entire card, the same way resource-cards works. The <code>aria-label</code> is filled in automatically from the heading text, so a screen reader still announces something meaningful even though there's no visible link text to read. Hovering the card lifts it slightly and adds a shadow (matching the lift effect used on resource cards and icon-toggle triggers), and the cursor switches to a pointer — both there specifically to signal \"this whole box is clickable\" even though nothing looks like a traditional button.</p> <p>Two more things worth knowing: the icon here has <strong>no navy circle behind it</strong> — these icons are already full-colour transparent PNGs with their own colours baked in, so no CSS circle is needed or wanted. And numbering is automatic (a checkbox, on by default) rather than typed — the number is based on each card's position, so reordering or removing a card never leaves you with \"1, 3, 4\" or a stale number stuck on the wrong card.</p> <h4>How the icon always sits at the bottom</h4> <p><code>margin-top: auto</code> on the icon's wrapper is a neat flexbox trick — inside a flex column, an automatic margin greedily eats up all the leftover space above it, pushing everything after it to the very bottom of the box. That's what keeps the icons lined up at the bottom of every card even when headings run to different lengths.</p>",
+      "variants": {
+        "standard": {
+          "html": "<div class=\"nav-cards-grid\">\n  <div class=\"nav-card\">\n    <div class=\"nav-card__icon\">\n      <img src=\"https://example.org/icon.png\" alt=\"\" />\n    </div>\n    <p>Learn what it means</p>\n    <a href=\"https://leadershipportal.heiw.wales/page\" class=\"nav-card__button\">Understand it</a>\n  </div>\n  <div class=\"nav-card\">\n    <div class=\"nav-card__icon\">\n      <img src=\"https://example.org/icon.png\" alt=\"\" />\n    </div>\n    <p>Learn what it means</p>\n    <a href=\"https://example.org/x\" class=\"nav-card__button\" target=\"_blank\" rel=\"noopener noreferrer\">Go external <i class=\"fa-solid fa-up-right-from-square button-icon inline-icon\"></i></a>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": []
+        },
+        "numbered": {
+          "html": "<div class=\"nav-cards-grid nav-cards-grid--numbered\">\n  <div class=\"nav-card nav-card--numbered\">\n    <a href=\"https://example.org/direction\" class=\"stretched-link\" aria-label=\"Agree direction\"></a>\n    <h3><span class=\"nav-card__number\">1.</span> Agree direction</h3>\n    <div class=\"nav-card__icon-plain\">\n      <img src=\"https://example.org/icon.png\" alt=\"\" />\n    </div>\n  </div>\n  <div class=\"nav-card nav-card--numbered\">\n    <a href=\"https://example.org/direction\" class=\"stretched-link\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Create environments\"></a>\n    <h3><span class=\"nav-card__number\">2.</span> Create environments <i class=\"fa-solid fa-up-right-from-square button-icon inline-icon\"></i></h3>\n    <div class=\"nav-card__icon-plain\">\n      <img src=\"https://example.org/icon.png\" alt=\"\" />\n    </div>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": []
+        },
+        "numbered-unnumbered": {
+          "html": "<div class=\"nav-cards-grid nav-cards-grid--numbered\">\n  <div class=\"nav-card nav-card--numbered\">\n    <a href=\"https://example.org/direction\" class=\"stretched-link\" aria-label=\"Agree direction\"></a>\n    <h3>Agree direction</h3>\n    <div class=\"nav-card__icon-plain\">\n      <img src=\"https://example.org/icon.png\" alt=\"\" />\n    </div>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": []
+        },
+        "standard-empty": {
+          "html": "<div class=\"nav-cards-grid\">\n\n</div>",
+          "secondary": null,
+          "warnings": [
+            "Standard style needs a button label on at least one card, so nothing was generated. Button labels are separate from the numbered style's headings."
+          ]
+        },
+        "numbered-empty": {
+          "html": "<div class=\"nav-cards-grid nav-cards-grid--numbered\">\n\n</div>",
+          "secondary": null,
+          "warnings": [
+            "Numbered style needs a heading on at least one card, so nothing was generated. Headings are separate from the standard style's description and button label."
+          ]
+        }
+      }
+    },
+    "at-a-glance": {
+      "label": "At-a-glance",
+      "description": "A short bulleted summary box that sits above the table of contents on the page.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "bullet-list",
+          "id": "bullets",
+          "label": "Bullet points",
+          "defaultCount": 2
+        }
+      ],
+      "css": "  #at-a-glance {\n    background-color: #e8e8e8;\n    border-bottom: 4px solid var(--primary-colour);\n    border-radius: 20px 20px 0 0;\n    padding: 20px;\n\n    @media (max-width: 768px) {\n      order: 2;\n    }\n\n    #at-a-glance-heading {\n      margin-block: 0 10px;\n      font-size: 18px;\n      font-weight: bold;\n    }\n\n    ul {\n      margin-block: 0;\n\n      li + li {\n        margin-top: 10px;\n      }\n    }\n  }",
+      "js": null,
+      "guide": "<p>Think of this like the little summary box you sometimes see at the top of a recipe, before the actual steps — a quick \"here's what you're getting\" before the reader dives into the page.</p> <h4>The HTML</h4> <p>It's just a box with a heading and a list:</p> <pre><code>&lt;div id=\"at-a-glance\"&gt; &lt;h3 id=\"at-a-glance-heading\"&gt;At a glance&lt;/h3&gt; &lt;ul&gt; &lt;li&gt;Your bullet point&lt;/li&gt; &lt;/ul&gt; &lt;/div&gt;</code></pre> <p>The heading text \"At a glance\" never changes, so the tool writes it for you — one less thing to type or accidentally misspell. Each &lt;li&gt; is one bullet; add or remove as many as you like in the form and the tool builds the list to match.</p> <h4>The CSS</h4> <p><code>id=\"at-a-glance\"</code> is how the CSS finds this exact box to give it its grey background and the navy line underneath. <code>border-radius: 20px 20px 0 0</code> means \"round the top-left and top-right corners, leave the bottom two square\" — that's why it looks like a rounded card sitting on a flat base.</p> <p><code>li + li { margin-top: 10px; }</code> means \"add a gap above any bullet that comes right after another bullet\" — the <code>+</code> is CSS-speak for \"the one right after\". That's why the first bullet sits flush at the top, but every bullet after it gets a bit of breathing room.</p> <h4>On mobile</h4> <p><code>order: 2</code> is like a seating chart that only applies on small screens — it tells this box \"you're in seat 2\" so it lands in the right spot (title, then this box, then the table of contents, then everything else) even though the actual HTML order underneath never changes.</p>",
+      "variants": {
+        "basic": {
+          "html": "<div id=\"at-a-glance\">\n  <h3 id=\"at-a-glance-heading\">At a glance</h3>\n  <ul>\n    <li>First point</li>\n    <li>Second &amp; &lt;third&gt;</li>\n  </ul>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "hero-text": {
+      "label": "Hero text",
+      "description": "Sits just below at-a-glance and just above the first section — one rich text editor, same as elsewhere. The first paragraph you write is automatically rendered larger (1.25em); everything after it is normal size. No separate field for the opening line — the tool finds it for you.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "rich-text",
+          "id": "content",
+          "label": "Content",
+          "placeholder": "Write freely — the first paragraph is automatically styled larger..."
+        }
+      ],
+      "css": "  .hero-text {\n    .hero-text__intro {\n      font-size: 1.25em;\n    }\n  }",
+      "js": null,
+      "guide": "<p>The bit of writing that greets the reader right after the summary box — one editor, write it exactly like any other rich text field. The only special thing about this block is what happens automatically to whatever paragraph comes first.</p> <h4>Write normally — the sizing takes care of itself</h4> <p>You don't tell the tool which paragraph is the \"opening\" one, and there's no separate box for it. When you hit Generate, the tool looks at your finished content and finds the very first paragraph, wherever it is, and marks it:</p> <pre><code>&lt;p class=\"hero-text__intro\"&gt;Your opening sentence.&lt;/p&gt; &lt;p&gt;Everything else, at normal size.&lt;/p&gt;</code></pre> <p>The size (1.25em, a quarter bigger than normal text) lives on that <code>hero-text__intro</code> class in the CSS, not on the text itself — so it's <strong>always</strong> applied to whatever the first paragraph turns out to be, structurally guaranteed, rather than depending on someone remembering to size it themselves every time they write one of these.</p> <h4>Everything else</h4> <p>This is the exact same rich text editor used elsewhere in the tool (headings, bold, italic, lists, links) — full flexibility. The only thing that's different about the output is that one added class on the first paragraph.</p>",
+      "variants": {
+        "basic": {
+          "html": "<div class=\"hero-text\">\n  <p class=\"hero-text__intro\">Opening <strong>paragraph</strong> with a <a href=\"https://example.org\" target=\"_blank\" rel=\"noopener noreferrer\">link</a>.</p><h3>A heading</h3><ul><li>One</li><li>Two</li></ul><p>Closing paragraph.</p>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "single": {
+          "html": "<div class=\"hero-text\">\n  <p class=\"hero-text__intro\">Just <em>one</em> paragraph.</p>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "empty": {
+          "html": "<div class=\"hero-text\">\n\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "image-text-section": {
+      "label": "Image-text-section",
+      "description": "Free-form content — headings, lists, paragraphs, whatever the page needs — with an optional image or video floated alongside it. The content always flows around the media correctly; you don't need to manage that yourself.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "media-picker",
+          "id": "media",
+          "label": "Media",
+          "allowSize": true
+        },
+        {
+          "type": "rich-text",
+          "id": "content",
+          "label": "Content",
+          "placeholder": "Write the content that sits alongside the image or video..."
+        }
+      ],
+      "css": "  .image-text-section {\n    > img,\n    > iframe {\n      float: right;\n      width: 100%;\n      max-width: 275px;\n      margin: 0 0 1rem 1.5rem;\n      border-radius: 16px;\n    }\n\n    > iframe {\n      aspect-ratio: 16 / 9;\n      height: auto;\n      border: none;\n    }\n\n    > img.media-large {\n      width: 340px;\n      max-width: 45%;\n    }\n\n    > div {\n      min-width: 0;\n    }\n\n    &::after {\n      content: \"\";\n      display: block;\n      clear: both;\n    }\n\n    h3 {\n      color: var(--primary-colour);\n      font-size: var(--numbered-subheading);\n      font-weight: 600;\n    }\n\n    @media (max-width: 768px) {\n      margin-top: 0;\n\n      > img,\n      > iframe {\n        float: none;\n        display: block;\n        max-width: none;\n        width: 100%;\n        margin: 0 auto 1rem;\n      }\n\n      > img {\n        aspect-ratio: 3 / 2;\n        object-fit: cover;\n        object-position: top;\n        margin: 0 auto 1rem;\n      }\n\n      > img.media-large {\n        float: right;\n        display: inline;\n        width: 200px;\n        max-width: 40%;\n        aspect-ratio: auto;\n        object-fit: initial;\n        margin: 0 0 1.5rem 2.5rem;\n      }\n    }\n  }",
+      "js": null,
+      "guide": "<p>Picture a newspaper column with a photo tucked into the corner and the text flowing around it, wrapping underneath once it runs past the photo's height. That's exactly what this block does — except the \"photo\" can also be a video, or nothing at all.</p> <h4>The HTML</h4> <pre><code>&lt;div class=\"image-text-section\"&gt; &lt;img src=\"...\" alt=\"...\" /&gt; &lt;div&gt; (your content goes here) &lt;/div&gt; &lt;/div&gt;</code></pre> <p>Two things sit side by side inside the wrapper: the image (or video, or nothing), and a &lt;div&gt; holding whatever you wrote in the rich text editor. Whatever formatting you used — headings, bullet points, plain paragraphs — gets carried straight through into that div as real HTML.</p> <h4>The CSS trick — floating</h4> <p>The image is told to <code>float: right</code>, which is an old but still very useful CSS trick: it pulls the image out to the right-hand side and lets everything else (the text in the div) flow around it like water round a rock, wrapping underneath once the image ends.</p> <pre><code>.image-text-section::after { content: \"\"; display: block; clear: both; }</code></pre> <p>This last bit is called a \"clearfix\" — without it, a floated image can spill outside its own box and overlap whatever comes after it on the page. This rule tells the browser \"stop, don't let anything float past this point\" — it's invisible, but it's what keeps the layout tidy underneath.</p> <h4>The \"Large\" image size</h4> <p>Choosing \"Large\" adds a <code>media-large</code> class to the image, which swaps its size (250px max normally, 340px/45% when Large) — this is how the old \"badge\" image style (like the pledge certificate graphic) got folded into this same block instead of being a separate one.</p>",
+      "variants": {
+        "image": {
+          "html": "<div class=\"image-text-section\">\n  <img src=\"https://example.org/pic.png\" alt=\"A &quot;quoted&quot; &lt;alt&gt;\" />\n  <div>\n    <p>Opening <strong>paragraph</strong> with a <a href=\"https://example.org\" target=\"_blank\" rel=\"noopener noreferrer\">link</a>.</p><h3>A heading</h3><ul><li>One</li><li>Two</li></ul><p>Closing paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "image-large": {
+          "html": "<div class=\"image-text-section\">\n  <img class=\"media-large\" src=\"https://example.org/pic.png\" alt=\"A &quot;quoted&quot; &lt;alt&gt;\" />\n  <div>\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "video": {
+          "html": "<div class=\"image-text-section\">\n  <iframe src=\"https://www.youtube.com/embed/NSUm8ZhTBXY\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>\n  <div>\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "video-short-id": {
+          "html": "<div class=\"image-text-section\">\n  <iframe src=\"https://www.youtube.com/embed/NSUm8ZhTBXY\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>\n  <div>\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "none": {
+          "html": "<div class=\"image-text-section\">\n  <div>\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "image-no-url": {
+          "html": "<div class=\"image-text-section\">\n  <div>\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "accordion": {
+      "label": "Accordion",
+      "description": "A stack of expandable items — only one open at a time. This block only builds the structure (titles + correctly-linked ids); the content inside each panel is left as a placeholder for you to fill in — paste generated content from another tab, or write it directly.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "text",
+          "id": "groupName",
+          "label": "Group name (used to build a readable id — leave blank to fall back to a random id)",
+          "placeholder": "e.g. Digital literacy resources"
+        },
+        {
+          "type": "bullet-list",
+          "id": "titles",
+          "label": "Item titles",
+          "defaultCount": 2,
+          "itemPlaceholder": "Item title",
+          "addLabel": "+ Add item"
+        }
+      ],
+      "css": "  .accordion {\n    margin-block: 1rem 1.5rem;\n\n    .accordion-header {\n      margin: 0;\n    }\n\n    .accordion-item {\n      border: none !important;\n    }\n\n    .accordion-button {\n      color: var(--primary-colour) !important;\n      background-color: transparent !important;\n      padding: 0.5rem 0 !important;\n      box-shadow: none !important;\n      font-weight: 600;\n\n      .accordion-button-text {\n        text-decoration: underline;\n      }\n\n      &:hover .accordion-button-text {\n        text-decoration: none;\n      }\n\n      &::after {\n        display: none;\n      }\n\n      &::before {\n        content: \"▸\";\n        scale: 2;\n        margin-right: 8px;\n        transition: transform 0.2s ease-in-out;\n        color: var(--primary-colour);\n      }\n\n      &:not(.collapsed) {\n        background-color: transparent !important;\n        color: var(--primary-colour) !important;\n        box-shadow: none !important;\n\n        &::before {\n          transform: rotate(90deg);\n        }\n      }\n    }\n\n    .accordion-body {\n      padding: 1rem 0;\n    }\n  }",
+      "js": null,
+      "guide": "<p>Think of a filing cabinet: each drawer has a label, you click the label to slide it open, and — because this is a well-behaved cabinet — opening one drawer closes whichever one was already open.</p> <h4>The HTML — and why the ids matter so much</h4> <pre><code>&lt;button data-bs-target=\"#collapse-digital-literacy\" ...&gt; Digital literacy &lt;/button&gt; &lt;div id=\"collapse-digital-literacy\" ...&gt; (content goes here) &lt;/div&gt;</code></pre> <p>The button doesn't know what \"digital literacy\" means — it just knows to look for an element whose id exactly matches its <code>data-bs-target</code>, like dialling a phone number. If those two ids don't match <em>exactly</em> — a typo, a missing letter — clicking the button does nothing at all, with no error message telling you why. That's precisely why this tool generates both ids together automatically from your item's title, so they can never drift apart.</p> <h4>How \"only one open at a time\" works</h4> <p>Every panel also carries <code>data-bs-parent=\"#accordion-...\"</code>, pointing back at the outer wrapper. This is Bootstrap's own JavaScript (already loaded by Base HTML) reading that attribute as an instruction: \"when I open, ask every other panel sharing this same parent to close.\" That's the whole mechanism — no custom code needed for this block.</p> <h4>The \"Group name\" field</h4> <p>This just gives the outer wrapper's id something readable to be built from (e.g. \"digital-literacy-resources\" instead of a random string) — purely for humans reading the pasted code later, it doesn't change how anything behaves.</p>",
+      "variants": {
+        "named": {
+          "html": "<div class=\"accordion\" id=\"accordion-digital-literacy-resources\">\n  <div class=\"accordion-item\">\n    <h3 class=\"accordion-header\" id=\"heading-topic-one\">\n      <button class=\"accordion-button collapsed\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapse-topic-one\" aria-expanded=\"false\" aria-controls=\"collapse-topic-one\">\n        <span class=\"accordion-button-text\">Topic one</span>\n      </button>\n    </h3>\n    <div id=\"collapse-topic-one\" class=\"accordion-collapse collapse\" aria-labelledby=\"heading-topic-one\" data-bs-parent=\"#accordion-digital-literacy-resources\">\n      <div class=\"accordion-body\">\n        <!-- Content goes here -->\n      </div>\n    </div>\n  </div>\n  <div class=\"accordion-item\">\n    <h3 class=\"accordion-header\" id=\"heading-idea-two\">\n      <button class=\"accordion-button collapsed\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapse-idea-two\" aria-expanded=\"false\" aria-controls=\"collapse-idea-two\">\n        <span class=\"accordion-button-text\">Idea two</span>\n      </button>\n    </h3>\n    <div id=\"collapse-idea-two\" class=\"accordion-collapse collapse\" aria-labelledby=\"heading-idea-two\" data-bs-parent=\"#accordion-digital-literacy-resources\">\n      <div class=\"accordion-body\">\n        <!-- Content goes here -->\n      </div>\n    </div>\n  </div>\n  <div class=\"accordion-item\">\n    <h3 class=\"accordion-header\" id=\"heading-topic-one-2\">\n      <button class=\"accordion-button collapsed\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapse-topic-one-2\" aria-expanded=\"false\" aria-controls=\"collapse-topic-one-2\">\n        <span class=\"accordion-button-text\">Topic one</span>\n      </button>\n    </h3>\n    <div id=\"collapse-topic-one-2\" class=\"accordion-collapse collapse\" aria-labelledby=\"heading-topic-one-2\" data-bs-parent=\"#accordion-digital-literacy-resources\">\n      <div class=\"accordion-body\">\n        <!-- Content goes here -->\n      </div>\n    </div>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "unnamed": {
+          "html": "<div class=\"accordion\" id=\"accordion-4xjve4\">\n  <div class=\"accordion-item\">\n    <h3 class=\"accordion-header\" id=\"heading-only-item\">\n      <button class=\"accordion-button collapsed\" type=\"button\" data-bs-toggle=\"collapse\" data-bs-target=\"#collapse-only-item\" aria-expanded=\"false\" aria-controls=\"collapse-only-item\">\n        <span class=\"accordion-button-text\">Only item</span>\n      </button>\n    </h3>\n    <div id=\"collapse-only-item\" class=\"accordion-collapse collapse\" aria-labelledby=\"heading-only-item\" data-bs-parent=\"#accordion-4xjve4\">\n      <div class=\"accordion-body\">\n        <!-- Content goes here -->\n      </div>\n    </div>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "icon-toggle": {
+      "label": "Icon-toggle",
+      "description": "A grid of clickable icons; clicking one reveals its own content panel below (and closes any other open panel). Content is left as a placeholder for you to fill in, same as accordion. Note: only one icon-toggle group per page — the click behaviour tracks 'the currently open panel' globally, not per-group.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "text",
+          "id": "groupName",
+          "label": "Group name (used to build a readable id — leave blank to fall back to a random id)",
+          "placeholder": "e.g. Communication scenarios"
+        },
+        {
+          "type": "icon-toggle-items",
+          "id": "items",
+          "label": "Icons",
+          "defaultCount": 3
+        }
+      ],
+      "css": "  .data-icons-grid {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 20px;\n    margin-block: 1.5rem;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n    }\n\n    h5 {\n      font-size: 14px;\n      margin: 0.5rem 0 0;\n      color: var(--primary-colour);\n      font-weight: 600;\n    }\n  }\n\n  .data-icon-trigger {\n    cursor: pointer;\n  }\n\n  .data-icon-card {\n    height: 100%;\n    display: flex;\n    flex-direction: column;\n    justify-content: center;\n    align-items: center;\n    border: 1px solid var(--mid-grey);\n    border-radius: 15px;\n    padding: 0.5rem 0.2rem;\n    text-align: center;\n    transition: transform 0.2s, box-shadow 0.2s;\n\n    &:hover {\n      transform: translateY(-3px);\n      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);\n    }\n\n    &.active {\n      border: 3px solid var(--primary-colour);\n      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);\n    }\n\n    img {\n      width: 45px;\n    }\n  }\n\n  .content-display {\n    display: none;\n    margin-block: 1rem;\n    padding: 1.2rem;\n    border: 2px solid var(--primary-colour);\n    background-color: transparent;\n    border-radius: 12px;\n    /* Extra offset so the clicked icon stays visible above the panel. */\n    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 110px);\n\n    &.active {\n      display: block;\n    }\n  }\n\n  .content-display-inner-grid {\n    display: grid;\n    grid-template-columns: 3fr 1fr;\n    gap: 2rem;\n    align-items: center;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n\n      img {\n        order: -1;\n      }\n    }\n\n    img {\n      width: 150px;\n      height: auto;\n      justify-self: center;\n    }\n  }",
+      "js": "function openAccordion(tileColumn, contentId) {\n  const tile = tileColumn.querySelector(\".data-icon-card\");\n  const openContent = document.querySelector(\".content-display.active\");\n  const activeTile = document.querySelector(\".data-icon-card.active\");\n  if (openContent && openContent.id !== contentId) {\n    openContent.classList.remove(\"active\");\n    openContent.style.display = \"none\";\n  }\n  if (activeTile && activeTile !== tile) {\n    activeTile.classList.remove(\"active\");\n  }\n  const content = document.getElementById(contentId);\n  if (content.style.display === \"block\") {\n    content.style.display = \"none\";\n    content.classList.remove(\"active\");\n    tile.classList.remove(\"active\");\n  } else {\n    content.style.display = \"block\";\n    content.classList.add(\"active\");\n    tile.classList.add(\"active\");\n    if (window.innerWidth <= 768) {\n      tileColumn.insertAdjacentElement(\"afterend\", content);\n    }\n    content.scrollIntoView({\n      behavior: \"smooth\",\n      block: \"start\",\n    });\n  }\n}\nfunction openAccordionKey(event, tileColumn, contentID) {\n  if (event.key === \"Enter\") {\n    openAccordion(tileColumn, contentID);\n  }\n}",
+      "guide": "<p>Imagine a row of light switches: flick one, and a message board underneath lights up with that switch's message. Flick a different one, and the board swaps to the new message — only one message shows at a time.</p> <h4>The HTML</h4> <pre><code>&lt;div onclick=\"openAccordion(this, 'content-hosting-a-meeting')\" ...&gt; &lt;div class=\"data-icon-card\"&gt; &lt;img src=\"...\" /&gt; &lt;h5&gt;Hosting a meeting&lt;/h5&gt; &lt;/div&gt; &lt;/div&gt; &lt;div class=\"content-display\" id=\"content-hosting-a-meeting\"&gt; (content goes here) &lt;/div&gt;</code></pre> <p>Clicking an icon calls a function called <code>openAccordion</code>, telling it two things: \"here's the icon I clicked\" and \"here's the id of the panel it should open\" — like calling a friend and saying \"open that box, and close whatever else is open.\" That id has to match the panel's own id exactly, which is why the tool generates both from the same label text automatically.</p> <h4>Why the JS is separate from the HTML/CSS</h4> <p>Unlike the accordion (which reuses Bootstrap's own built-in behaviour), this block needs its own small helper function — <code>openAccordion</code> — that isn't part of Bootstrap. It only needs to exist <strong>once</strong> on the page no matter how many icons you add, which is why it's pasted into the shared script area rather than repeated per icon — like one shared tool in a toolbox, not a new copy for every job.</p> <h4>The scroll behaviour</h4> <p>When a panel opens, the page automatically scrolls down to it (<code>scrollIntoView</code>) — with some extra breathing room added above it, deliberately, so the icon you just clicked stays visible on screen. That way you can find it again to close the panel without having to scroll back up.</p>",
+      "variants": {
+        "named": {
+          "html": "<div class=\"data-icons-grid\" id=\"data-icons-grid-communication-scenarios\">\n  <div class=\"data-icon-trigger\" onclick=\"openAccordion(this, 'content-meetings')\" onkeydown=\"openAccordionKey(event, this, 'content-meetings')\" tabindex=\"0\">\n    <div class=\"data-icon-card\">\n      <img src=\"https://example.org/a.png\" alt=\"\" />\n      <h5>Meetings</h5>\n    </div>\n  </div>\n  <div class=\"data-icon-trigger\" onclick=\"openAccordion(this, 'content-clinical')\" onkeydown=\"openAccordionKey(event, this, 'content-clinical')\" tabindex=\"0\">\n    <div class=\"data-icon-card\">\n      <img src=\"https://example.org/b.png\" alt=\"Clinical icon\" />\n      <h5>Clinical</h5>\n    </div>\n  </div>\n  <div class=\"data-icon-trigger\" onclick=\"openAccordion(this, 'content-meetings-2')\" onkeydown=\"openAccordionKey(event, this, 'content-meetings-2')\" tabindex=\"0\">\n    <div class=\"data-icon-card\">\n      <img src=\"https://example.org/c.png\" alt=\"\" />\n      <h5>Meetings</h5>\n    </div>\n  </div>\n</div>\n<div class=\"content-display\" id=\"content-meetings\">\n  <div class=\"content-display-inner-grid\">\n    <div>\n      <!-- Content goes here -->\n    </div>\n    <img src=\"https://example.org/a.png\" alt=\"\" />\n  </div>\n</div>\n<div class=\"content-display\" id=\"content-clinical\">\n  <div class=\"content-display-inner-grid\">\n    <div>\n      <!-- Content goes here -->\n    </div>\n    <img src=\"https://example.org/b-big.png\" alt=\"Clinical icon\" />\n  </div>\n</div>\n<div class=\"content-display\" id=\"content-meetings-2\">\n  <div class=\"content-display-inner-grid\">\n    <div>\n      <!-- Content goes here -->\n    </div>\n    <img src=\"https://example.org/c.png\" alt=\"\" />\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "unnamed": {
+          "html": "<div class=\"data-icons-grid\" id=\"data-icons-grid-9v3qs8\">\n  <div class=\"data-icon-trigger\" onclick=\"openAccordion(this, 'content-one')\" onkeydown=\"openAccordionKey(event, this, 'content-one')\" tabindex=\"0\">\n    <div class=\"data-icon-card\">\n      <img src=\"https://example.org/a.png\" alt=\"\" />\n      <h5>One</h5>\n    </div>\n  </div>\n</div>\n<div class=\"content-display\" id=\"content-one\">\n  <div class=\"content-display-inner-grid\">\n    <div>\n      <!-- Content goes here -->\n    </div>\n    <img src=\"https://example.org/a.png\" alt=\"\" />\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "resource-cards": {
+      "label": "Resource cards",
+      "description": "A grid of linked resource cards — image, title, type, and an optional duration/length. Generates just the card grid; wrap it in your own <section> with a heading, same as every other block.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "resource-card-items",
+          "id": "cards",
+          "label": "Cards",
+          "defaultCount": 2
+        }
+      ],
+      "css": "  .cards-grid {\n    display: grid;\n    grid-template-columns: repeat(2, 1fr);\n    justify-items: center;\n    align-items: stretch;\n    gap: 1rem;\n\n    @media (max-width: 576px) {\n      grid-template-columns: repeat(1, 90%);\n      justify-content: center;\n    }\n\n    .card {\n      display: flex;\n      flex-direction: column;\n      width: 100%;\n      border-radius: 10px;\n      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);\n      transition: 0.2s;\n\n      &:hover {\n        transform: translateY(-3px);\n        box-shadow: 8px 12px 29px -3px rgba(26, 26, 26, 0.4);\n      }\n\n      @media (max-width: 576px) {\n        max-width: 300px;\n      }\n\n      > div {\n        flex: 1;\n        padding: 1rem 1rem 0 1rem;\n        display: flex;\n        flex-direction: column;\n        justify-content: space-between;\n        min-height: 180px;\n\n        > a {\n          margin-bottom: 2rem;\n          color: var(--primary-colour);\n        }\n      }\n\n      p {\n        display: flex;\n        justify-content: space-between;\n      }\n    }\n\n    .resource-card__img {\n      width: 100%;\n      height: auto;\n      object-fit: cover;\n      border-radius: 10px 10px 0 0;\n    }\n  }",
+      "js": null,
+      "guide": "<p>Picture a stack of business cards laid out in a neat grid — each one clickable, each one the same height as its neighbours in the same row, however short or long its title happens to be.</p> <h4>The HTML</h4> <pre><code>&lt;div class=\"card\"&gt; &lt;img src=\"...\" class=\"resource-card__img\" /&gt; &lt;div&gt; &lt;a href=\"...\" class=\"stretched-link\" target=\"_blank\"&gt; &lt;strong&gt;Title text &lt;i class=\"fa-solid fa-up-right-from-square\"&gt;&lt;/i&gt;&lt;/strong&gt; &lt;/a&gt; &lt;p&gt;&lt;strong&gt;Type&lt;/strong&gt;&lt;span&gt;Duration&lt;/span&gt;&lt;/p&gt; &lt;/div&gt; &lt;/div&gt;</code></pre> <p>The <code>stretched-link</code> class is a neat CSS trick: it stretches the clickable area of that link invisibly to cover the <em>entire</em> card, even though the actual link text is only a few words. That's why clicking anywhere on the card — the image, the empty space, not just the title — opens the link.</p> <h4>Why every card in a row matches height</h4> <p>By default, a grid lets each item size itself to fit its own content — so a card with a two-line title would end up shorter than one with a three-line title next to it. Telling the grid to <code>stretch</code> instead makes every card fill the full height of its row, and then the card's own layout (a flexbox column with <code>justify-content: space-between</code>) pushes the type/duration line down to the bottom either way — like a bookend holding the price tag at the bottom of the shelf no matter how thick the book is.</p> <h4>The new-tab checkbox</h4> <p>Ticking it adds <code>target=\"_blank\"</code> and the little arrow icon, tied to the one checkbox so neither can be forgotten. The builder also adds <code>rel=\"noopener noreferrer\"</code> (a safety measure for links that open a new tab) but only to external links. Relative links and links to our own domains (listed in <code>INTERNAL_HOSTS</code>) keep just <code>target=\"_blank\"</code>.</p>",
+      "variants": {
+        "mixed": {
+          "html": "<div class=\"cards-grid\">\n  <div class=\"card\">\n    <img src=\"https://example.org/w.png\" alt=\"\" class=\"resource-card__img\" />\n    <div>\n      <a href=\"https://example.org/site\" class=\"stretched-link\" target=\"_blank\" rel=\"noopener noreferrer\">\n        <strong>A website <i class=\"fa-solid fa-up-right-from-square\"></i></strong>\n      </a>\n      <p><strong>Website</strong></p>\n    </div>\n  </div>\n  <div class=\"card\">\n    <img src=\"https://example.org/a.png\" alt=\"Alt\" class=\"resource-card__img\" />\n    <div>\n      <a href=\"https://ytydysgu.heiw.wales/article\" class=\"stretched-link\" target=\"_blank\">\n        <strong>An article <i class=\"fa-solid fa-up-right-from-square\"></i></strong>\n      </a>\n      <p><strong>Article</strong><span>5 Minutes</span></p>\n    </div>\n  </div>\n  <div class=\"card\">\n    <img src=\"https://example.org/a.png\" alt=\"\" class=\"resource-card__img\" />\n    <div>\n      <a href=\"/local\" class=\"stretched-link\">\n        <strong>Same tab <i class=\"fa-solid fa-up-right-from-square\"></i></strong>\n      </a>\n      <p><strong>Page</strong><span>2 Minutes</span></p>\n    </div>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "buttons": {
+      "label": "Buttons",
+      "description": "A row of call-to-action buttons (e.g. 'Sign the pledge'). Wraps as needed on smaller screens.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "button-items",
+          "id": "buttons",
+          "label": "Buttons",
+          "defaultCount": 1
+        }
+      ],
+      "css": "  .buttons {\n    display: flex;\n    flex-wrap: wrap;\n    justify-content: center;\n    gap: 1rem;\n    margin-top: 2rem;\n\n    a {\n      display: inline-block;\n      width: 250px;\n      max-width: 100%;\n      text-align: center;\n      background: var(--primary-colour);\n      color: #fff !important;\n      padding: 14px 28px;\n      border-radius: 10px;\n      text-decoration: none !important;\n      font-weight: 600;\n      transition: 0.2s;\n\n      &:hover {\n        background: color-mix(in srgb, var(--primary-colour), black 15%);\n        text-decoration: none;\n      }\n    }\n  }\n\n  .flex-section .buttons,\n  .two-column .buttons {\n    flex-direction: column;\n    align-items: stretch;\n    margin-top: 1.5rem;\n  }\n\n  .flex-section .buttons a,\n  .two-column .buttons a {\n    max-width: none;\n    width: 100%;\n  }",
+      "js": null,
+      "guide": "<p>The simplest block here — a row of \"go do this\" buttons, like \"Sign the pledge\" or \"Download the guide\".</p> <h4>The HTML</h4> <pre><code>&lt;div class=\"buttons\"&gt; &lt;a href=\"...\" target=\"_blank\" aria-label=\"Sign the pledge (opens in a new tab)\"&gt; Sign the pledge &lt;i class=\"fa-solid fa-up-right-from-square\"&gt;&lt;/i&gt; &lt;/a&gt; &lt;/div&gt;</code></pre> <p>The <code>aria-label</code> is what a screen reader announces instead of the visible text — it's there so someone who can't see the little arrow icon still gets told \"this link opens in a new tab\" out loud. Both the icon and that spoken warning are tied to the same \"open in a new tab\" checkbox, so they always agree with each other; you'll never end up with the icon showing but the label not mentioning it, or vice versa.</p> <h4>The CSS</h4> <p><code>display: flex; flex-wrap: wrap;</code> on the row means the buttons sit side by side and automatically drop onto a new line if they run out of horizontal space — no extra work needed for that to happen responsively.</p>",
+      "variants": {
+        "mixed": {
+          "html": "<div class=\"buttons\">\n  <a href=\"https://example.org/apply\" target=\"_blank\" rel=\"noopener noreferrer\" aria-label=\"Apply now (opens in a new tab)\">\n    Apply now\n    <i class=\"fa-solid fa-up-right-from-square button-icon inline-icon\"></i>\n  </a>\n  <a href=\"/stay\" aria-label=\"Stay here\">\n    Stay here\n  </a>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "flex-section": {
+      "label": "Flex-section",
+      "description": "A genuine two-column layout — left side is always free-form content (the rich text editor), right side is your choice: an image, a video, or another content block from a different tab. Different from image-text-section: this doesn't wrap text around media, it's a true side-by-side split, so the right column is always shown (there's no 'None' option here).",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "rich-text",
+          "id": "content",
+          "label": "Left column — content",
+          "placeholder": "Write the content for this side..."
+        },
+        {
+          "type": "media-picker",
+          "id": "media",
+          "label": "Right column",
+          "allowNone": false,
+          "allowOther": true
+        }
+      ],
+      "css": "  .flex-section {\n    display: flex;\n    align-items: center;\n    justify-content: space-between;\n    gap: 3rem;\n\n    @media (max-width: 768px) {\n      flex-direction: column;\n    }\n  }\n\n  .text-content {\n    flex: 1;\n    min-width: 0;\n  }\n\n  .video-content {\n    flex: 1;\n    display: flex;\n    justify-content: flex-end;\n\n    @media (max-width: 768px) {\n      justify-content: center;\n      order: -1;\n    }\n\n    img {\n      width: 100%;\n      max-width: 320px;\n      height: auto;\n      display: block;\n      border-radius: 16px;\n\n      @media (max-width: 768px) {\n        aspect-ratio: 3 / 2;\n        object-fit: cover;\n        object-position: top;\n        max-width: 100%;\n        margin: 0 auto;\n      }\n    }\n\n    iframe {\n      width: 100%;\n      aspect-ratio: 16 / 9;\n      height: auto;\n      border-radius: 16px;\n      border: none;\n    }\n  }",
+      "js": null,
+      "guide": "<p>Picture a book lying open — content on the left-hand page, a picture or video on the right-hand page, side by side, both taking up roughly equal space. That's the whole idea of this block, and it's genuinely different from image-text-section: nothing wraps around anything here, it's a clean two-column split.</p> <h4>The HTML</h4> <pre><code>&lt;div class=\"flex-section\"&gt; &lt;div class=\"text-content\"&gt; (your content goes here) &lt;/div&gt; &lt;div class=\"video-content\"&gt; &lt;iframe src=\"...\"&gt;&lt;/iframe&gt; &lt;/div&gt; &lt;/div&gt;</code></pre> <h4>The CSS</h4> <p><code>display: flex</code> on the outer wrapper lines the two inner boxes up side by side. <code>flex: 1</code> on both of them means \"split the available space evenly between us\" — like cutting a sandwich exactly in half, regardless of how wide the page actually is.</p> <p>On phones, <code>flex-direction: column</code> switches that same layout from side-by-side to stacked — the same two boxes, just rearranged vertically once the screen gets too narrow for two columns to sit comfortably next to each other.</p> <h4>Why media is required here</h4> <p>Unlike image-text-section, there's no \"None\" option for the right column — an empty second column wouldn't make sense in a layout whose entire point is two columns side by side.</p> <h4>The \"Another content block\" option</h4> <p>Picking this for the right column doesn't generate any media at all — it just leaves a marker instead:</p> <pre><code>&lt;div class=\"video-content\"&gt; &lt;!-- CONTENT BLOCK GOES HERE --&gt; &lt;/div&gt;</code></pre> <p>Same idea as the placeholder used in accordion and icon-toggle panels: build whatever you actually need on another tab (buttons, for instance) and paste its generated HTML in place of that comment. This block only ever handles the two-column structure itself — it doesn't try to generate every possible thing that could go in the right column.</p>",
+      "variants": {
+        "image": {
+          "html": "<div class=\"flex-section\">\n  <div class=\"text-content\">\n    <p>Opening <strong>paragraph</strong> with a <a href=\"https://example.org\" target=\"_blank\" rel=\"noopener noreferrer\">link</a>.</p><h3>A heading</h3><ul><li>One</li><li>Two</li></ul><p>Closing paragraph.</p>\n  </div>\n  <div class=\"video-content\">\n    <img src=\"https://example.org/pic.png\" alt=\"\" />\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "video": {
+          "html": "<div class=\"flex-section\">\n  <div class=\"text-content\">\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n  <div class=\"video-content\">\n    <iframe src=\"https://www.youtube.com/embed/NSUm8ZhTBXY\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "other": {
+          "html": "<div class=\"flex-section\">\n  <div class=\"text-content\">\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n  <div class=\"video-content\">\n    <!-- CONTENT BLOCK GOES HERE -->\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "image-no-url": {
+          "html": "<div class=\"flex-section\">\n  <div class=\"text-content\">\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n  <div class=\"video-content\">\n    \n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    },
+    "two-column": {
+      "label": "Two-column layout",
+      "description": "One media item in one column, free text (and buttons, or other blocks pasted into the text) in the other. Media sits on the left by default; switch the layout to flip it. Top-aligned on desktop, and stacked with media first on mobile.",
+      "htmlOutputLabel": null,
+      "secondaryLabel": null,
+      "fields": [
+        {
+          "type": "select",
+          "id": "flip",
+          "label": "Layout",
+          "default": "media-left",
+          "options": [
+            {
+              "value": "media-left",
+              "label": "Media left (default)"
+            },
+            {
+              "value": "media-right",
+              "label": "Media right"
+            }
+          ]
+        },
+        {
+          "type": "media-picker",
+          "id": "media",
+          "label": "Media column",
+          "allowNone": false,
+          "allowOther": true
+        },
+        {
+          "type": "rich-text",
+          "id": "content",
+          "label": "Text column",
+          "placeholder": "Write the text for this column, then paste any buttons or other blocks here..."
+        }
+      ],
+      "css": "  .two-column {\n    display: flex;\n    align-items: flex-start;\n    gap: 2rem;\n\n    @media (max-width: 768px) {\n      flex-direction: column;\n      align-items: stretch;\n      gap: 1.5rem;\n    }\n\n    @media (min-width: 769px) {\n      &.two-column--flipped {\n        flex-direction: row-reverse;\n      }\n    }\n  }\n\n  .two-column__media {\n    flex: 0.8 1 0;\n    min-width: 0;\n  }\n\n  .two-column__content {\n    flex: 1 1 0;\n    min-width: 0;\n  }\n\n  .two-column__media img,\n  .two-column__media iframe {\n    display: block;\n    width: 100%;\n    height: auto;\n    border-radius: 16px;\n  }\n\n  .two-column__media iframe {\n    aspect-ratio: 16 / 9;\n    border: none;\n  }\n\n  @media (min-width: 769px) {\n    .two-column__media {\n      margin-top: 1.5rem;\n    }\n  }\n\n  @media (max-width: 768px) {\n    .two-column__media img {\n      aspect-ratio: 3 / 2;\n      object-fit: cover;\n      object-position: top;\n      margin: 0 auto;\n    }\n  }",
+      "js": null,
+      "guide": "<p>Think of a magazine spread: a photo on one page, the story on the other. This block is that layout, with the photo on the left by default.</p> <h4>Flip the layout</h4> <p>The Layout option switches the media to the right. The HTML stays in the same order either way; the change is made in CSS, so the text is always read after the media by screen readers.</p> <h4>Mobile</h4> <p>On phones the two columns stack, media first, and the image is shown at 3:2 and centred.</p> <h4>Buttons in the text column</h4> <p>Generate buttons in the Buttons tab and paste them into the text column. Inside a two-column layout they automatically become full width and stack with a gap.</p>",
+      "variants": {
+        "left": {
+          "html": "<div class=\"two-column\">\n  <div class=\"two-column__media\">\n    <img src=\"https://example.org/pic.png\" alt=\"A &quot;quoted&quot; &lt;alt&gt;\" />\n  </div>\n  <div class=\"two-column__content\">\n    <p>Opening <strong>paragraph</strong> with a <a href=\"https://example.org\" target=\"_blank\" rel=\"noopener noreferrer\">link</a>.</p><h3>A heading</h3><ul><li>One</li><li>Two</li></ul><p>Closing paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "right": {
+          "html": "<div class=\"two-column two-column--flipped\">\n  <div class=\"two-column__media\">\n    <iframe src=\"https://www.youtube.com/embed/NSUm8ZhTBXY\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe>\n  </div>\n  <div class=\"two-column__content\">\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        },
+        "other": {
+          "html": "<div class=\"two-column\">\n  <div class=\"two-column__media\">\n    <!-- CONTENT BLOCK GOES HERE -->\n  </div>\n  <div class=\"two-column__content\">\n    <p>Just <em>one</em> paragraph.</p>\n  </div>\n</div>",
+          "secondary": null,
+          "warnings": null
+        }
+      }
+    }
+  },
+  "richtext": {
+    "lists": {
+      "clean": "<ul><li>Bullet one</li><li>Bullet two</li></ul><ol><li>Step one</li></ol>",
+      "hero": "<ul><li>Bullet one</li><li>Bullet two</li></ul><ol><li>Step one</li></ol>"
+    },
+    "classes": {
+      "clean": "<p class=\"keep\">Styled</p>",
+      "hero": "<p class=\"keep hero-text__intro\">Styled</p>"
+    },
+    "newtab": {
+      "clean": "<p>See <a href=\"https://example.org\" target=\"_blank\" rel=\"noopener noreferrer\">here <i class=\"fa-solid fa-up-right-from-square button-icon inline-icon\"></i></a> and <a href=\"/x\">there</a>.</p>",
+      "hero": "<p class=\"hero-text__intro\">See <a href=\"https://example.org\" target=\"_blank\" rel=\"noopener noreferrer\">here <i class=\"fa-solid fa-up-right-from-square button-icon inline-icon\"></i></a> and <a href=\"/x\">there</a>.</p>"
+    },
+    "empty": {
+      "clean": "",
+      "hero": ""
+    }
+  },
+  "helpers": {
+    "slugify": [
+      "hello-world",
+      "item",
+      "a-b-c",
+      "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "n"
+    ],
+    "youtube": [
+      "https://www.youtube.com/embed/NSUm8ZhTBXY",
+      "https://www.youtube.com/embed/NSUm8ZhTBXY",
+      "https://www.youtube.com/embed/NSUm8ZhTBXY",
+      "https://www.youtube.com/embed/abc",
+      "nonsense"
+    ],
+    "external": [
+      [
+        true,
+        " target=\"_blank\" rel=\"noopener noreferrer\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ],
+      [
+        false,
+        " target=\"_blank\"",
+        ""
+      ]
+    ],
+    "escape": "&lt;a href=&quot;x&quot;&gt;&amp;&#39;&lt;/a&gt;",
+    "indent": "  a\n\n   b",
+    "compare": [
+      1,
+      0,
+      -1
+    ]
+  },
+  "preview": "<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css\" />\n<style>\n  :root { --thinqi-navbar-height: 0px; --anchor-section-offset: 0px; }\n  body { margin: 0; padding: 1.25rem; background: #fff; }\n  \n/* Gwella base CSS · version 3.1.1 */\n/* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */\n\nhtml {\n  scroll-behavior: smooth;\n}\n\n.gwella {\n  --primary-colour: #a3195b;\n  --secondary-colour: #faf3f7;\n  --light-grey: #f1f1f1;\n  --mid-grey: #d3d3d3;\n  --dark-grey: #545454;\n}\n\n.ytydysgu {\n  --primary-colour: #325083;\n  --secondary-colour: #f3f6fb;\n  --light-grey: #f1f1f1;\n  --mid-grey: #d3d3d3;\n  --dark-grey: #545454;\n}\n\nbody > main > article.plain-text {\n  overflow: visible !important;\n}\n\n#page-container {\n  --heading-1: 1.625rem;\n  --heading-2: 1.375rem;\n  --heading-3: 1.125rem;\n  --numbered-subheading: 20px;\n\n\n  --bs-font-sans-serif: \"Noto Sans\", \"Noto Sans Arabic\", sans-serif;\n  --bs-body-font-family: \"Noto Sans\", \"Noto Sans Arabic\", sans-serif;\n\n  margin-top: var(--thinqi-navbar-height, 95px);\n  line-height: 160%;\n  background-color: white !important;\n  font-family: var(--bs-font-sans-serif) !important;\n\n  &,\n  *,\n  *::before,\n  *::after {\n    box-sizing: border-box;\n  }\n\n  p {\n    margin-block: 1em;\n  }\n\n  ul {\n    list-style-type: disc;\n    padding-left: 40px;\n  }\n\n  ol {\n    list-style-type: decimal;\n    padding-left: 40px;\n  }\n\n  ol > li {\n    display: list-item;\n  }\n\n  li {\n    line-height: 1.5em;\n  }\n\n  section {\n    /* Padding, not margin, gives the 64px gap between sections. */\n    padding-block: 1.25rem;\n    scroll-margin-top: var(--anchor-section-offset, 145px);\n  }\n\n  h1,\n  h2,\n  h3,\n  h4,\n  h5 {\n    font-weight: bold;\n    margin-block: 1.5rem;\n    /* Keeps anchored headings clear of the navbar. */\n    scroll-margin-top: var(--anchor-section-offset, 145px);\n  }\n\n  a {\n    color: var(--primary-colour);\n    text-decoration: underline;\n\n    &:hover {\n      text-decoration: none;\n    }\n  }\n\n  .standard-container {\n    max-width: 860px;\n    margin-inline: auto;\n\n    @media (max-width: 1200px) {\n      max-width: 750px;\n    }\n\n    @media (max-width: 768px) {\n      max-width: 100%;\n      padding-inline: 1.2rem;\n    }\n  }\n\n  .content-column {\n    h2 {\n      font-size: var(--heading-2);\n      font-weight: bold;\n      margin-block: 1.5rem;\n    }\n\n    h3 {\n      font-size: var(--heading-3);\n      font-weight: 600;\n      color: var(--primary-colour);\n    }\n\n    @media (max-width: 768px) {\n      display: contents;\n    }\n  }\n\n  .button-icon {\n    margin-left: 0.25rem;\n  }\n\n  #breadcrumb-nav {\n    padding: 1rem;\n\n    #breadcrumb-nav__list {\n      display: flex;\n      align-items: center;\n      flex-wrap: wrap;\n      list-style: none;\n      padding: 0;\n      margin: 0;\n      gap: 0.4rem;\n\n      li:not(:last-child)::after {\n        content: \"|\";\n        margin-left: 0.5rem;\n        color: var(--dark-grey);\n      }\n\n      li:last-child {\n        color: var(--dark-grey);\n      }\n    }\n\n    a {\n      color: var(--primary-colour);\n      text-decoration: underline;\n\n      &:hover {\n        text-decoration: none;\n      }\n    }\n  }\n\n  .header {\n    width: 100%;\n  }\n\n  #header-img {\n    width: 100%;\n    object-fit: cover;\n    object-position: center 30%;\n    display: block;\n\n    @media (max-width: 576px) {\n      object-fit: contain;\n    }\n  }\n\n  #header-h1 {\n    font-size: var(--heading-1);\n    color: var(--primary-colour);\n    line-height: 120%;\n    font-weight: bold;\n    margin-block: 1.5rem;\n\n    @media (max-width: 768px) {\n      order: 1;\n    }\n  }\n\n  .main-grid {\n    display: grid;\n    grid-template-columns: 1fr 3fr;\n    gap: 2rem;\n    align-items: start;\n    padding-inline: 1rem;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n      gap: 0;\n    }\n  }\n\n  .content-body {\n    margin-top: 1rem;\n\n    /* The order belongs on .content-body, the grid item on mobile. */\n    @media (max-width: 768px) {\n      order: 4;\n    }\n  }\n\n  #table-of-contents {\n    position: sticky;\n    top: 110px;\n\n    @media (max-width: 768px) {\n      order: 3;\n      padding-top: 0;\n      position: relative;\n      top: 0;\n    }\n\n    #table-of-contents-heading {\n      border-radius: 20px;\n      background-color: var(--primary-colour);\n      color: white;\n      padding: 5px;\n      text-align: center;\n      font-weight: 400;\n      line-height: 1.5;\n      font-size: 1.2em;\n      margin-block: 1.5rem 0.75em;\n    }\n\n    ul {\n      padding-left: 0;\n    }\n\n    li {\n      list-style: none;\n      border-radius: 10px;\n      padding: 10px;\n      background-color: var(--secondary-colour);\n      margin-left: 0;\n\n      &:hover {\n        background-color: var(--light-grey);\n      }\n\n      & + li {\n        margin-top: 1rem;\n      }\n    }\n\n    .toc-link {\n      color: var(--primary-colour);\n\n      &:hover {\n        text-decoration: none;\n      }\n    }\n  }\n\n  .timestamp {\n    margin-top: 2rem;\n    margin-bottom: 1rem;\n    font-style: italic;\n    font-size: 13px;\n    color: var(--dark-grey);\n    padding-inline: 1rem;\n  }\n\n  .back-to-top {\n    display: none;\n    flex-direction: column;\n    position: fixed;\n    right: 2rem;\n    bottom: 2rem;\n    background-color: rgba(255, 255, 255, 0.8);\n    border: none;\n    justify-content: center;\n    align-items: center;\n    gap: 8px;\n    color: var(--primary-colour);\n    font-weight: bold;\n    padding: 0.5rem 0.8rem;\n    border-radius: 10px;\n    cursor: pointer;\n    z-index: 99;\n\n    & > i {\n      font-size: 30px;\n      color: var(--primary-colour);\n    }\n  }\n\n  /* ============================================================\n     PLACE NEW BLOCK CSS ABOVE THIS LINE\n     ============================================================ */\n}\n\n    .nav-cards-grid {\n    display: grid;\n    grid-template-columns: repeat(3, 1fr);\n    gap: 1.5rem;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n    }\n  }\n\n  /* Auto-fits 185–210px cards, wrapping as needed. */\n  .nav-cards-grid.nav-cards-grid--numbered {\n    grid-template-columns: repeat(auto-fit, minmax(185px, 210px));\n    justify-content: center;\n\n    @media (max-width: 768px) {\n      grid-template-columns: 1fr;\n    }\n  }\n\n  .nav-card {\n    background-color: var(--secondary-colour);\n    border-top: 6px solid var(--primary-colour);\n    border-radius: 0 0 10px 10px;\n    padding: 1.75rem 1.5rem;\n    text-align: left;\n\n    .nav-card__icon {\n      width: 76px;\n      height: 76px;\n      border-radius: 50%;\n      background-color: var(--primary-colour);\n      display: flex;\n      align-items: center;\n      justify-content: center;\n      margin: 0 auto 1.25rem;\n\n      img {\n        width: 34px;\n        height: 34px;\n        display: block;\n      }\n    }\n\n    p {\n      margin: 0 0 1.25rem;\n      color: #000;\n      font-weight: 500;\n    }\n\n    .nav-card__button {\n      display: block;\n      width: 100%;\n      text-align: center;\n      background: var(--primary-colour);\n      color: #fff !important;\n      font-weight: 700;\n      text-decoration: none !important;\n      padding: 0.6rem 2rem;\n      border-radius: 15px;\n\n      &:hover {\n        background: color-mix(in srgb, var(--primary-colour), black 15%);\n        text-decoration: none;\n      }\n    }\n\n    &.nav-card--numbered {\n      display: flex;\n      flex-direction: column;\n      position: relative;\n      cursor: pointer;\n      transition: transform 0.2s, box-shadow 0.2s;\n      max-width: 210px;\n      min-width: 185px;\n      padding: 16px;\n\n      &:hover {\n        transform: translateY(-3px);\n        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);\n      }\n\n      h3 {\n        font-size: 16px;\n        font-weight: 700;\n        color: #1a1a1a;\n        margin: 0;\n      }\n\n      .nav-card__number {\n        color: var(--primary-colour);\n      }\n\n      .nav-card__icon-plain {\n        margin-top: auto;\n        padding-top: 1.5rem;\n\n        img {\n          width: 78px;\n          height: 78px;\n          object-fit: contain;\n          display: block;\n        }\n      }\n\n      @media (max-width: 768px) {\n        flex-direction: row;\n        align-items: center;\n        max-width: none;\n        min-width: 0;\n\n        h3 {\n          flex: 1;\n        }\n\n        .nav-card__icon-plain {\n          margin-top: 0;\n          padding-top: 0;\n          margin-left: 1rem;\n          flex-shrink: 0;\n        }\n      }\n    }\n  }\n</style>\n</head>\n<body>\n<div id=\"page-container\" class=\"ytydysgu\">\n<p>x</p>\n</div>\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js\"></script>\n\n</body>\n</html>"
+}

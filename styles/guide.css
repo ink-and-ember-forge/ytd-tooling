@@ -1,0 +1,79 @@
+.how-it-works {
+  margin-top: 2rem;
+  border: 1px solid #e4dfd4;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.how-it-works summary {
+  cursor: pointer;
+  padding: 0.9rem 1.1rem;
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 0.95rem;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.how-it-works summary::-webkit-details-marker {
+  display: none;
+}
+
+.how-it-works summary::before {
+  content: "▸";
+  color: var(--green);
+  display: inline-block;
+  transition: transform 0.15s;
+}
+
+.how-it-works[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.how-it-works-body {
+  padding: 0 1.1rem 1.1rem;
+  color: #1a1a1a;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  border-top: 1px solid #e4dfd4;
+  padding-top: 1rem;
+}
+
+.how-it-works-body h4 {
+  margin: 1.2rem 0 0.4rem;
+  font-size: 0.85rem;
+  color: var(--dark-grey);
+}
+
+.how-it-works-body h4:first-child {
+  margin-top: 0;
+}
+
+.how-it-works-body p {
+  margin: 0 0 0.9rem;
+}
+
+.how-it-works-body pre {
+  background: #f4f2ed;
+  border: 1px solid #e4dfd4;
+  border-radius: 6px;
+  padding: 0.8rem 1rem;
+  overflow-x: auto;
+  margin: 0 0 0.9rem;
+}
+
+.how-it-works-body pre code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.how-it-works-body :not(pre) > code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82rem;
+  background: #f4f2ed;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
