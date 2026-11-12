@@ -1,174 +1,115 @@
-// One block's tab: description, live preview, form, Generate button, outputs
-// (HTML / CSS / JS with copy buttons) and the "How it works" guide.
+// One block's tab: a form on the left; on the right a sticky live preview and
+// the generated code. Everything updates as you type; there is no Generate step.
+// The form is autosaved to the browser and can be reset (with Undo).
 import { buildField, collectValue } from "./fields.js";
 import { getTheme, onThemeChange } from "./theme.js";
 import { buildPreviewDoc } from "../lib/preview-doc.js";
 import { BASE_CSS } from "../base/index.js";
-import { copyToClipboard } from "../lib/dom.js";
+import { createPreview } from "./preview.js";
+import { createOutputPanel } from "./output-panel.js";
+import { validateForm } from "./validation.js";
+import { snapshotForm, restoreForm } from "./form-state.js";
+import { getBlockState, setBlockState, clearBlockState, debounce } from "./storage.js";
+import { toast } from "./toast.js";
 
-function updatePreview(block, panel, fieldEls, previewFrame) {
-  try {
-    const values = {};
-    block.fields.forEach((field, i) => {
-      values[field.id] = collectValue(fieldEls[i], field);
-    });
-    const html = block.generateHTML(values);
-    previewFrame.srcdoc = buildPreviewDoc(block, html, block.css, block.js, getTheme(), BASE_CSS);
-  } catch (err) {
-    // A field mid-edit (e.g. incomplete media URL) shouldn't break the tool —
-    // just skip this update, the next keystroke will try again.
-  }
-}
-
-// Returns { tabBtn, panel }; the caller decides where they go.
-export function buildBlockPanel(block, index) {
-  const tabBtn = document.createElement("button");
-  tabBtn.className = "tab-btn" + (index === 0 ? " active" : "");
-  tabBtn.textContent = block.label;
-  tabBtn.dataset.tabTarget = block.id;
-
+export function buildBlockPanel(block) {
   const panel = document.createElement("div");
-  panel.className = "panel" + (index === 0 ? " active" : "");
+  panel.className = "panel";
   panel.id = "panel-" + block.id;
 
-  const desc = document.createElement("p");
-  desc.className = "panel-desc";
-  desc.textContent = block.description || "";
-  panel.appendChild(desc);
+  panel.innerHTML = `
+    <div class="panel-head">
+      <div>
+        <h2 class="panel-title"></h2>
+        <p class="panel-desc"></p>
+      </div>
+      <button type="button" class="reset-btn">Reset this block</button>
+    </div>
+    <div class="panel-grid">
+      <div class="panel-form"></div>
+      <div class="panel-side"></div>
+    </div>`;
+  panel.querySelector(".panel-title").textContent = block.tabLabel || block.label;
+  panel.querySelector(".panel-desc").textContent = block.description || "";
+  const formCol = panel.querySelector(".panel-form");
+  const sideCol = panel.querySelector(".panel-side");
 
-  const previewWrap = document.createElement("div");
-  previewWrap.className = "preview-wrap";
-  previewWrap.innerHTML = `<h3>Live preview</h3><iframe class="live-preview"></iframe>`;
-  panel.appendChild(previewWrap);
-  const previewFrame = previewWrap.querySelector(".live-preview");
+  const preview = createPreview(block.tabLabel || block.label);
+  const output = createOutputPanel(block);
+  sideCol.append(preview.el, output.el);
 
-  const fieldEls = block.fields.map(field => {
+  const fieldEls = block.fields.map((field) => {
     const el = buildField(field);
-    panel.appendChild(el);
+    formCol.appendChild(el);
     return el;
   });
 
-  const refreshPreview = () => updatePreview(block, panel, fieldEls, previewFrame);
-  onThemeChange(refreshPreview);
-  panel.addEventListener("input", refreshPreview);
-  panel.addEventListener("change", refreshPreview);
-  fieldEls.forEach(el => {
-    if (el._quillInstance) el._quillInstance.on("text-change", refreshPreview);
-  });
-  refreshPreview();
-
-  const generateBtn = document.createElement("button");
-  generateBtn.className = "generate-btn";
-  generateBtn.textContent = "Generate " + block.label.toLowerCase();
-  panel.appendChild(generateBtn);
-
-  const htmlOutputBlock = document.createElement("div");
-  htmlOutputBlock.className = "output-block hidden";
-  htmlOutputBlock.innerHTML = `
-    <h3>${block.htmlOutputLabel || "HTML for this block — paste into .content-body"}</h3>
-    <div class="output-wrap">
-      <button class="copy-btn">Copy</button>
-      <textarea rows="9" readonly></textarea>
-    </div>`;
-  const warningBox = document.createElement("div");
-  warningBox.className = "note generate-warning";
-  warningBox.style.cssText = "display:none; margin-top:1rem; padding:0.7rem 0.9rem; border-radius:6px; background:#fff4e5; color:#7a4a00; font-weight:600;";
-  panel.appendChild(warningBox);
-  panel.appendChild(htmlOutputBlock);
-
-  let secondaryHtmlOutputBlock = null;
-  if (block.secondaryHTML) {
-    secondaryHtmlOutputBlock = document.createElement("div");
-    secondaryHtmlOutputBlock.className = "output-block hidden";
-    secondaryHtmlOutputBlock.innerHTML = `
-      <h3>${block.secondaryHTML.label}</h3>
-      <div class="output-wrap">
-        <button class="copy-btn">Copy</button>
-        <textarea rows="4" readonly></textarea>
-      </div>`;
-    panel.appendChild(secondaryHtmlOutputBlock);
-  }
-
-  let cssOutputBlock = null;
-  if (block.css) {
-    cssOutputBlock = document.createElement("div");
-    cssOutputBlock.className = "output-block hidden";
-    cssOutputBlock.innerHTML = `
-      <h3>CSS for this block — paste inside #page-container { ... }</h3>
-      <div class="output-wrap">
-        <button class="copy-btn">Copy</button>
-        <textarea rows="9" readonly></textarea>
-      </div>
-      <p class="note">This CSS only styles this one block — it doesn't include the base page styling, which you already have from the Base CSS download above.</p>`;
-    panel.appendChild(cssOutputBlock);
-  }
-
-  let jsOutputBlock = null;
-  if (block.js) {
-    jsOutputBlock = document.createElement("div");
-    jsOutputBlock.className = "output-block hidden";
-    jsOutputBlock.innerHTML = `
-      <h3>JS for this block — paste inside the Base JS script block</h3>
-      <div class="output-wrap">
-        <button class="copy-btn">Copy</button>
-        <textarea rows="9" readonly></textarea>
-      </div>
-      <p class="note">Doesn't include its own &lt;script&gt; tags — add this inside the script block from Base JS, not as a separate one. Only needed once even if this block appears multiple times on the same page.</p>`;
-    panel.appendChild(jsOutputBlock);
-  }
-
-
   if (block.guide) {
-    const howItWorks = document.createElement("details");
-    howItWorks.className = "how-it-works";
-    howItWorks.innerHTML = `
-      <summary>How it works</summary>
-      <div class="how-it-works-body">${block.guide}</div>`;
-    panel.appendChild(howItWorks);
+    const guide = document.createElement("details");
+    guide.className = "how-it-works";
+    guide.innerHTML = `<summary>How it works</summary><div class="how-it-works-body">${block.guide}</div>`;
+    formCol.appendChild(guide);
   }
 
-  const htmlTextarea = htmlOutputBlock.querySelector("textarea");
-  const secondaryHtmlTextarea = secondaryHtmlOutputBlock ? secondaryHtmlOutputBlock.querySelector("textarea") : null;
-  const cssTextarea = cssOutputBlock ? cssOutputBlock.querySelector("textarea") : null;
-  const jsTextarea = jsOutputBlock ? jsOutputBlock.querySelector("textarea") : null;
+  let restoring = true; // suppress refreshes while loading saved state
+  const defaults = snapshotForm(fieldEls);
 
-  generateBtn.addEventListener("click", () => {
+  const collect = () => {
     const values = {};
-    block.fields.forEach((field, i) => {
-      values[field.id] = collectValue(fieldEls[i], field);
+    block.fields.forEach((field, i) => { values[field.id] = collectValue(fieldEls[i], field); });
+    return values;
+  };
+
+  const save = debounce(() => setBlockState(block.id, snapshotForm(fieldEls)), 400);
+  const showPreview = debounce((html) => preview.setDoc(html), 120);
+
+  function refresh() {
+    if (restoring) return;
+    validateForm(formCol);
+    try {
+      const values = collect();
+      const html = block.generateHTML(values);
+      output.update({
+        html,
+        secondary: block.secondaryHTML ? block.secondaryHTML.generate(values) : null,
+        warnings: block.warnings ? block.warnings(values) : [],
+      });
+      showPreview(buildPreviewDoc(block, html, block.css, block.js, getTheme(), BASE_CSS));
+    } catch (err) {
+      // A field mid-edit (e.g. an incomplete media URL) shouldn't break the
+      // tool; the next keystroke will try again. The last good output stays.
+    }
+  }
+
+  const onEdit = () => { refresh(); if (!restoring) save(); };
+  panel.addEventListener("input", onEdit);
+  panel.addEventListener("change", onEdit);
+  fieldEls.forEach((el) => { if (el._quillInstance) el._quillInstance.on("text-change", onEdit); });
+  onThemeChange(refresh);
+
+  // Load saved state, then render once.
+  restoreForm(fieldEls, getBlockState(block.id));
+  restoring = false;
+  refresh();
+
+  panel.querySelector(".reset-btn").addEventListener("click", () => {
+    const before = snapshotForm(fieldEls);
+    restoring = true;
+    restoreForm(fieldEls, defaults);
+    restoring = false;
+    clearBlockState(block.id);
+    refresh();
+    toast("Block reset", {
+      actionLabel: "Undo",
+      onAction: () => {
+        restoring = true;
+        restoreForm(fieldEls, before);
+        restoring = false;
+        refresh();
+        setBlockState(block.id, before);
+      },
     });
-    const warnings = block.warnings ? block.warnings(values) : [];
-    warningBox.textContent = warnings.join(" ");
-    warningBox.style.display = warnings.length ? "block" : "none";
-    htmlTextarea.value = block.generateHTML(values);
-    htmlOutputBlock.classList.remove("hidden");
-    if (secondaryHtmlOutputBlock) {
-      secondaryHtmlTextarea.value = block.secondaryHTML.generate(values);
-      secondaryHtmlOutputBlock.classList.remove("hidden");
-    }
-    if (cssOutputBlock) {
-      cssTextarea.value = block.css;
-      cssOutputBlock.classList.remove("hidden");
-    }
-    if (jsOutputBlock) {
-      jsTextarea.value = block.js;
-      jsOutputBlock.classList.remove("hidden");
-    }
   });
 
-  const outputBlocks = [htmlOutputBlock];
-  if (secondaryHtmlOutputBlock) outputBlocks.push(secondaryHtmlOutputBlock);
-  if (cssOutputBlock) outputBlocks.push(cssOutputBlock);
-  if (jsOutputBlock) outputBlocks.push(jsOutputBlock);
-
-  outputBlocks.forEach(outputBlock => {
-    const copyBtn = outputBlock.querySelector(".copy-btn");
-    const textarea = outputBlock.querySelector("textarea");
-    copyBtn.addEventListener("click", () => {
-      textarea.select();
-      copyToClipboard(textarea.value, copyBtn);
-    });
-  });
-
-  return { tabBtn, panel };
+  return panel;
 }

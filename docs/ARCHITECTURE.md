@@ -33,6 +33,23 @@ Nothing is hand-copied between these. If two outputs disagree, a test fails (`np
 
 Because `generateHTML` is pure, it runs identically in the browser and in Node, which is what the golden tests rely on.
 
+## The builder UI (`src/ui/`)
+
+| File | Job |
+|------|-----|
+| `block-panel.js` | One block's tab: form on the left, sticky preview and code on the right. Updates as you type; autosaves; Reset with Undo. |
+| `fields.js` | Builds each field type and reads its value back (`buildField` / `collectValue`). |
+| `form-state.js` | Reads and restores a whole form **generically from the DOM**, so autosave, reset and undo work for any field type, including future ones. |
+| `list-actions.js` | Move up/down, Duplicate and Remove-with-Undo on every list item. |
+| `validation.js` | Live hints: bad web addresses, empty list items. Never blocks output. |
+| `preview.js` / `output-panel.js` | The scaled device-width preview, and the HTML/CSS/JS tabs with Copy buttons. |
+| `storage.js` | Autosave to `localStorage`, plus project save/load as a JSON file. All wrapped in try/catch. |
+| `tabs.js` | Accessible tabs (roles, arrow keys) used for block tabs, code tabs and the Build / Upgrade / What's changed views. |
+| `upgrade-panel.js`, `changelog-panel.js` | The Upgrade (three steps + checklist) and What's changed views. |
+| `toast.js` | Non-blocking messages and Undo; replaces `alert()`. |
+
+Blocks choose where they appear in the tab bar with `group` and `tabLabel` (display only: the registry order still decides CSS order).
+
 ## Version and changelog
 
 `changelog/changelog.json` lists releases newest first. The first one is the current version; `{{VERSION}}` in the base files and `data-base-version` on pages come from it. Each change has `detect` / `outdated` patterns that the upgrade checker runs against a pasted page. Rules: `changelog/SCHEMA.md`.

@@ -5,17 +5,70 @@
   --light-grey: #f1f1f1;
   --dark-grey: #545454;
   --paper: #fbfaf8;
-  --thinqi-navbar-height: 95px;
+  --line: #e4dfd4;
+  /* Set by src/ui/navbar-offset.js: 0 on its own, the navbar's height under thinqi. */
+  --thinqi-navbar-height: 0px;
+  /* Set by src/ui/layout.js: heights of the sticky header and block tab bar. */
+  --topbar-h: 64px;
+  --tabbar-h: 48px;
 }
 
 * { box-sizing: border-box; }
 
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
-  margin-top: var(--thinqi-navbar-height, 95px);
+  margin-top: var(--thinqi-navbar-height, 0px);
   font-family: "Noto Sans", "Noto Sans Arabic", sans-serif;
   background: var(--paper);
   color: #1a1a1a;
   line-height: 1.5;
 }
 
+label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--dark-grey);
+  margin-bottom: 0.3rem;
+}
+
+select, input[type="text"], textarea {
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #d7d2c8;
+  border-radius: 6px;
+  background: #fff;
+  color: #1a1a1a;
+}
+
+textarea {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+/* One clear focus ring for everything keyboard users can reach. */
+:focus-visible {
+  outline: 3px solid var(--green);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--navy);
+  color: #fff;
+  padding: 0.6rem 1rem;
+  z-index: 100;
+}
+.skip-link:focus { left: 0.5rem; top: 0.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}

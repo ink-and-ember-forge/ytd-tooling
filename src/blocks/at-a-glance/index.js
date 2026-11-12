@@ -4,6 +4,9 @@ import { escapeHTML } from "../../lib/html.js";
 export default {
   id: "at-a-glance",
   label: "At-a-glance",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Structure",
+  tabLabel: "At a glance",
   description: "A short bulleted summary box that sits above the table of contents on the page.",
   fields: [
     { type: "bullet-list", id: "bullets", label: "Bullet points", defaultCount: 2 }

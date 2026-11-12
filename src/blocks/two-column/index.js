@@ -5,6 +5,9 @@ import { mediaInner } from "../../lib/media.js";
 export default {
   id: "two-column",
   label: "Two-column layout",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Content",
+  tabLabel: "Media + text",
   description: "One media item in one column, free text (and buttons, or other blocks pasted into the text) in the other. Media sits on the left by default; switch the layout to flip it. Top-aligned on desktop, and stacked with media first on mobile.",
   fields: [
     { type: "select", id: "flip", label: "Layout", default: "media-left",

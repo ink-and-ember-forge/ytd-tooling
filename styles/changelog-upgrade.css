@@ -27,3 +27,13 @@
 
 /* Inline "copy the new code" button on a change card (the base .copy-btn is positioned for output boxes). */
 .copy-btn--inline { position: static; margin-top: 0.6rem; }
+
+/* ---- upgrade stepper ------------------------------------------------------ */
+.step { margin: 1.5rem 0; padding: 1rem 1.25rem; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.step-title { margin: 0 0 0.75rem; font-size: 1rem; color: var(--navy); }
+.upgrade-detected { margin: 0 0 0.75rem; font-weight: 600; color: var(--dark-grey); }
+.upgrade-progress { font-weight: 700; color: var(--navy); margin: 1rem 0 0; }
+.upgrade-finish { margin-top: 1.5rem; padding: 1rem; border: 2px solid var(--green); border-radius: 8px; background: #e6f4f1; }
+.change-done { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0 1rem; font-weight: 600; cursor: pointer; }
+.change-done input { width: auto; accent-color: var(--green); }
+.change-card.is-done { opacity: 0.6; border-color: var(--green); }

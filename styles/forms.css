@@ -48,7 +48,8 @@ select:focus, input:focus, textarea:focus, button:focus {
 
 .bullet-row input { flex: 1; }
 
-.bullet-remove, .bullet-add, .copy-btn, .generate-btn, .item-remove, .item-add {
+.bullet-remove, .bullet-add, .copy-btn, .generate-btn, .primary-btn, .item-remove, .item-add,
+.item-up, .item-down, .item-dup, .bullet-up, .bullet-down {
   font-family: inherit;
   cursor: pointer;
   border: none;
@@ -74,7 +75,7 @@ select:focus, input:focus, textarea:focus, button:focus {
 
 .bullet-add:hover, .item-add:hover { border-color: var(--green); color: var(--green); }
 
-.generate-btn {
+.generate-btn, .primary-btn {
   background: var(--green);
   color: #fff;
   font-weight: 600;
@@ -82,7 +83,7 @@ select:focus, input:focus, textarea:focus, button:focus {
   font-size: 0.9rem;
 }
 
-.generate-btn:hover { background: #007d6d; }
+.generate-btn:hover, .primary-btn:hover { background: #007d6d; }
 
 .item-card {
   border: 1px solid #e4dfd4;
@@ -155,3 +156,34 @@ select:focus, input:focus, textarea:focus, button:focus {
   margin-top: 0.5rem;
 }
 
+
+/* ---- list item controls: move, duplicate, remove --------------------------- */
+.item-up, .item-down, .item-dup, .bullet-up, .bullet-down {
+  background: none;
+  color: var(--navy);
+  border: 1px solid var(--line);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.item-up:hover, .item-down:hover, .item-dup:hover, .bullet-up:hover, .bullet-down:hover { background: var(--light-grey); }
+.item-up:disabled, .item-down:disabled, .bullet-up:disabled, .bullet-down:disabled { opacity: 0.35; cursor: default; }
+.item-card-header { gap: 0.35rem; }
+.item-card-title { margin-right: auto; }
+
+/* "Card 1", "Card 2"... follow the order on screen, so reordering renumbers them. */
+.item-cards { counter-reset: item; }
+.item-card { counter-increment: item; }
+.item-card-title::after { content: " " counter(item); }
+
+.item-card.is-empty::after {
+  content: "Empty: this one is left out of the output.";
+  display: block;
+  margin-top: 0.7rem;
+  font-size: 0.78rem;
+  color: #7a4a00;
+}
+
+/* ---- inline validation ---------------------------------------------------- */
+.is-invalid { border-color: var(--burgundy) !important; }
+.field-error { color: var(--burgundy); font-size: 0.78rem; margin: 0.3rem 0 0; font-weight: 600; }

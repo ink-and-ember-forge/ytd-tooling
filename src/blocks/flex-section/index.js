@@ -5,6 +5,9 @@ import { mediaInner } from "../../lib/media.js";
 export default {
   id: "flex-section",
   label: "Flex-section",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Content",
+  tabLabel: "Text + media",
   description: "A genuine two-column layout — left side is always free-form content (the rich text editor), right side is your choice: an image, a video, or another content block from a different tab. Different from image-text-section: this doesn't wrap text around media, it's a true side-by-side split, so the right column is always shown (there's no 'None' option here).",
   fields: [
     { type: "rich-text", id: "content", label: "Left column — content", placeholder: "Write the content for this side..." },

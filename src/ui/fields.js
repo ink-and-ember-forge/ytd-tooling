@@ -4,7 +4,8 @@
 // and list it in docs/ADDING-A-BLOCK.md.
 import { openLinkDialog } from "./link-dialog.js";
 import { cleanQuillHTML } from "../lib/richtext.js";
-
+import { initList, wireItem } from "./list-actions.js";
+import { associateLabels, uniqueId } from "./a11y.js";
 
 export function buildField(field) {
   const wrap = document.createElement("div");
@@ -14,7 +15,13 @@ export function buildField(field) {
   if (field.label) {
     const label = document.createElement("label");
     label.textContent = field.label;
+    label.id = uniqueId("lbl");
     wrap.appendChild(label);
+    // Fields made of several controls are announced as a labelled group.
+    if (field.type !== "text" && field.type !== "select") {
+      wrap.setAttribute("role", "group");
+      wrap.setAttribute("aria-labelledby", label.id);
+    }
   }
 
   if (field.type === "text") {
@@ -29,6 +36,7 @@ export function buildField(field) {
     const rowsContainer = document.createElement("div");
     rowsContainer.className = "bullet-rows";
     wrap.appendChild(rowsContainer);
+    initList(rowsContainer);
 
     function addRow(value) {
       const row = document.createElement("div");
@@ -42,10 +50,10 @@ export function buildField(field) {
       remove.type = "button";
       remove.textContent = "×";
       remove.setAttribute("aria-label", "Remove bullet");
-      remove.onclick = () => row.remove();
       row.appendChild(input);
       row.appendChild(remove);
       rowsContainer.appendChild(row);
+      wireItem(rowsContainer, row);
     }
 
     for (let i = 0; i < field.defaultCount; i++) addRow("");
@@ -163,12 +171,15 @@ export function buildField(field) {
     });
 
     wrap._quillInstance = quill;
+    const labelEl = wrap.querySelector("label");
+    if (labelEl) quill.root.setAttribute("aria-labelledby", labelEl.id);
   }
 
   else if (field.type === "button-items") {
     const itemsContainer = document.createElement("div");
     itemsContainer.className = "item-cards";
     wrap.appendChild(itemsContainer);
+    initList(itemsContainer);
 
     function addItem() {
       const card = document.createElement("div");
@@ -186,8 +197,8 @@ export function buildField(field) {
           <input type="checkbox" class="btn-new-tab" style="width:auto;" checked />
           Open in a new tab
         </label>`;
-      card.querySelector(".item-remove").onclick = () => card.remove();
       itemsContainer.appendChild(card);
+      wireItem(itemsContainer, card);
     }
 
     for (let i = 0; i < field.defaultCount; i++) addItem();
@@ -223,6 +234,7 @@ export function buildField(field) {
     const itemsContainer = document.createElement("div");
     itemsContainer.className = "item-cards";
     wrap.appendChild(itemsContainer);
+    initList(itemsContainer);
 
     function updateCardVisibility(card) {
       const style = styleSelect.value;
@@ -265,8 +277,8 @@ export function buildField(field) {
           <input type="checkbox" class="navcard-new-tab" style="width:auto;" />
           Open in a new tab
         </label>`;
-      card.querySelector(".item-remove").onclick = () => card.remove();
       itemsContainer.appendChild(card);
+      wireItem(itemsContainer, card);
       updateCardVisibility(card);
     }
 
@@ -287,6 +299,7 @@ export function buildField(field) {
     const itemsContainer = document.createElement("div");
     itemsContainer.className = "item-cards";
     wrap.appendChild(itemsContainer);
+    initList(itemsContainer);
 
     function addItem() {
       const card = document.createElement("div");
@@ -312,8 +325,8 @@ export function buildField(field) {
         <input type="text" class="card-type" placeholder="e.g. Video, Publication, Course" />
         <label style="margin-top:0.6rem;">Duration / length (optional)</label>
         <input type="text" class="card-duration" placeholder="e.g. 36 Minutes, Long Read — leave blank to omit" />`;
-      card.querySelector(".item-remove").onclick = () => card.remove();
       itemsContainer.appendChild(card);
+      wireItem(itemsContainer, card);
     }
 
     for (let i = 0; i < field.defaultCount; i++) addItem();
@@ -330,6 +343,7 @@ export function buildField(field) {
     const itemsContainer = document.createElement("div");
     itemsContainer.className = "item-cards";
     wrap.appendChild(itemsContainer);
+    initList(itemsContainer);
 
     function addItem() {
       const card = document.createElement("div");
@@ -353,13 +367,13 @@ export function buildField(field) {
           <label>Content panel image URL</label>
           <input type="text" class="panel-image-url" placeholder="https://..." />
         </div>`;
-      card.querySelector(".item-remove").onclick = () => card.remove();
       const checkbox = card.querySelector(".separate-image-toggle");
       const group = card.querySelector(".separate-image-group");
       checkbox.addEventListener("change", () => {
         group.style.display = checkbox.checked ? "block" : "none";
       });
       itemsContainer.appendChild(card);
+      wireItem(itemsContainer, card);
     }
 
     for (let i = 0; i < field.defaultCount; i++) addItem();
@@ -376,6 +390,7 @@ export function buildField(field) {
     const itemsContainer = document.createElement("div");
     itemsContainer.className = "item-cards";
     wrap.appendChild(itemsContainer);
+    initList(itemsContainer);
 
     function addItem() {
       const card = document.createElement("div");
@@ -389,8 +404,8 @@ export function buildField(field) {
         <input type="text" class="item-heading" placeholder="Heading text (number is added automatically)" />
         <label style="margin-top:0.6rem;">Content — one line per ${itemsContainer.dataset.formatHint || "list item / paragraph"}</label>
         <textarea class="item-content-textarea" rows="3" placeholder="One line per point"></textarea>`;
-      card.querySelector(".item-remove").onclick = () => card.remove();
       itemsContainer.appendChild(card);
+      wireItem(itemsContainer, card);
     }
 
     for (let i = 0; i < field.defaultCount; i++) addItem();
@@ -403,6 +418,7 @@ export function buildField(field) {
     wrap.appendChild(addBtn);
   }
 
+  associateLabels(wrap);
   return wrap;
 }
 

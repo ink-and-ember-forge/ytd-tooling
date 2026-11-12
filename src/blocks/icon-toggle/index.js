@@ -4,6 +4,9 @@ import { escapeHTML, slugify, uniqueSlug, randomId } from "../../lib/html.js";
 export default {
   id: "icon-toggle",
   label: "Icon-toggle",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Interactive",
+  tabLabel: "Icon panels",
   description: "A grid of clickable icons; clicking one reveals its own content panel below (and closes any other open panel). Content is left as a placeholder for you to fill in, same as accordion. Note: only one icon-toggle group per page — the click behaviour tracks 'the currently open panel' globally, not per-group.",
   fields: [
     { type: "text", id: "groupName", label: "Group name (used to build a readable id — leave blank to fall back to a random id)", placeholder: "e.g. Communication scenarios" },

@@ -16,7 +16,8 @@ export function copyTargetFor(scope) {
 }
 
 // `replacement` is optional: { label, text } adds a button that copies the new code.
-export function changeCard(change, label, replacement) {
+// `checkable` adds a "Done" tick box (the upgrade checklist); `onToggle` hears about it.
+export function changeCard(change, label, replacement, { checkable = false, onToggle } = {}) {
   const card = makeEl("div", "change-card");
   const head = makeEl("div", "change-card-head");
   head.appendChild(makeEl("span", "change-id", change.id));
@@ -33,6 +34,17 @@ export function changeCard(change, label, replacement) {
     btn.type = "button";
     btn.addEventListener("click", () => copyToClipboard(replacement.text, btn));
     card.appendChild(btn);
+  }
+  if (checkable) {
+    const tick = makeEl("label", "change-done");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.addEventListener("change", () => {
+      card.classList.toggle("is-done", box.checked);
+      if (onToggle) onToggle();
+    });
+    tick.append(box, " Done");
+    card.appendChild(tick);
   }
   return card;
 }

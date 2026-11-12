@@ -5,6 +5,9 @@ import { newTabAttrs } from "../../lib/links.js";
 export default {
   id: "nav-cards",
   label: "Navigation cards",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Links",
+  tabLabel: "Navigation cards",
   description: "A row of cards, two styles available: icon + description + button (only the button is clickable, unlike resource-cards), or numbered heading + plain icon with no button at all. Choose the style once — it applies to every card in the row.",
   fields: [
     { type: "nav-card-items", id: "cardsData", label: "Cards", defaultCount: 3 }

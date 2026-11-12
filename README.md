@@ -2,8 +2,8 @@
 
 Everything needed to build pages in the Gwella template style, and to bring older pages up to the latest version.
 
-- **Builder** (`index.html`): one tab per block. Fill in the form, get HTML/CSS/JS to paste into a thinqi page, with a live preview.
-- **Upgrade checker** (Tools drawer in the builder): paste an old page's code, get a list of what it needs to reach the current version, with the replacement code one click away.
+- **Builder** (`index.html`, *Build blocks*): one tab per block, grouped by purpose. Fill in the form and the code to paste updates live beside a preview you can view at desktop, tablet or phone width. Your work autosaves in the browser and can be saved to / loaded from a file.
+- **Upgrade a page** (second view in the builder): paste an old page's code and work through a checklist of what it needs to reach the current version, with the replacement code one click away.
 - **Template** (`template/`): the reference page showing every block, using the current base code.
 - **Changelog** (`changelog/changelog.json`): the version history, as data. The newest release *is* the current version.
 
@@ -27,13 +27,13 @@ The builder must be served over http(s) (browsers block ES modules and `fetch` o
 | `src/blocks/index.js` | Block registry. Order = tab order = order in the template CSS/JS. |
 | `src/lib/` | Shared helpers (HTML escaping, links, rich text cleaning, media markup, file loading). No DOM except `dom.js`. |
 | `src/changelog/` | Changelog loader, validator, upgrade checker and guided-fix logic. No DOM. |
-| `src/ui/` | The builder's interface (tabs, forms, preview, tools drawer). |
+| `src/ui/` | The builder's interface: tabs, forms, live preview and code panel, autosave, upgrade checklist. |
 | `styles/` | The builder's own CSS, one file per area. |
 | `changelog/` | `changelog.json` (the history) and `SCHEMA.md` (its rules). |
 | `baseline/<version>/` | Frozen copy of the base and block code as released. |
 | `template/` | Reference page. `template.css` / `template.js` are **generated**; `index.html` is hand-written. |
 | `scripts/` | `build.js`, `release.js`, `new-block.js`. |
-| `test/` | Golden snapshots of every block's output, template/baseline/changelog checks. |
+| `test/` | Golden snapshots of every block's output, template/baseline/changelog checks (`npm test`), and browser tests of the UI (`npm run test:e2e`). |
 | `docs/` | How the pieces fit together, and the recipes below. |
 
 ## Everyday commands
@@ -41,6 +41,7 @@ The builder must be served over http(s) (browsers block ES modules and `fetch` o
 | Command | Does |
 |---------|------|
 | `npm test` | Runs all checks. Run before and after any change. |
+| `npm run test:e2e` | Browser tests of the builder UI (needs Playwright installed; not run in CI). |
 | `npm run build` | Regenerates `template/template.css` and `template.js` from `src/`. |
 | `npm run new-block -- my-block "My block"` | Scaffolds a block. See [docs/ADDING-A-BLOCK.md](docs/ADDING-A-BLOCK.md). |
 | `npm run snapshot:update` | Accepts an intended change to a block's output. Review the git diff. |
