@@ -194,7 +194,20 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const sDesk = await scaleOf();
   await page.click('#panel-two-column .device-toggle button:has-text("Tablet")');
   const sTab = await scaleOf();
-  ok("preview: desktop and tablet are clearly different scales", sDesk > 0.5 && sTab - sDesk > 0.15, `desktop ${sDesk.toFixed(2)} vs tablet ${sTab.toFixed(2)}`);
+  // Text must be readable: on-screen size = the page's CSS font size x the preview's scale.
+  const bodyPx = () => page.$eval("#panel-two-column .live-preview", (f) => parseFloat(getComputedStyle(f.contentDocument.body).fontSize));
+  const containerMax = () => page.$eval("#panel-two-column .live-preview", (f) => getComputedStyle(f.contentDocument.getElementById("page-container")).maxWidth);
+  const tabletText = (await bodyPx()) * sTab;
+  await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
+  await page.waitForTimeout(300);
+  const deskScale = await scaleOf();
+  const deskText = (await bodyPx()) * deskScale;
+  ok("preview: desktop text is at (near) true size, not shrunk", deskText >= 15, `16px text renders at ${deskText.toFixed(1)}px (scale ${deskScale.toFixed(2)})`);
+  ok("preview: tablet text is also readable", tabletText >= 14, `renders at ${tabletText.toFixed(1)}px`);
+  ok("preview: desktop shows the real ~600px page column", (await containerMax()) === "600px", await containerMax());
+  await page.click('#panel-two-column .device-toggle button:has-text("Tablet")');
+  await page.waitForTimeout(300);
+  ok("preview: tablet fills its width (single column)", (await containerMax()) === "none", await containerMax());
   await page.click('#panel-two-column .device-toggle button:has-text("Desktop")');
   const hb = await (await page.$("#panel-two-column .panel-split")).boundingBox();
   await page.mouse.move(hb.x + 10, hb.y + 200);
@@ -215,6 +228,11 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const widthReset = await widthOf("#panel-two-column .panel-side");
   ok("preview: double-click resets", Math.abs(widthReset - side0) <= 2, Math.round(widthReset) + "px");
   await page.screenshot({ path: path.join(OUT, "ui-wide-preview.png") });
+  // Real text in the preview, at true size (screenshot for a human to judge).
+  await page.click("#panel-two-column .ql-editor");
+  await page.keyboard.type("This is body text in the preview. At the default layout it should look the same size as the text in the form beside it.");
+  await page.waitForTimeout(500);
+  await page.locator("#panel-two-column .preview-card").screenshot({ path: path.join(OUT, "preview-true-size.png") });
 
   // screenshots
   await page.click('#tabbar .tab-btn:has-text("Resource cards")');
