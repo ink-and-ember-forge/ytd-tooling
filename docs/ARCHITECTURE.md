@@ -43,6 +43,7 @@ Because `generateHTML` is pure, it runs identically in the browser and in Node, 
 | `list-actions.js` | Move up/down, Duplicate and Remove-with-Undo on every list item. |
 | `validation.js` | Live hints: bad web addresses, empty list items. Never blocks output. |
 | `preview.js` / `output-panel.js` | The scaled device-width preview, and the HTML/CSS/JS tabs with Copy buttons. |
+| `splitter.js` | The draggable divider between form and preview (mouse, touch, arrow keys; double-click resets). Width is shared by all blocks and remembered. |
 | `storage.js` | Autosave to `localStorage`, plus project save/load as a JSON file. All wrapped in try/catch. |
 | `tabs.js` | Accessible tabs (roles, arrow keys) used for block tabs, code tabs and the Build / Upgrade / What's changed views. |
 | `upgrade-panel.js`, `changelog-panel.js` | The Upgrade (three steps + checklist) and What's changed views. |

@@ -9,6 +9,9 @@ import { initTopbar } from "./ui/topbar.js";
 import { initTabs } from "./ui/tabs.js";
 import { initLayout, initMenus } from "./ui/layout.js";
 import { getPref, setPref } from "./ui/storage.js";
+import { restoreSplitWidth } from "./ui/splitter.js";
+
+restoreSplitWidth(); // before the panels are built, so each starts at the saved width
 
 // ---- block tabs, grouped by purpose ------------------------------------------
 const GROUP_ORDER = ["Structure", "Content", "Interactive", "Links"];

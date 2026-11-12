@@ -1,7 +1,7 @@
-// "What's changed" view: release notes plus the schema behind them.
+// "What's changed" view: release notes for editors.
 import { makeEl } from "../lib/dom.js";
 import { changeCard, ACTION_LABELS } from "./change-card.js";
-import { CHANGELOG, SCHEMA_DOC, BUILDER_VERSION } from "../changelog/index.js";
+import { CHANGELOG, BUILDER_VERSION } from "../changelog/index.js";
 import { validateChangelog } from "../changelog/checker.js";
 
 export function buildChangelogPanel() {
@@ -19,15 +19,11 @@ export function buildChangelogPanel() {
     });
     panel.appendChild(section);
   });
+  // The schema and the passing check are maintainers' business (see changelog/SCHEMA.md
+  // and `npm test`); editors only need to hear if the data is somehow broken.
   const errors = validateChangelog(CHANGELOG);
-  const count = CHANGELOG.releases.reduce((n, r) => n + r.changes.length, 0);
-  panel.appendChild(makeEl("p", "changelog-check " + (errors.length ? "changelog-check--fail" : "changelog-check--pass"),
-    errors.length ? "Changelog check failed: " + errors.join("; ") : "Changelog check passed: " + count + " changes."));
-  const schema = makeEl("section", "schema-section");
-  schema.appendChild(makeEl("h3", "release-title", "Changelog schema"));
-  schema.appendChild(makeEl("p", "release-summary", "The rules behind the changelog and the Upgrade checker."));
-  const pre = makeEl("pre", "schema-doc", SCHEMA_DOC);
-  schema.appendChild(pre);
-  panel.appendChild(schema);
+  if (errors.length) {
+    panel.appendChild(makeEl("p", "changelog-check changelog-check--fail", "Changelog data problem: " + errors.join("; ")));
+  }
   return panel;
 }

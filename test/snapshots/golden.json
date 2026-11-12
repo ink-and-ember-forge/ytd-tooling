@@ -146,7 +146,7 @@
     },
     "image-text-section": {
       "label": "Image-text-section",
-      "description": "Free-form content — headings, lists, paragraphs, whatever the page needs — with an optional image or video floated alongside it. The content always flows around the media correctly; you don't need to manage that yourself.",
+      "description": "Text that wraps around a small image or video and flows underneath it once it passes the media's height. Use it when the writing is the main thing and the media is a supporting extra. The media is optional. If you want a clean side-by-side split instead, use Equal columns or Media beside text.",
       "htmlOutputLabel": null,
       "secondaryLabel": null,
       "fields": [
@@ -321,7 +321,7 @@
     },
     "flex-section": {
       "label": "Flex-section",
-      "description": "A genuine two-column layout — left side is always free-form content (the rich text editor), right side is your choice: an image, a video, or another content block from a different tab. Different from image-text-section: this doesn't wrap text around media, it's a true side-by-side split, so the right column is always shown (there's no 'None' option here).",
+      "description": "Text on the left, media on the right, in two equal-width columns that are vertically centred, for a balanced, symmetrical look. The text is always on the left (it can't be flipped) and the media is required. To put the media on the left, or to line it up with the top of the text, use Media beside text instead.",
       "htmlOutputLabel": null,
       "secondaryLabel": null,
       "fields": [
@@ -367,7 +367,7 @@
     },
     "two-column": {
       "label": "Two-column layout",
-      "description": "One media item in one column, free text (and buttons, or other blocks pasted into the text) in the other. Media sits on the left by default; switch the layout to flip it. Top-aligned on desktop, and stacked with media first on mobile.",
+      "description": "Media in one column and text in the other, both lined up at the top, with the text column a little wider. You choose which side the media sits on. Best for longer text with a smaller picture beside it. For a balanced, centred, equal split use Equal columns instead.",
       "htmlOutputLabel": null,
       "secondaryLabel": null,
       "fields": [

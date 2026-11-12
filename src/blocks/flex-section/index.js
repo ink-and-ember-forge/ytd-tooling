@@ -7,8 +7,8 @@ export default {
   label: "Flex-section",
   // How the block appears in the builder's tab bar (display only).
   group: "Content",
-  tabLabel: "Text + media",
-  description: "A genuine two-column layout — left side is always free-form content (the rich text editor), right side is your choice: an image, a video, or another content block from a different tab. Different from image-text-section: this doesn't wrap text around media, it's a true side-by-side split, so the right column is always shown (there's no 'None' option here).",
+  tabLabel: "Equal columns",
+  description: "Text on the left, media on the right, in two equal-width columns that are vertically centred, for a balanced, symmetrical look. The text is always on the left (it can't be flipped) and the media is required. To put the media on the left, or to line it up with the top of the text, use Media beside text instead.",
   fields: [
     { type: "rich-text", id: "content", label: "Left column — content", placeholder: "Write the content for this side..." },
     { type: "media-picker", id: "media", label: "Right column", allowNone: false, allowOther: true }

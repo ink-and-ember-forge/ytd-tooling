@@ -52,10 +52,18 @@ textarea {
   resize: vertical;
 }
 
-/* One clear focus ring for everything keyboard users can reach. */
+/* One focus ring, for keyboard focus only (a mouse click on a button shows none).
+   Do not add a second :focus rule: it stacks with this one and looks doubled. */
 :focus-visible {
   outline: 3px solid var(--green);
   outline-offset: 2px;
+}
+/* Tabs and pills sit tight against their neighbours, so their ring is drawn inside them.
+   (The active tab's own outer ring is dropped while focused: see .tab-btn.active:focus-visible in tabs.css.) */
+.tab-btn:focus-visible,
+.mode-btn:focus-visible,
+.output-tab:focus-visible {
+  outline-offset: -3px;
 }
 
 .skip-link {
