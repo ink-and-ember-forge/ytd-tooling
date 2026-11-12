@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Gwella Page Builder</title>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
+<link href="builder.css" rel="stylesheet" />
+
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Gwella Page Builder</h1>
+  <div class="theme-toggle" role="group" aria-label="Preview theme">
+    <button type="button" class="theme-toggle-btn" data-theme="gwella" aria-pressed="true">Gwella</button>
+    <button type="button" class="theme-toggle-btn" data-theme="ytydysgu" aria-pressed="false">Y Tŷ Dysgu</button>
+  </div>
+  <div class="download-row">
+    <button class="download-btn" id="open-template-btn">Open template ↗</button>
+    <label class="toc-toggle">
+      <input type="checkbox" id="include-toc-toggle" checked />
+      ToC included
+    </label>
+    <button class="download-btn" id="download-html-btn">⬇ Base HTML</button>
+    <button class="download-btn" id="download-css-btn">⬇ Base CSS</button>
+    <button class="download-btn" id="download-js-btn">⬇ Base JS</button>
+  </div>
+</div>
+<p class="topbar-note">Base HTML, CSS, and JS all get pasted into a new thinqi page once each — the JS handles navbar-height sync, the back-to-top button, and tooltips.</p>
+
+<nav class="tabbar" id="tabbar"></nav>
+
+<main id="panels"></main>
+
+<button type="button" class="tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-menu">Tools</button>
+<aside class="tools-menu" id="tools-menu" aria-label="Tools">
+  <div class="tools-head">
+    <span>Tools</span>
+    <button type="button" class="tools-close" id="tools-close" aria-label="Close tools">&times;</button>
+  </div>
+  <nav class="tools-tabbar" id="tools-tabbar"></nav>
+  <div class="tools-panels" id="tools-panels"></div>
+</aside>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script src="builder.js"></script>
+
+</body>
+</html>
