@@ -1,0 +1,19 @@
+<p>Picture a newspaper column with a photo tucked into the corner and the text flowing around it, wrapping underneath once it runs past the photo's height. That's exactly what this block does — except the "photo" can also be a video, or nothing at all.</p>
+<h4>The HTML</h4>
+<pre><code>&lt;div class="image-text-section"&gt;
+  &lt;img src="..." alt="..." /&gt;
+  &lt;div&gt;
+    (your content goes here)
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>Two things sit side by side inside the wrapper: the image (or video, or nothing), and a &lt;div&gt; holding whatever you wrote in the rich text editor. Whatever formatting you used — headings, bullet points, plain paragraphs — gets carried straight through into that div as real HTML.</p>
+<h4>The CSS trick — floating</h4>
+<p>The image is told to <code>float: right</code>, which is an old but still very useful CSS trick: it pulls the image out to the right-hand side and lets everything else (the text in the div) flow around it like water round a rock, wrapping underneath once the image ends.</p>
+<pre><code>.image-text-section::after {
+  content: "";
+  display: block;
+  clear: both;
+}</code></pre>
+<p>This last bit is called a "clearfix" — without it, a floated image can spill outside its own box and overlap whatever comes after it on the page. This rule tells the browser "stop, don't let anything float past this point" — it's invisible, but it's what keeps the layout tidy underneath.</p>
+<h4>The "Large" image size</h4>
+<p>Choosing "Large" adds a <code>media-large</code> class to the image, which swaps its size (250px max normally, 340px/45% when Large) — this is how the old "badge" image style (like the pledge certificate graphic) got folded into this same block instead of being a separate one.</p>

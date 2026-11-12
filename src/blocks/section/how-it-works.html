@@ -1,0 +1,16 @@
+<p>Think of this as starting a new chapter in a book — before you write anything, you give the chapter a title, add it to the contents page at the front, and set up a blank page for it to live on. That's exactly what this does, in one go.</p>
+<h4>The HTML — two pieces, two destinations</h4>
+<p>This is the one block that produces two separate outputs, because a table of contents entry and the actual section live in two different places on the page. The section wrapper:</p>
+<pre><code>&lt;section id="putting-into-practice"&gt;
+  &lt;h2&gt;Putting into practice&lt;/h2&gt;
+
+  (content goes here)
+
+&lt;/section&gt;</code></pre>
+<p>...and, separately, the matching table of contents entry:</p>
+<pre><code>&lt;li&gt;&lt;a href="#putting-into-practice" class="toc-link"&gt;Putting into practice&lt;/a&gt;&lt;/li&gt;</code></pre>
+<p>Notice the id (<code>putting-into-practice</code>) and the link's <code>href</code> are exactly the same text — that's what makes clicking the table of contents entry actually jump down to this section. Both get built from the same title you type, once, so there's no way for them to quietly drift apart the way hand-typed ids sometimes do.</p>
+<h4>Where the other blocks fit in</h4>
+<p>The comment in the middle — <code>&lt;!-- Content goes here --&gt;</code> — is where you paste whatever you build on the other tabs: an image-text-section, an accordion, at-a-glance, anything. One section can hold more than one block if the content calls for it; just paste them one after another in place of the comment.</p>
+<h4>Why there's no CSS output for this one</h4>
+<p>Unlike every other tab, this block doesn't need its own CSS — spacing, scroll behaviour and heading styles for sections are already part of the Base CSS every page starts with, so there's nothing extra to add.</p>

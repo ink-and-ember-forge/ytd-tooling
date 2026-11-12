@@ -1,0 +1,28 @@
+<p>Two styles live in this one block, chosen once for the whole row via "Card style":</p>
+<h4>Style 1 — Icon + description + button</h4>
+<p>Three (or however many) signposts side by side — an icon, a line explaining what's over there, and a button to actually go. The important bit: only the button is clickable, not the whole card — unlike resource-cards, where the entire card is one big link.</p>
+<pre><code>&lt;div class="nav-card"&gt;
+  &lt;div class="nav-card__icon"&gt;
+    &lt;img src="..." alt="" /&gt;
+  &lt;/div&gt;
+  &lt;p&gt;Learn what compassionate leadership means&lt;/p&gt;
+  &lt;a href="..." class="nav-card__button"&gt;Understand it&lt;/a&gt;
+&lt;/div&gt;</code></pre>
+<p>Notice the &lt;img&gt; and the &lt;a&gt; button are separate elements, not nested inside one another — that's the structural difference from resource-cards, where the whole card is one clickable link. Here, clicking the icon or the description text does nothing; only the green button is an actual link.</p>
+<h4>The circle behind the icon (style 1 only)</h4>
+<p>The navy circle isn't part of the icon image at all — it's plain CSS, a box made perfectly round with <code>border-radius: 50%</code>, coloured navy, with the icon centred inside it using flexbox. That's why the icon itself needs to be a <strong>transparent PNG</strong>: the navy circle is the actual background, showing through wherever the icon image is transparent. A white-icon-on-transparent-background PNG is what makes this look right — a PNG with its own solid background would show up as an ugly box over the circle instead of blending in.</p>
+<h4>New tab, off by default (style 1 only)</h4>
+<p>Unlike buttons and resource-cards (which default to opening in a new tab), this block defaults to the <strong>same</strong> tab — matching the reference design, where these are meant to feel like in-site navigation rather than links out to something external. Ticking the box adds <code>target="_blank"</code> and the little arrow icon, same as everywhere else.</p>
+<h4>Style 2 — Numbered heading + plain icon</h4>
+<p>No visible button — but the whole card is clickable, using the same trick as resource-cards.</p>
+<pre><code>&lt;div class="nav-card nav-card--numbered"&gt;
+  &lt;a href="..." class="stretched-link" aria-label="..."&gt;&lt;/a&gt;
+  &lt;h3&gt;&lt;span class="nav-card__number"&gt;1.&lt;/span&gt; Agree direction and ensure alignment and commitment&lt;/h3&gt;
+  &lt;div class="nav-card__icon-plain"&gt;
+    &lt;img src="..." alt="" /&gt;
+  &lt;/div&gt;
+&lt;/div&gt;</code></pre>
+<p>That empty <code>&lt;a class="stretched-link"&gt;</code> has no visible content of its own — <code>stretched-link</code> is what invisibly expands its clickable area to cover the entire card, the same way resource-cards works. The <code>aria-label</code> is filled in automatically from the heading text, so a screen reader still announces something meaningful even though there's no visible link text to read. Hovering the card lifts it slightly and adds a shadow (matching the lift effect used on resource cards and icon-toggle triggers), and the cursor switches to a pointer — both there specifically to signal "this whole box is clickable" even though nothing looks like a traditional button.</p>
+<p>Two more things worth knowing: the icon here has <strong>no navy circle behind it</strong> — these icons are already full-colour transparent PNGs with their own colours baked in, so no CSS circle is needed or wanted. And numbering is automatic (a checkbox, on by default) rather than typed — the number is based on each card's position, so reordering or removing a card never leaves you with "1, 3, 4" or a stale number stuck on the wrong card.</p>
+<h4>How the icon always sits at the bottom</h4>
+<p><code>margin-top: auto</code> on the icon's wrapper is a neat flexbox trick — inside a flex column, an automatic margin greedily eats up all the leftover space above it, pushing everything after it to the very bottom of the box. That's what keeps the icons lined up at the bottom of every card even when headings run to different lengths.</p>

@@ -1,0 +1,29 @@
+.release { margin-bottom: 2rem; }
+.release-title { font-size: 1.05rem; color: var(--navy); margin: 0 0 0.25rem; }
+.release-summary { color: var(--dark-grey); margin: 0 0 0.9rem; }
+.change-card { border: 1px solid #e4dfd4; border-radius: 8px; background: #fff; padding: 0.8rem 1rem; margin-bottom: 0.7rem; }
+.change-card-head { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.change-id { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.78rem; color: var(--dark-grey); }
+.change-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eef2f8; color: var(--navy); }
+.change-type--breaking { background: #fde8ef; color: #a3195b; }
+.change-type--action { background: #e6f4f1; color: #00695c; }
+.change-summary { margin: 0.5rem 0 0.25rem; }
+.change-meta { font-size: 0.78rem; color: var(--dark-grey); margin: 0 0 0.25rem; }
+.change-notes { font-size: 0.85rem; margin: 0; }
+.upgrade-row { display: flex; gap: 0.6rem; align-items: center; margin: 0.8rem 0; flex-wrap: wrap; }
+.upgrade-version { width: auto; min-width: 260px; }
+.upgrade-message { font-weight: 600; }
+.upgrade-group { margin: 1.2rem 0 0.5rem; color: var(--navy); font-size: 0.95rem; }
+.upgrade-banner { background: #fde8ef; color: #7a1040; padding: 0.7rem 0.9rem; border-radius: 6px; font-weight: 600; }
+.upgrade-warning { background: #fff4e5; color: #7a4a00; padding: 0.7rem 0.9rem; border-radius: 6px; }
+.changelog-check { margin: 12px 0; font-weight: 600; }
+.changelog-check--pass { color: #2e6b3a; }
+.changelog-check--fail { color: #9b1c1c; }
+.schema-doc { white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+.upgrade-field { margin: 0.6rem 0; }
+.upgrade-label { display: block; font-weight: 600; color: var(--navy); font-size: 0.9rem; margin-bottom: 0.25rem; }
+.upgrade-input { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; padding: 0.5rem; border: 1px solid #cfc8b8; border-radius: 6px; background: #fff; resize: vertical; }
+
+
+/* Inline "copy the new code" button on a change card (the base .copy-btn is positioned for output boxes). */
+.copy-btn--inline { position: static; margin-top: 0.6rem; }

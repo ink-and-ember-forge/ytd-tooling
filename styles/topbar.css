@@ -1,0 +1,97 @@
+.topbar {
+  position: sticky;
+  top: var(--thinqi-navbar-height, 95px);
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid #e4dfd4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  flex-wrap: wrap;
+}
+
+.topbar h1 {
+  font-size: 1.15rem;
+  color: var(--navy);
+  margin: 0;
+  white-space: nowrap;
+}
+
+.download-row {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.download-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--navy);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.download-btn:hover {
+  background: var(--navy);
+  color: #fff;
+}
+
+.topbar-note {
+  max-width: 900px;
+  margin: 0.6rem auto 0;
+  padding: 0 1.5rem;
+  font-size: 0.8rem;
+  color: var(--dark-grey);
+}
+
+.toc-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--dark-grey);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.toc-toggle input {
+  width: auto;
+  accent-color: var(--green);
+}
+
+.theme-toggle {
+  display: inline-flex;
+  border: 1px solid var(--navy);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.theme-toggle-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.9rem;
+  white-space: nowrap;
+}
+
+.theme-toggle-btn + .theme-toggle-btn {
+  border-left: 1px solid var(--navy);
+}
+
+.theme-toggle-btn[aria-pressed="true"] {
+  background: var(--navy);
+  color: #fff;
+}

@@ -1,0 +1,11 @@
+<p>The simplest block here — a row of "go do this" buttons, like "Sign the pledge" or "Download the guide".</p>
+<h4>The HTML</h4>
+<pre><code>&lt;div class="buttons"&gt;
+  &lt;a href="..." target="_blank" aria-label="Sign the pledge (opens in a new tab)"&gt;
+    Sign the pledge
+    &lt;i class="fa-solid fa-up-right-from-square"&gt;&lt;/i&gt;
+  &lt;/a&gt;
+&lt;/div&gt;</code></pre>
+<p>The <code>aria-label</code> is what a screen reader announces instead of the visible text — it's there so someone who can't see the little arrow icon still gets told "this link opens in a new tab" out loud. Both the icon and that spoken warning are tied to the same "open in a new tab" checkbox, so they always agree with each other; you'll never end up with the icon showing but the label not mentioning it, or vice versa.</p>
+<h4>The CSS</h4>
+<p><code>display: flex; flex-wrap: wrap;</code> on the row means the buttons sit side by side and automatically drop onto a new line if they run out of horizontal space — no extra work needed for that to happen responsively.</p>

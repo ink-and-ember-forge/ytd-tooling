@@ -4,7 +4,17 @@
 <meta charset="UTF-8" />
 <title>Gwella Page Builder</title>
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet" />
-<link href="builder.css" rel="stylesheet" />
+<!-- Builder UI styles, in cascade order. One file per area of the page. -->
+<link href="styles/tokens.css" rel="stylesheet" />
+<link href="styles/topbar.css" rel="stylesheet" />
+<link href="styles/tabs.css" rel="stylesheet" />
+<link href="styles/preview.css" rel="stylesheet" />
+<link href="styles/forms.css" rel="stylesheet" />
+<link href="styles/rich-text.css" rel="stylesheet" />
+<link href="styles/link-dialog.css" rel="stylesheet" />
+<link href="styles/guide.css" rel="stylesheet" />
+<link href="styles/changelog-upgrade.css" rel="stylesheet" />
+<link href="styles/tools.css" rel="stylesheet" />
 
 </head>
 <body>
@@ -43,7 +53,8 @@
 </aside>
 
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-<script src="builder.js"></script>
+<!-- Quill is a global (classic script) and must load before the module. -->
+<script type="module" src="src/main.js"></script>
 
 </body>
 </html>

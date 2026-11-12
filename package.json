@@ -1,0 +1,21 @@
+{
+  "name": "ytd-tooling",
+  "private": true,
+  "type": "module",
+  "description": "Gwella page builder, reference template and upgrade tooling (static site, no build step for the builder itself)",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "test": "node --test test/*.test.js",
+    "snapshot:update": "UPDATE_SNAPSHOTS=1 node --test test/golden.test.js",
+    "check": "npm test",
+    "release": "node scripts/release.js",
+    "new-block": "node scripts/new-block.js",
+    "serve": "npx --yes serve ."
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.15"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

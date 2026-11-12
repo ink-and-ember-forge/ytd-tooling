@@ -1,0 +1,23 @@
+.rich-text-editor {
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.rich-text-editor .ql-toolbar {
+  border-color: #d7d2c8;
+  border-radius: 6px 6px 0 0;
+  font-family: inherit;
+}
+
+.rich-text-editor .ql-container {
+  border-color: #d7d2c8;
+  border-radius: 0 0 6px 6px;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.rich-text-editor .ql-editor {
+  min-height: 160px;
+}
+

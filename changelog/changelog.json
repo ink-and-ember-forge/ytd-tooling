@@ -1,0 +1,259 @@
+{
+  "releases": [
+    {
+      "version": "3.1.1",
+      "date": "2026-11-12",
+      "summary": "Patch: the page container background is set explicitly to white, so the supplier's grey default no longer shows.",
+      "changes": [
+        {
+          "id": "CHG-3.1.1-01",
+          "type": "fix",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "The #page-container background is set to white. The supplier's default page background changed to grey, so pages built on the base CSS showed grey.",
+          "detect": {
+            "patterns": [
+              "id=\"page-container\""
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "background-color:\\s*white\\s*!important"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS. In the #page-container block, background-color must be white !important. Pages on 3.1.0 have it as transparent, which is the line to change."
+        }
+      ],
+      "deprecations": []
+    },
+    {
+      "version": "3.1.0",
+      "date": "2026-11-05",
+      "summary": "First set of updates on version 3.0.0: colour tokens, theme toggle, two-column block, mobile layout fixes, ordered list numbering, link rel handling, back-to-top icon, nav card and upgrade tooling.",
+      "changes": [
+        {
+          "id": "CHG-3.1.0-01",
+          "type": "breaking",
+          "scope": "base-css",
+          "blocks": [
+            "*"
+          ],
+          "summary": "Colour tokens renamed to the template's names: --navy, --green and --burgundy become --primary-colour; --tertiary-colour becomes --secondary-colour. The old --secondary-colour (navy) is removed, so the name --secondary-colour now means a different colour.",
+          "detect": {
+            "patterns": [
+              "--primary-colour",
+              "--secondary-colour",
+              "var\\(--(navy|green|burgundy|tertiary-colour)\\)"
+            ]
+          },
+          "action": "copy",
+          "notes": "Pages are self-consistent with their own pasted CSS, so they only break if base CSS and block CSS are mixed from different versions. Replace the base CSS and the CSS of every block on the page together. No deprecation aliases existed for this change, so it cannot be done gradually. Note that --secondary-colour changed meaning. It is not a detection pattern, because new pages use it too: check pages that set it by hand.",
+          "outdated": {
+            "present": [
+              "var\\(--(navy|green|burgundy|tertiary-colour)\\)"
+            ]
+          }
+        },
+        {
+          "id": "CHG-3.1.0-02",
+          "type": "visual",
+          "scope": "base-css",
+          "blocks": [
+            "*"
+          ],
+          "summary": "Ordered lists show their numbers again. The platform strips them from <ol> elements, so the base CSS now restores decimal numbering.",
+          "detect": {
+            "patterns": [
+              "<ol"
+            ]
+          },
+          "action": "copy",
+          "notes": "Only pages with ordered lists are affected.",
+          "outdated": {
+            "missing": [
+              "list-style-type:\\s*decimal"
+            ]
+          }
+        },
+        {
+          "id": "CHG-3.1.0-03",
+          "type": "fix",
+          "scope": "tool",
+          "blocks": [
+            "*"
+          ],
+          "summary": "Double quotes in headings, labels, URLs and alt text are now escaped. Previously they broke the generated attributes.",
+          "detect": {
+            "patterns": []
+          },
+          "action": "hand-edit",
+          "notes": "Only pages containing a double quote in an attribute value are affected. Replace each such quote with &quot;. Most pages have none.",
+          "outdated": {}
+        },
+        {
+          "id": "CHG-3.1.0-04",
+          "type": "behaviour",
+          "scope": "tool",
+          "blocks": [
+            "nav-cards",
+            "resource-cards",
+            "buttons",
+            "rich-text"
+          ],
+          "summary": "rel=\"noopener noreferrer\" is now added only to external links opening in a new tab. Internal links keep target=\"_blank\" alone.",
+          "detect": {
+            "patterns": []
+          },
+          "action": "none",
+          "notes": "Older pages still carry rel on internal links. That is harmless, so no page change is needed.",
+          "outdated": {}
+        },
+        {
+          "id": "CHG-3.1.0-05",
+          "type": "visual",
+          "scope": "base-html",
+          "blocks": [],
+          "summary": "The back-to-top button uses the Font Awesome circle-chevron-up icon, coloured with the primary colour, instead of an image.",
+          "detect": {
+            "patterns": [
+              "fa-circle-chevron-up",
+              "28516050-c6f7-4b2f-80ac-8bf8b962427a"
+            ]
+          },
+          "action": "copy",
+          "notes": "Requires Font Awesome 7, which the base HTML already loads.",
+          "outdated": {
+            "present": [
+              "28516050-c6f7-4b2f-80ac-8bf8b962427a"
+            ]
+          }
+        },
+        {
+          "id": "CHG-3.1.0-06",
+          "type": "visual",
+          "scope": "block:flex-section",
+          "blocks": [
+            "flex-section"
+          ],
+          "summary": "Flexible content: images are vertically centred on desktop, and on mobile they stack image-first, at 3:2, full width and centred.",
+          "detect": {
+            "patterns": [
+              "class=\"flex-section\""
+            ]
+          },
+          "action": "copy",
+          "notes": "Copy the block's CSS. The HTML is unchanged.",
+          "outdated": {
+            "present": [
+              "\\.flex-section\\s*\\{[^}]*align-items:\\s*flex-start"
+            ]
+          }
+        },
+        {
+          "id": "CHG-3.1.0-07",
+          "type": "visual",
+          "scope": "block:image-text-section",
+          "blocks": [
+            "image-text-section"
+          ],
+          "summary": "Image-text: on mobile, 3:2 images are full width, centred and show the top of the image.",
+          "detect": {
+            "patterns": [
+              "class=\"image-text-section\""
+            ]
+          },
+          "action": "copy",
+          "notes": "Copy the block's CSS. The HTML is unchanged.",
+          "outdated": {
+            "missing": [
+              "margin:\\s*0 auto 1rem"
+            ]
+          }
+        },
+        {
+          "id": "CHG-3.1.0-08",
+          "type": "additive",
+          "scope": "block:two-column",
+          "blocks": [
+            "two-column"
+          ],
+          "summary": "New two-column layout block, with media on the left by default and a flip option.",
+          "detect": {
+            "patterns": [
+              "class=\"two-column"
+            ]
+          },
+          "action": "none",
+          "notes": "Existing pages are unaffected. Pages can adopt the block when they are next edited.",
+          "outdated": {}
+        },
+        {
+          "id": "CHG-3.1.0-09",
+          "type": "visual",
+          "scope": "block:buttons",
+          "blocks": [
+            "buttons"
+          ],
+          "summary": "Buttons: fixed 250px width by default, centred and wrapping. Inside a two-column or flexible-content block they are full width and stacked.",
+          "detect": {
+            "patterns": [
+              "class=\"buttons\""
+            ]
+          },
+          "action": "copy",
+          "notes": "Copy the block's CSS. The HTML is unchanged.",
+          "outdated": {
+            "missing": [
+              "width:\\s*250px"
+            ]
+          }
+        },
+        {
+          "id": "CHG-3.1.0-10",
+          "type": "tool-only",
+          "scope": "tool",
+          "blocks": [
+            "nav-cards"
+          ],
+          "summary": "Nav cards: link URL and new-tab settings are shared between the two styles. Generate warns when a style has no usable cards.",
+          "detect": {
+            "patterns": []
+          },
+          "action": "none",
+          "notes": "Form change only. Output is unchanged.",
+          "outdated": {}
+        },
+        {
+          "id": "CHG-3.1.0-11",
+          "type": "additive",
+          "scope": "base-html",
+          "blocks": [],
+          "summary": "Base HTML, CSS and JS carry a version header, and the page container carries data-base-version.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "notes": "Pages without the marker are checked against the version chosen in the upgrade tab."
+        }
+      ],
+      "deprecations": []
+    },
+    {
+      "version": "3.0.0",
+      "date": "2026-11-05",
+      "origin": true,
+      "summary": "ORIGIN. The information-hub template page (leadershipportal.thinqi-uat.co.uk/templates/information-hub) as received. Its code is stored unmodified in baseline/3.0.0/. Every later change is recorded against this point.",
+      "changes": [],
+      "deprecations": []
+    }
+  ],
+  "origin": {
+    "version": "3.0.0",
+    "source": "https://leadershipportal.thinqi-uat.co.uk/templates/information-hub",
+    "baseline_dir": "baseline/3.0.0",
+    "status": "code received, stored in baseline/3.0.0"
+  }
+}

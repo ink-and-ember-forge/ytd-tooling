@@ -1,0 +1,15 @@
+<p>Think of this like the little summary box you sometimes see at the top of a recipe, before the actual steps — a quick "here's what you're getting" before the reader dives into the page.</p>
+<h4>The HTML</h4>
+<p>It's just a box with a heading and a list:</p>
+<pre><code>&lt;div id="at-a-glance"&gt;
+  &lt;h3 id="at-a-glance-heading"&gt;At a glance&lt;/h3&gt;
+  &lt;ul&gt;
+    &lt;li&gt;Your bullet point&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;</code></pre>
+<p>The heading text "At a glance" never changes, so the tool writes it for you — one less thing to type or accidentally misspell. Each &lt;li&gt; is one bullet; add or remove as many as you like in the form and the tool builds the list to match.</p>
+<h4>The CSS</h4>
+<p><code>id="at-a-glance"</code> is how the CSS finds this exact box to give it its grey background and the navy line underneath. <code>border-radius: 20px 20px 0 0</code> means "round the top-left and top-right corners, leave the bottom two square" — that's why it looks like a rounded card sitting on a flat base.</p>
+<p><code>li + li { margin-top: 10px; }</code> means "add a gap above any bullet that comes right after another bullet" — the <code>+</code> is CSS-speak for "the one right after". That's why the first bullet sits flush at the top, but every bullet after it gets a bit of breathing room.</p>
+<h4>On mobile</h4>
+<p><code>order: 2</code> is like a seating chart that only applies on small screens — it tells this box "you're in seat 2" so it lands in the right spot (title, then this box, then the table of contents, then everything else) even though the actual HTML order underneath never changes.</p>

@@ -1,0 +1,17 @@
+<p>Imagine a row of light switches: flick one, and a message board underneath lights up with that switch's message. Flick a different one, and the board swaps to the new message — only one message shows at a time.</p>
+<h4>The HTML</h4>
+<pre><code>&lt;div onclick="openAccordion(this, 'content-hosting-a-meeting')" ...&gt;
+  &lt;div class="data-icon-card"&gt;
+    &lt;img src="..." /&gt;
+    &lt;h5&gt;Hosting a meeting&lt;/h5&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;div class="content-display" id="content-hosting-a-meeting"&gt;
+  (content goes here)
+&lt;/div&gt;</code></pre>
+<p>Clicking an icon calls a function called <code>openAccordion</code>, telling it two things: "here's the icon I clicked" and "here's the id of the panel it should open" — like calling a friend and saying "open that box, and close whatever else is open." That id has to match the panel's own id exactly, which is why the tool generates both from the same label text automatically.</p>
+<h4>Why the JS is separate from the HTML/CSS</h4>
+<p>Unlike the accordion (which reuses Bootstrap's own built-in behaviour), this block needs its own small helper function — <code>openAccordion</code> — that isn't part of Bootstrap. It only needs to exist <strong>once</strong> on the page no matter how many icons you add, which is why it's pasted into the shared script area rather than repeated per icon — like one shared tool in a toolbox, not a new copy for every job.</p>
+<h4>The scroll behaviour</h4>
+<p>When a panel opens, the page automatically scrolls down to it (<code>scrollIntoView</code>) — with some extra breathing room added above it, deliberately, so the icon you just clicked stays visible on screen. That way you can find it again to close the panel without having to scroll back up.</p>

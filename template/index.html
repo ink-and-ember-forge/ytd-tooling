@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gwella Template</title>
+<link href="template.css" rel="stylesheet" />
+</head>
+<body>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+<!-- Bundle JS: Popper.js is required for tooltips -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<div id="page-container" class="gwella" data-base-version="3.1.1">
+  <nav aria-label="breadcrumb" id="breadcrumb-nav">
+    <ol id="breadcrumb-nav__list">
+      <li><a href="/">Home</a></li>
+      <li>Current page title</li>
+    </ol>
+  </nav>
+  <header class="header">
+    <img id="header-img"
+      src="https://leadershipportal.heiw.wales/api/storage/82431af2-3708-496c-a5f6-489cea6654ec/CL%20Hub%20-%20Hero.png"
+      alt="" />
+  </header>
+
+  <main class="main-grid standard-container">
+    <!-- Each ToC href must match a section id below -->
+    <nav id="table-of-contents">
+      <h3 id="table-of-contents-heading">Table of Contents</h3>
+      <ul>
+        <li><a href="#hero-text-header" class="toc-link">Hero Text</a></li>
+        <li><a href="#text-around-media" class="toc-link">Text around media</a></li>
+        <li><a href="#nav-cards" class="toc-link">Navigation Cards</a></li>
+        <li><a href="#accordions" class="toc-link">Accordions</a></li>
+        <li><a href="#icon-toggle" class="toc-link">Icon Box Toggle</a></li>
+        <li><a href="#resource-cards" class="toc-link">Resource Cards</a></li>
+        <li><a href="#buttons" class="toc-link">Buttons</a></li>
+        <li><a href="#flex-content" class="toc-link">Flexible Content</a></li>
+        <li><a href="#two-column" class="toc-link">Two-column layout</a></li>
+      </ul>
+    </nav>
+
+    <div class="content-column">
+
+      <h1 id="header-h1">Page title</h1>
+      <!-- At-a-glance must be a direct child of .content-column -->
+      <div id="at-a-glance">
+        <h3 id="at-a-glance-heading">At a glance</h3>
+        <ul>
+          <li>This page is a template page</li>
+          <li>All of the examples here have been built using the webpage builder</li>
+        </ul>
+      </div>
+
+      <div class="content-body">
+
+        <section id="hero-text-header">
+          <h2>Hero Text</h2>
+          <div class="hero-text">
+            <p class="hero-text__intro">This is hero text. I can have <strong>multiple </strong>sentences in this.</p>
+            <p>When I move to the next section, the text is smaller. Like magic.</p>
+          </div>
+        </section>
+
+        <section id="text-around-media">
+          <h2>Text around media</h2>
+          <div class="image-text-section">
+            <iframe src="https://www.youtube.com/embed/NSUm8ZhTBXY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <div>
+              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi porttitor libero vitae metus mattis, a luctus metus finibus. Vestibulum vehicula erat quis ligula accumsan, a eleifend tortor gravida. Duis placerat ultrices dolor, sit amet egestas ante lobortis id. Pellentesque tellus nisi, ullamcorper eget venenatis a, molestie eget nunc. Quisque in tristique mauris, et ultricies tortor. Proin consequat velit eu quam posuere mollis. Vivamus ac convallis ante. Sed venenatis velit id dolor sodales accumsan. Etiam et egestas metus, eleifend imperdiet sapien. Etiam aliquam cursus volutpat. Praesent non mauris porta, egestas nisl a, condimentum magna. Sed a nunc lectus.</p>
+              <p>Praesent ac vulputate justo, et dapibus nisl. In suscipit, metus eget maximus mollis, ante urna venenatis odio, sed posuere mi ante at quam. Duis eu elit bibendum, dignissim mauris at, porta mi. In hac habitasse platea dictumst. Nullam laoreet diam nunc, sed egestas enim facilisis ac. Vivamus interdum metus eget sem tempor, quis viverra odio tempor. Morbi eget mattis nulla, quis lacinia diam. Sed at lectus posuere, ullamcorper nisi quis, tristique ligula. Donec tristique dignissim rutrum. Quisque pellentesque lacinia sodales. Morbi pharetra rutrum massa vel fringilla.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="nav-cards">
+          <h2>Navigation Cards</h2>
+
+          <div class="nav-cards-grid">
+            <div class="nav-card">
+              <div class="nav-card__icon">
+                <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/d0f95939-208e-4493-a05b-d7c80dee943c/Icon%20-%20bulb.png" alt="" />
+              </div>
+              <p>Learn what compassionate leadership means and the principles behind it</p>
+              <a href="" class="nav-card__button">Understand it</a>
+            </div>
+          </div>
+
+          <h3>Navigation card variant</h3>
+
+          <div class="nav-cards-grid nav-cards-grid--numbered">
+            <div class="nav-card nav-card--numbered">
+              <a href="https://leadershipportal.thinqi-uat.co.uk/new-agree-direction" class="stretched-link" aria-label="Agree direction and ensure alignment and commitment"></a>
+              <h3><span class="nav-card__number">1.</span> Agree direction and ensure alignment and commitment</h3>
+              <div class="nav-card__icon-plain">
+                <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/81759fb4-a73a-46b4-a1a2-9929d6b34653/Principle%20-%20Agree%20direction.png" alt="" />
+              </div>
+            </div>
+            <div class="nav-card nav-card--numbered">
+              <a href="https://leadershipportal.thinqi-uat.co.uk/new-how-to-apply-CL#" class="stretched-link" aria-label="Create environments where collective leadership thrives"></a>
+              <h3><span class="nav-card__number">2.</span> Create environments where collective leadership thrives</h3>
+              <div class="nav-card__icon-plain">
+                <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/29253c27-6710-4003-b853-fd5a7199cf2d/Principle%20-%20Create%20environments.png" alt="" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="accordions">
+          <h2>Accordions</h2>
+          <div class="accordion" id="accordion-example-accordions">
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="heading-topic-one">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-topic-one" aria-expanded="false" aria-controls="collapse-topic-one">
+                  <span class="accordion-button-text">Topic one</span>
+                </button>
+              </h3>
+              <div id="collapse-topic-one" class="accordion-collapse collapse" aria-labelledby="heading-topic-one" data-bs-parent="#accordion-example-accordions">
+                <div class="accordion-body">
+                  <p>This is an example of accordion content.</p>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <h3 class="accordion-header" id="heading-idea-two">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-idea-two" aria-expanded="false" aria-controls="collapse-idea-two">
+                   <span class="accordion-button-text">Idea two</span>
+                </button>
+              </h3>
+              <div id="collapse-idea-two" class="accordion-collapse collapse" aria-labelledby="heading-idea-two" data-bs-parent="#accordion-example-accordions">
+                <div class="accordion-body">
+                  <p>This is yet another example of accordion content.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="icon-toggle">
+          <h2>Icon Box Toggle</h2>
+
+          <div class="data-icons-grid" id="data-icons-grid-jur2tq">
+            <div class="data-icon-trigger" onclick="openAccordion(this, 'content-meetings')" onkeydown="openAccordionKey(event, this, 'content-meetings')" tabindex="0">
+              <div class="data-icon-card">
+                <img src="https://leadershipportal.heiw.wales/api/storage/41a0e461-1d45-4cf7-8fd1-c75f41f5abfd/Icons%20-%20Ward%20Managers%20-%20Meeting.png" alt="" />
+                <h5>Meetings</h5>
+              </div>
+            </div>
+            <div class="data-icon-trigger" onclick="openAccordion(this, 'content-clinical')" onkeydown="openAccordionKey(event, this, 'content-clinical')" tabindex="0">
+              <div class="data-icon-card">
+                <img src="https://leadershipportal.heiw.wales/api/storage/69eb8311-be41-49d5-92c0-b93989904cbe/Icons%20-%20Ward%20Managers%20-%20Clinical.png" alt="" />
+                <h5>Clinical</h5>
+              </div>
+            </div>
+            <div class="data-icon-trigger" onclick="openAccordion(this, 'content-conversation')" onkeydown="openAccordionKey(event, this, 'content-conversation')" tabindex="0">
+              <div class="data-icon-card">
+                <img src="https://leadershipportal.heiw.wales/api/storage/0e1ec550-f06e-48c6-b043-49910d678ad1/Icons%20-%20Ward%20Managers%20-%20Conversation.png" alt="" />
+                <h5>Conversation</h5>
+              </div>
+            </div>
+          </div>
+          <div class="content-display" id="content-meetings">
+            <div class="content-display-inner-grid">
+              <div>
+                <p>An example of content</p>
+              </div>
+              <img src="https://leadershipportal.heiw.wales/api/storage/41a0e461-1d45-4cf7-8fd1-c75f41f5abfd/Icons%20-%20Ward%20Managers%20-%20Meeting.png" alt="" />
+            </div>
+          </div>
+          <div class="content-display" id="content-clinical">
+            <div class="content-display-inner-grid">
+              <div>
+                <p>A second example of content</p>
+              </div>
+              <img src="https://leadershipportal.heiw.wales/api/storage/69eb8311-be41-49d5-92c0-b93989904cbe/Icons%20-%20Ward%20Managers%20-%20Clinical.png" alt="" />
+            </div>
+          </div>
+          <div class="content-display" id="content-conversation">
+            <div class="content-display-inner-grid">
+              <div>
+                <p>Oh my word, a third example of content</p>
+              </div>
+              <img src="https://leadershipportal.heiw.wales/api/storage/0e1ec550-f06e-48c6-b043-49910d678ad1/Icons%20-%20Ward%20Managers%20-%20Conversation.png" alt="" />
+            </div>
+          </div>
+        </section>
+
+        <section id="resource-cards">
+          <h2>Resource Cards</h2>
+          <div class="cards-grid">
+            <div class="card">
+              <img src="https://leadershipportal.heiw.wales/api/storage/3680ab94-dc2f-476c-9367-1fb9b841eab1/Resources%20Card%20-%20Webpages.png" alt="" class="resource-card__img" />
+              <div>
+                <a href="https://www.nhsemployers.org/toolkits/people-performance-management-toolkit" class="stretched-link" target="_blank" rel="noopener noreferrer">
+                  <strong>People Performance Management Toolkit - Make time to talk about all aspects of performance <i class="fa-solid fa-up-right-from-square"></i></strong>
+                </a>
+                <p><strong>Website</strong></p>
+              </div>
+            </div>
+            <div class="card">
+              <img src="https://leadershipportal.heiw.wales/api/storage/5e4804e1-e7ea-4d9e-a95a-cac98a3ae194/Resources%20Card%20-%20Articles.png" alt="" class="resource-card__img" />
+              <div>
+                <a href="https://heiw.nhs.wales/updates/news/motivational-interviewing-to-enhance-patient-centred-care-across-wales/" class="stretched-link" target="_blank" rel="noopener noreferrer">
+                  <strong>Motivational Interviewing to enhance patient-centred care across Wales <i class="fa-solid fa-up-right-from-square"></i></strong>
+                </a>
+                <p><strong>Article</strong><span>5 Minutes</span></p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="buttons">
+          <h2>Buttons</h2>
+          <div class="buttons">
+            <a href="" target="_blank" rel="noopener noreferrer" aria-label="Apply now (opens in a new tab)">
+              Apply now
+              <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+            </a>
+            <a href="" target="_blank" rel="noopener noreferrer" aria-label="Don't apply now (opens in a new tab)">
+              Don't apply now
+              <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+            </a>
+          </div>
+        </section>
+
+        <section id="flex-content">
+          <h2>Flexible Content</h2>
+          <div class="flex-section">
+            <div class="text-content">
+              <h3>This is a heading</h3>
+              <p>This is normal text to see how it looks. And look, how cool, you can add <a href="https://nhswalesleadershipportal.heiw.wales/" rel="noopener noreferrer" target="_blank">links <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i></a> as well!</p>
+            </div>
+            <div class="video-content">
+              <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/d7385272-ff37-4560-b488-7e8b8ea4e458/CL%20Hub%20-%20Square.png" alt="" />
+            </div>
+          </div>
+        </section>
+
+        <section id="two-column">
+          <h2>Two-column layout</h2>
+          <div class="two-column">
+            <div class="two-column__media">
+              <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/d7385272-ff37-4560-b488-7e8b8ea4e458/CL%20Hub%20-%20Square.png" alt="" />
+            </div>
+            <div class="two-column__content">
+              <h3>This is a heading</h3><p>Media sits on the left by default. Use the layout option in the builder to flip it, and on mobile the media always comes first.</p>
+            </div>
+          </div>
+        </section>
+        <p class="timestamp">
+          Webpage last updated on [date].
+        </p>
+
+      </div>
+    </div>
+  </main>
+  <button class="back-to-top" aria-label="Back to top">
+    <i class="fa-solid fa-circle-chevron-up" aria-hidden="true"></i>
+    <span>Back to Top</span>
+  </button>
+
+</div>
+
+<script src="template.js"></script>
+</body>
+</html>
