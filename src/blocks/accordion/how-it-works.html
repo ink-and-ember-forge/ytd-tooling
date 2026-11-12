@@ -1,14 +1,38 @@
-<p>Think of a filing cabinet: each drawer has a label, you click the label to slide it open, and — because this is a well-behaved cabinet — opening one drawer closes whichever one was already open.</p>
-<h4>The HTML — and why the ids matter so much</h4>
-<pre><code>&lt;button data-bs-target="#collapse-digital-literacy" ...&gt;
-  Digital literacy
-&lt;/button&gt;
+<div class="guide-tldr">
+  <strong>In 30 seconds</strong>
+  <p>An accordion is a list of titles that each hide a panel. Click a title and its panel slides open; open another and the first one closes.</p>
+  <p>It all hinges on one trick: every title and its panel share a <strong>name</strong>. The builder writes both names for you, from the same words, so they can never drift apart.</p>
+</div>
 
-&lt;div id="collapse-digital-literacy" ...&gt;
-  (content goes here)
-&lt;/div&gt;</code></pre>
-<p>The button doesn't know what "digital literacy" means — it just knows to look for an element whose id exactly matches its <code>data-bs-target</code>, like dialling a phone number. If those two ids don't match <em>exactly</em> — a typo, a missing letter — clicking the button does nothing at all, with no error message telling you why. That's precisely why this tool generates both ids together automatically from your item's title, so they can never drift apart.</p>
-<h4>How "only one open at a time" works</h4>
-<p>Every panel also carries <code>data-bs-parent="#accordion-..."</code>, pointing back at the outer wrapper. This is Bootstrap's own JavaScript (already loaded by Base HTML) reading that attribute as an instruction: "when I open, ask every other panel sharing this same parent to close." That's the whole mechanism — no custom code needed for this block.</p>
+<div class="guide-try">
+  <strong>See it on your own accordion.</strong> Open the <em>Explain</em> tab beside the preview, then hover <code>data-bs-target</code> in the code and watch the matching names light up.
+</div>
+
+<h4>The idea: a button that knows its panel by name</h4>
+<p>Think of a filing cabinet: each drawer has a label, you click the label to slide the drawer open, and, because this is a well-behaved cabinet, opening one drawer closes whichever one was already open.</p>
+<p>The button doesn't know what "Digital literacy" means. It only knows a name to look for, like dialling a phone number:</p>
+<pre><code>&lt;button data-bs-target="#collapse-digital-literacy" ...&gt;Digital literacy&lt;/button&gt;
+
+&lt;div id="collapse-digital-literacy" ...&gt;(your content goes here)&lt;/div&gt;</code></pre>
+<p>The <code>#</code> means "the element with this id". Bootstrap's script (already loaded by the base HTML) finds the panel with that id and opens it.</p>
+
+<h4>What goes wrong when the names don't match</h4>
+<p>If the two names differ by even one letter, clicking the title does <strong>nothing at all</strong>, and there is no error message to tell you why. This is the most common way a hand-edited accordion breaks. It is why the builder writes both names from the same title: there is nothing to mistype.</p>
+
+<h4>"Only one open at a time"</h4>
+<p>Every panel also carries <code>data-bs-parent="#accordion-…"</code>, naming the accordion it belongs to. Bootstrap reads that as an instruction: "when I open, ask every other panel in this group to close." No custom code is needed.</p>
+
 <h4>The "Group name" field</h4>
-<p>This just gives the outer wrapper's id something readable to be built from (e.g. "digital-literacy-resources" instead of a random string) — purely for humans reading the pasted code later, it doesn't change how anything behaves.</p>
+<p>It only gives the whole accordion a readable name (for example <code>accordion-digital-literacy-resources</code> instead of a random one). It is for the humans who read the pasted code later and changes nothing about how it behaves.</p>
+
+<details>
+  <summary>Deep dive: what happens when you click a title</summary>
+  <ol>
+    <li>You click the <code>button</code>. Because it has <code>data-bs-toggle="collapse"</code>, Bootstrap's script takes over.</li>
+    <li>It reads <code>data-bs-target</code> and looks up the element with that <code>id</code>.</li>
+    <li>It adds the class <code>show</code> to the panel (the <code>collapse</code> class hides it otherwise) and removes <code>collapsed</code> from the button, which is what turns the arrow.</li>
+    <li>It flips <code>aria-expanded</code> to <code>"true"</code>, so screen readers announce that the panel is open.</li>
+    <li>It reads <code>data-bs-parent</code>, finds the other panels in that group, and closes them the same way.</li>
+  </ol>
+  <p>Our CSS only changes how this <em>looks</em> (the arrow, the underline, no borders). The behaviour is entirely Bootstrap's.</p>
+</details>

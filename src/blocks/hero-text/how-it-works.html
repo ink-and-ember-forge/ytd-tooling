@@ -1,6 +1,6 @@
 <p>The bit of writing that greets the reader right after the summary box — one editor, write it exactly like any other rich text field. The only special thing about this block is what happens automatically to whatever paragraph comes first.</p>
 <h4>Write normally — the sizing takes care of itself</h4>
-<p>You don't tell the tool which paragraph is the "opening" one, and there's no separate box for it. When you hit Generate, the tool looks at your finished content and finds the very first paragraph, wherever it is, and marks it:</p>
+<p>You don't tell the tool which paragraph is the "opening" one, and there's no separate box for it. As you type, the tool looks at your finished content and finds the very first paragraph, wherever it is, and marks it:</p>
 <pre><code>&lt;p class="hero-text__intro"&gt;Your opening sentence.&lt;/p&gt;
 &lt;p&gt;Everything else, at normal size.&lt;/p&gt;</code></pre>
 <p>The size (1.25em, a quarter bigger than normal text) lives on that <code>hero-text__intro</code> class in the CSS, not on the text itself — so it's <strong>always</strong> applied to whatever the first paragraph turns out to be, structurally guaranteed, rather than depending on someone remembering to size it themselves every time they write one of these.</p>

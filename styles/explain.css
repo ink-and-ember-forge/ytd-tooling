@@ -1,0 +1,156 @@
+/* The Explain tab (annotated code + explanation card), the X-ray button, and the guide's
+   "Explore it on my block" footer. See src/ui/explain-panel.js. */
+
+/* More room for the Explain tab: the code card takes most of the side pane while it is open. */
+.panel-side.is-explaining .preview-card { flex: 1 1 0; min-height: 200px; }
+.panel-side.is-explaining .output-card { flex: 2 1 0; }
+
+.output-body--explain { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.explain-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* ---- the annotated code ---------------------------------------------------- */
+.explain-code {
+  flex: 1;
+  min-height: 80px;
+  overflow: auto;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  background: #f4f2ed;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #222;
+}
+.explain-code [data-el] { cursor: pointer; }
+.tk-punct { color: #6b6b6b; }
+.tk-tag { color: #1f4f9a; font-weight: 600; }
+.tk-attr { color: #8a4b00; }
+.tk-eq { color: #6b6b6b; }
+.tk-val { color: #0b6b3a; }
+.tk-comment { color: #8a8a8a; font-style: italic; }
+
+/* the part the pointer is on: whole range softly, its tags strongly */
+.explain-code .is-range { background: rgba(0, 145, 127, 0.1); }
+.explain-code .is-tag { background: rgba(0, 145, 127, 0.3); border-radius: 3px; }
+/* identical values (ids that must match): bright, so they cannot be missed */
+.explain-code .is-same { background: #ffd54a; color: #000; outline: 1px solid #c99700; border-radius: 3px; }
+.explain-code .is-attr { text-decoration: underline wavy #8a4b00; text-underline-offset: 3px; }
+.explain-code .tk-attr:hover, .explain-code .tk-val:hover { text-decoration: underline; }
+
+/* numbered badges: the same numbers appear on the X-ray chips in the preview */
+.tk-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35em;
+  height: 1.35em;
+  padding: 0 0.3em;
+  margin-right: 0.4em;
+  border-radius: 999px;
+  background: var(--green);
+  color: #fff;
+  font: 700 0.68rem/1 "Noto Sans", sans-serif;
+  vertical-align: 0.05em;
+  user-select: none;
+}
+
+/* ---- the explanation card ------------------------------------------------------ */
+.explain-card {
+  flex: none;
+  max-height: 46%;
+  overflow-y: auto;
+  padding: 0.65rem 0.8rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: 6px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.explain-card p { margin: 0 0 0.5rem; }
+.explain-card code, .explain-intro code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.8rem;
+  background: #f4f2ed;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+}
+.explain-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap; }
+.explain-label { font-size: 0.95rem; color: var(--navy); }
+.explain-tag { color: #1f4f9a; background: #eef3fb !important; }
+.explain-what { font-weight: 500; }
+.explain-more { margin: 0.25rem 0; }
+.explain-more summary { cursor: pointer; font-weight: 700; color: var(--navy); font-size: 0.82rem; }
+.explain-more p { margin: 0.3rem 0 0.2rem 0.9rem; }
+
+.explain-attr {
+  margin: 0.4rem 0;
+  padding: 0.4rem 0.6rem;
+  background: #fff9e0;
+  border-left: 3px solid #ffd54a;
+  border-radius: 0 4px 4px 0;
+  font-size: 0.84rem;
+}
+.explain-same { margin-top: 0.3rem; font-weight: 700; color: #7a4a00; }
+
+.explain-intro { color: var(--dark-grey); }
+.explain-legend { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+.legend-item {
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem 0.2rem 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 0.8rem;
+  color: #1a1a1a;
+}
+.legend-item .tk-badge { margin: 0; }
+.legend-item:hover { background: #e6f4f1; border-color: var(--green); }
+.explain-unpin {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--navy);
+  padding: 0.2rem 0.6rem;
+  margin-top: 0.3rem;
+}
+
+/* ---- the X-ray button on the preview ------------------------------------------------- */
+.xray-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid var(--green);
+  background: #fff;
+  color: #006b5c;
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+}
+.xray-btn:hover { background: #e6f4f1; }
+.xray-btn[aria-pressed="true"] { background: var(--green); color: #fff; }
+
+/* ---- the guide lightbox's footer --------------------------------------------------------- */
+.guide-foot {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.25rem;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+.guide-foot p { margin: 0; color: var(--dark-grey); font-size: 0.9rem; }

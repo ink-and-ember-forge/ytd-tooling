@@ -1,19 +1,40 @@
-<p>Picture a newspaper column with a photo tucked into the corner and the text flowing around it, wrapping underneath once it runs past the photo's height. That's exactly what this block does — except the "photo" can also be a video, or nothing at all.</p>
-<h4>The HTML</h4>
+<div class="guide-tldr">
+  <strong>In 30 seconds</strong>
+  <p>Text that wraps around a picture or video, like a photo in a newspaper column. The media is told to <strong>float</strong> to one side, and the text flows around it, then underneath once it passes the bottom of the picture.</p>
+  <p>The media is optional: with none, you just get your text.</p>
+</div>
+
+<div class="guide-try">
+  <strong>See it on your own block.</strong> Open the <em>Explain</em> tab beside the preview, turn on X-ray, and hover the image: the code line for the picture lights up and tells you about <code>float</code>.
+</div>
+
+<h4>The idea: float</h4>
+<p>Picture a newspaper column with a photo tucked into the corner and the text flowing around it, wrapping underneath once it runs past the photo's height. That is exactly what this block does.</p>
 <pre><code>&lt;div class="image-text-section"&gt;
   &lt;img src="..." alt="..." /&gt;
   &lt;div&gt;
     (your content goes here)
   &lt;/div&gt;
 &lt;/div&gt;</code></pre>
-<p>Two things sit side by side inside the wrapper: the image (or video, or nothing), and a &lt;div&gt; holding whatever you wrote in the rich text editor. Whatever formatting you used — headings, bullet points, plain paragraphs — gets carried straight through into that div as real HTML.</p>
-<h4>The CSS trick — floating</h4>
-<p>The image is told to <code>float: right</code>, which is an old but still very useful CSS trick: it pulls the image out to the right-hand side and lets everything else (the text in the div) flow around it like water round a rock, wrapping underneath once the image ends.</p>
-<pre><code>.image-text-section::after {
+<p>Two things sit inside the wrapper: the media, then a <code>div</code> holding whatever you wrote. Whatever you used (headings, bullet points, plain paragraphs) is carried through as real HTML.</p>
+
+<h4>Why the order matters</h4>
+<p>The media comes <strong>first</strong> in the code. A floated picture can only sit beside text that comes <em>after</em> it, so putting it first is what lets the text wrap round it. Move it below the text and it would drop underneath instead.</p>
+
+<h4>The "Large" size</h4>
+<p>Choosing "Large" adds a class, <code>media-large</code>, which makes the picture bigger (340px rather than 275px). That is how the old "badge" style, such as the pledge certificate graphic, was folded into this block.</p>
+
+<h4>On phones</h4>
+<p>There is not room to put things side by side on a small screen. The CSS switches the float off and shows the picture full width above the text instead.</p>
+
+<details>
+  <summary>Deep dive: floats and the "clearfix"</summary>
+  <p><code>float: right</code> is an old but very useful CSS trick. It pulls the image out to the right-hand side and lets the text in the neighbouring <code>div</code> flow around it like water round a rock.</p>
+  <p>The catch: a floated element no longer counts towards its parent's height, so it can spill out of its own box and overlap whatever comes next. This rule stops that:</p>
+  <pre><code>.image-text-section::after {
   content: "";
   display: block;
   clear: both;
 }</code></pre>
-<p>This last bit is called a "clearfix" — without it, a floated image can spill outside its own box and overlap whatever comes after it on the page. This rule tells the browser "stop, don't let anything float past this point" — it's invisible, but it's what keeps the layout tidy underneath.</p>
-<h4>The "Large" image size</h4>
-<p>Choosing "Large" adds a <code>media-large</code> class to the image, which swaps its size (250px max normally, 340px/45% when Large) — this is how the old "badge" image style (like the pledge certificate graphic) got folded into this same block instead of being a separate one.</p>
+  <p>It adds an invisible block at the end of the wrapper that refuses to sit beside any float. That forces the wrapper to grow tall enough to contain the picture. It is called a "clearfix", and you will see it in plenty of CSS.</p>
+</details>
