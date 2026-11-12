@@ -1,6 +1,7 @@
 // Rich-text links: a Quill link format that remembers 'opens in a new tab', plus the
 // shared dialog used to insert one. Needs the Quill global (loaded in index.html).
 import { linkIsExternal } from "../lib/links.js";
+import { toast } from "./toast.js";
 
 const QuillLink = Quill.import("formats/link");
 class TargetLink extends QuillLink {
@@ -59,7 +60,7 @@ let linkDialogActiveRange = null;
 export function openLinkDialog(quill) {
   const range = quill.getSelection();
   if (!range || range.length === 0) {
-    alert("Select some text first, then click the link button to turn it into a link.");
+    toast("Select some text first, then click the link button to turn it into a link.");
     return;
   }
   linkDialogActiveQuill = quill;

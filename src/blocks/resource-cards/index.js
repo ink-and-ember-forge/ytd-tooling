@@ -5,6 +5,9 @@ import { newTabAttrs } from "../../lib/links.js";
 export default {
   id: "resource-cards",
   label: "Resource cards",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Links",
+  tabLabel: "Resource cards",
   description: "A grid of linked resource cards — image, title, type, and an optional duration/length. Generates just the card grid; wrap it in your own <section> with a heading, same as every other block.",
   fields: [
     { type: "resource-card-items", id: "cards", label: "Cards", defaultCount: 2 }

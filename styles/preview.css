@@ -1,27 +1,86 @@
-.panel-desc {
-  color: var(--dark-grey);
-  font-size: 0.95rem;
-  margin: 0 0 1.25rem;
-  max-width: 65ch;
+/* Side panel cards: live preview and generated code. */
+.preview-card,
+.output-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.8rem 1rem 1rem;
 }
 
-.preview-wrap {
-  margin-bottom: 1.5rem;
+.card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
 }
 
-.preview-wrap h3 {
+.card-head h3 {
   font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   color: var(--dark-grey);
-  margin: 0 0 0.5rem;
+  margin: 0;
 }
 
-.live-preview {
-  width: 100%;
-  min-height: 220px;
+.device-toggle { display: inline-flex; border: 1px solid var(--navy); border-radius: 6px; overflow: hidden; }
+.device-toggle button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.65rem;
+}
+.device-toggle button + button { border-left: 1px solid var(--navy); }
+.device-toggle button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+
+/* The iframe is laid out at the device width, then scaled to fit (see preview.js). */
+.preview-stage {
+  position: relative;
+  height: 380px;
+  overflow: hidden;
   border: 1px solid #d7d2c8;
   border-radius: 8px;
   background: #fff;
 }
 
+.live-preview {
+  position: absolute;
+  top: 0;
+  border: 0;
+  background: #fff;
+  transform-origin: top left;
+}
+
+/* Code tabs */
+.output-tabs { display: flex; gap: 0.25rem; margin-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
+.output-tab {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--dark-grey);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.7rem;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+.output-tab.active { color: var(--navy); border-bottom-color: var(--green); }
+
+.output-heading { margin: 0 0 0.4rem; font-size: 0.82rem; font-weight: 600; color: var(--dark-grey); }
+.output-wrap { position: relative; }
+.output-warning {
+  margin: 0 0 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 6px;
+  background: #fff4e5;
+  color: #7a4a00;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.live-preview, .output-wrap textarea { max-width: none; }

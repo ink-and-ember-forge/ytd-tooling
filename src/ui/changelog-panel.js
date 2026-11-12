@@ -1,12 +1,13 @@
-// Tools drawer, "Changelog" tab: release notes plus the schema behind them.
+// "What's changed" view: release notes plus the schema behind them.
 import { makeEl } from "../lib/dom.js";
 import { changeCard, ACTION_LABELS } from "./change-card.js";
 import { CHANGELOG, SCHEMA_DOC, BUILDER_VERSION } from "../changelog/index.js";
 import { validateChangelog } from "../changelog/checker.js";
 
 export function buildChangelogPanel() {
-  const panel = makeEl("div", "panel");
-  panel.id = "panel-changelog";
+  const panel = makeEl("div", "view");
+  panel.id = "view-changelog";
+  panel.appendChild(makeEl("h2", "view-title", "What's changed"));
   panel.appendChild(makeEl("p", "panel-desc",
     "Release notes for the page builder, newest first. The current version is " + BUILDER_VERSION + "."));
   CHANGELOG.releases.forEach(rel => {

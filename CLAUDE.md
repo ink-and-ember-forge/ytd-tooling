@@ -5,4 +5,5 @@
 - Template CSS/JS (`template/template.css`, `template.js`) are generated: edit `src/`, then `npm run build`. Never edit them directly.
 - Base/block code changes need a changelog release and `npm run release` (see docs/RELEASING.md).
 - The builder has no bundler: `src/` is loaded by the browser as ES modules. Keep `generateHTML` functions pure (no DOM) so they run in Node tests.
+- UI changes: run `npm run test:e2e` (needs Playwright). It drives the real builder in a browser; add a check there for any new interaction.
 - The sandbox may block the CDNs (Quill, Bootstrap); serve Quill locally when browser-testing.

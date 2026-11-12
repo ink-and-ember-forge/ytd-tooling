@@ -14,43 +14,57 @@
 <link href="styles/link-dialog.css" rel="stylesheet" />
 <link href="styles/guide.css" rel="stylesheet" />
 <link href="styles/changelog-upgrade.css" rel="stylesheet" />
-<link href="styles/tools.css" rel="stylesheet" />
+<link href="styles/toast.css" rel="stylesheet" />
 
 </head>
 <body>
 
-<div class="topbar">
-  <h1>Gwella Page Builder</h1>
-  <div class="theme-toggle" role="group" aria-label="Preview theme">
-    <button type="button" class="theme-toggle-btn" data-theme="gwella" aria-pressed="true">Gwella</button>
-    <button type="button" class="theme-toggle-btn" data-theme="ytydysgu" aria-pressed="false">Y Tŷ Dysgu</button>
-  </div>
-  <div class="download-row">
-    <button class="download-btn" id="open-template-btn">Open template ↗</button>
-    <label class="toc-toggle">
-      <input type="checkbox" id="include-toc-toggle" checked />
-      ToC included
-    </label>
-    <button class="download-btn" id="download-html-btn">⬇ Base HTML</button>
-    <button class="download-btn" id="download-css-btn">⬇ Base CSS</button>
-    <button class="download-btn" id="download-js-btn">⬇ Base JS</button>
-  </div>
-</div>
-<p class="topbar-note">Base HTML, CSS, and JS all get pasted into a new thinqi page once each — the JS handles navbar-height sync, the back-to-top button, and tooltips.</p>
+<a class="skip-link" href="#main">Skip to content</a>
 
-<nav class="tabbar" id="tabbar"></nav>
-
-<main id="panels"></main>
-
-<button type="button" class="tools-toggle" id="tools-toggle" aria-expanded="false" aria-controls="tools-menu">Tools</button>
-<aside class="tools-menu" id="tools-menu" aria-label="Tools">
-  <div class="tools-head">
-    <span>Tools</span>
-    <button type="button" class="tools-close" id="tools-close" aria-label="Close tools">&times;</button>
+<header class="topbar" id="topbar">
+  <div class="topbar-row">
+    <h1>Gwella Page Builder</h1>
+    <nav class="modes" id="modes" role="tablist" aria-label="Builder sections">
+      <button type="button" class="mode-btn" data-view="build">Build blocks</button>
+      <button type="button" class="mode-btn" data-view="upgrade">Upgrade a page</button>
+      <button type="button" class="mode-btn" data-view="changelog">What's changed</button>
+    </nav>
+    <div class="topbar-actions">
+      <div class="theme-toggle" role="group" aria-label="Preview theme">
+        <button type="button" class="theme-toggle-btn" data-theme="gwella" aria-pressed="true">Gwella</button>
+        <button type="button" class="theme-toggle-btn" data-theme="ytydysgu" aria-pressed="false">Y Tŷ Dysgu</button>
+      </div>
+      <details class="menu" id="menu-base">
+        <summary>Base code</summary>
+        <div class="menu-panel">
+          <p class="menu-note">Base HTML, CSS and JS are pasted into a new thinqi page once each. The JS handles navbar-height sync, the back-to-top button and tooltips.</p>
+          <label class="toc-toggle"><input type="checkbox" id="include-toc-toggle" checked /> Include the table of contents</label>
+          <button type="button" class="menu-item" id="download-html-btn">⬇ Base HTML</button>
+          <button type="button" class="menu-item" id="download-css-btn">⬇ Base CSS</button>
+          <button type="button" class="menu-item" id="download-js-btn">⬇ Base JS</button>
+        </div>
+      </details>
+      <details class="menu" id="menu-project">
+        <summary>Project</summary>
+        <div class="menu-panel">
+          <p class="menu-note" id="save-status">Your work is saved automatically in this browser.</p>
+          <button type="button" class="menu-item" id="save-project-btn">⬇ Save project to a file</button>
+          <button type="button" class="menu-item" id="load-project-btn">⬆ Load project from a file</button>
+          <input type="file" id="load-project-input" accept="application/json,.json" hidden />
+          <button type="button" class="menu-item menu-item--danger" id="reset-all-btn">Reset everything</button>
+        </div>
+      </details>
+      <button type="button" class="download-btn" id="open-template-btn">Open template ↗</button>
+    </div>
   </div>
-  <nav class="tools-tabbar" id="tools-tabbar"></nav>
-  <div class="tools-panels" id="tools-panels"></div>
-</aside>
+</header>
+
+<main id="main">
+  <section class="view" id="view-build">
+    <nav class="tabbar" id="tabbar" role="tablist" aria-label="Blocks"></nav>
+    <div id="panels"></div>
+  </section>
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <!-- Quill is a global (classic script) and must load before the module. -->

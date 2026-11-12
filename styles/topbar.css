@@ -1,30 +1,55 @@
 .topbar {
   position: sticky;
-  top: var(--thinqi-navbar-height, 95px);
-  z-index: 10;
+  top: var(--thinqi-navbar-height, 0px);
+  z-index: 20;
   background: #fff;
-  border-bottom: 1px solid #e4dfd4;
+  border-bottom: 1px solid var(--line);
+}
+
+.topbar-row {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0.65rem 1.5rem;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
-  padding: 0.9rem 1.5rem;
   flex-wrap: wrap;
 }
 
 .topbar h1 {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   color: var(--navy);
   margin: 0;
   white-space: nowrap;
 }
 
-.download-row {
+/* Build / Upgrade / What's changed */
+.modes { display: flex; gap: 0.25rem; }
+
+.mode-btn {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--dark-grey);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+}
+.mode-btn:hover { background: var(--light-grey); }
+.mode-btn.active { background: var(--navy); color: #fff; }
+
+.topbar-actions {
+  margin-left: auto;
   display: flex;
+  align-items: center;
   gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
-.download-btn {
+.download-btn,
+.menu > summary {
   font-family: inherit;
   cursor: pointer;
   border: 1px solid var(--navy);
@@ -32,41 +57,67 @@
   background: #fff;
   color: var(--navy);
   font-weight: 600;
-  padding: 0.5rem 0.9rem;
+  padding: 0.45rem 0.85rem;
   font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   white-space: nowrap;
+  list-style: none;
+}
+.menu > summary::-webkit-details-marker { display: none; }
+.menu > summary::after { content: "▾"; font-size: 0.75rem; }
+.menu[open] > summary::after { content: "▴"; }
+.download-btn:hover,
+.menu > summary:hover,
+.menu[open] > summary { background: var(--navy); color: #fff; }
+
+.menu { position: relative; }
+
+.menu-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: 300px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.download-btn:hover {
-  background: var(--navy);
-  color: #fff;
-}
+.menu-note { margin: 0 0 0.25rem; font-size: 0.8rem; color: var(--dark-grey); }
 
-.topbar-note {
-  max-width: 900px;
-  margin: 0.6rem auto 0;
-  padding: 0 1.5rem;
-  font-size: 0.8rem;
-  color: var(--dark-grey);
+.menu-item {
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.7rem;
 }
+.menu-item:hover { background: var(--light-grey); }
+.menu-item--danger { color: var(--burgundy); }
 
 .toc-toggle {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.82rem;
+  gap: 0.45rem;
+  font-size: 0.85rem;
   color: var(--dark-grey);
   cursor: pointer;
-  white-space: nowrap;
+  font-weight: 500;
+  margin: 0 0 0.25rem;
 }
-
-.toc-toggle input {
-  width: auto;
-  accent-color: var(--green);
-}
+.toc-toggle input { width: auto; accent-color: var(--green); }
 
 .theme-toggle {
   display: inline-flex;
@@ -83,15 +134,16 @@
   color: var(--navy);
   font-weight: 600;
   font-size: 0.85rem;
-  padding: 0.5rem 0.9rem;
+  padding: 0.45rem 0.85rem;
   white-space: nowrap;
 }
+.theme-toggle-btn + .theme-toggle-btn { border-left: 1px solid var(--navy); }
+.theme-toggle-btn[aria-pressed="true"] { background: var(--navy); color: #fff; }
 
-.theme-toggle-btn + .theme-toggle-btn {
-  border-left: 1px solid var(--navy);
-}
-
-.theme-toggle-btn[aria-pressed="true"] {
-  background: var(--navy);
-  color: #fff;
+@media (max-width: 760px) {
+  .topbar-row { padding: 0.6rem 1rem; gap: 0.6rem; }
+  .topbar-actions { margin-left: 0; width: 100%; }
+  .modes { order: 3; width: 100%; overflow-x: auto; }
+  .mode-btn { white-space: nowrap; flex: none; }
+  .menu-panel { right: auto; left: 0; max-width: calc(100vw - 2rem); }
 }

@@ -1,25 +1,17 @@
-// The builder's own page sits under thinqi's navbar like any generated page,
-// so it measures the navbar the same way Base JS does.
-function updateToolNavOffset() {
+// When this page is shown under thinqi's navbar, leave room for it. When it is
+// served on its own (GitHub Pages, localhost) there is no navbar, so no gap:
+// the old fixed 95px fallback left a dead strip above the sticky header.
+// Sets --thinqi-navbar-height, which the stylesheets read.
+function updateNavbarOffset() {
   try {
-    const thinqiNavbar =
+    const navbar =
       document.querySelector("div.app-chrome") ||
       document.querySelector(".public-site-header");
-    const height = thinqiNavbar ? thinqiNavbar.offsetHeight : null;
-    document.documentElement.style.setProperty(
-      "--thinqi-navbar-height",
-      (height > 0 ? height : 95) + "px"
-    );
+    const height = navbar ? navbar.offsetHeight : 0;
+    document.documentElement.style.setProperty("--thinqi-navbar-height", (height > 0 ? height : 0) + "px");
   } catch (err) {
-    console.log("updateToolNavOffset failed", err);
+    console.log("updateNavbarOffset failed", err);
   }
 }
-window.addEventListener("DOMContentLoaded", updateToolNavOffset);
-window.addEventListener("resize", updateToolNavOffset);
-
-/* ===================================================================
-   BASE FILES
-   =================================================================== */
-
-// Run now as well as on load: module scripts can start after DOMContentLoaded has been queued.
-updateToolNavOffset();
+window.addEventListener("resize", updateNavbarOffset);
+updateNavbarOffset();

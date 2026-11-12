@@ -5,6 +5,9 @@ import { imageTag, youtubeIframe } from "../../lib/media.js";
 export default {
   id: "image-text-section",
   label: "Image-text-section",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Content",
+  tabLabel: "Text with media",
   description: "Free-form content — headings, lists, paragraphs, whatever the page needs — with an optional image or video floated alongside it. The content always flows around the media correctly; you don't need to manage that yourself.",
   fields: [
     { type: "media-picker", id: "media", label: "Media", allowSize: true },

@@ -4,6 +4,9 @@ import { escapeHTML, slugify } from "../../lib/html.js";
 export default {
   id: "section",
   label: "Section",
+  // How the block appears in the builder's tab bar (display only).
+  group: "Structure",
+  tabLabel: "Section",
   description: "Start here for every new bit of content — wraps it in a properly-idd <section> with its heading, and generates the matching table-of-contents entry at the same time, so those two ids can never drift apart.",
   fields: [
     { type: "text", id: "title", label: "Section title", placeholder: "e.g. Putting into practice" }
