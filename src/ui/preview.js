@@ -1,10 +1,17 @@
-// The live preview: an iframe shown at a chosen device width, scaled to fit the
-// side panel. The base CSS has breakpoints at 768px and 576px, so the width
-// toggle is how editors check the mobile layout.
+// The live preview: an iframe laid out at a chosen device width. The base CSS has
+// breakpoints at 768px and 576px, so the width toggle is how editors check the
+// mobile layout.
+//
+// Text must stay readable, so the preview is only shrunk when the panel is narrower
+// than the part of the page worth seeing. `width` is the iframe's viewport (what the
+// media queries see); `shown` is how much of it to display. On desktop a block sits in
+// a ~600px column (see preview-doc.js), so the viewport is 1000px (desktop layout) but
+// only the left 620px are shown (the column plus its left margin), at true size, and the
+// empty remainder is clipped.
 import { getPref, setPref } from "./storage.js";
 
 export const DEVICES = [
-  { id: "desktop", label: "Desktop", width: 1000 },
+  { id: "desktop", label: "Desktop", width: 1000, shown: 620, hint: "page column, about 600px wide" },
   { id: "tablet", label: "Tablet", width: 700 },
   { id: "phone", label: "Phone", width: 375 },
 ];
@@ -36,7 +43,7 @@ export function createPreview(title) {
     const b = document.createElement("button");
     b.type = "button";
     b.textContent = d.label;
-    b.title = `${d.label} (${d.width}px wide)`;
+    b.title = `${d.label} (${d.hint || d.width + "px wide"})`;
     b.addEventListener("click", () => setDevice(d));
     toggle.appendChild(b);
     return [d, b];
@@ -44,12 +51,13 @@ export function createPreview(title) {
 
   function layout() {
     buttons.forEach(([d, b]) => b.setAttribute("aria-pressed", String(d === device)));
-    const avail = stage.clientWidth || device.width;
-    const scale = Math.min(1, avail / device.width);
+    const shown = device.shown || device.width;
+    const avail = stage.clientWidth || shown;
+    const scale = Math.min(1, avail / shown); // 1 (true size) unless the panel is narrower than `shown`
     frame.style.width = device.width + "px";
     frame.style.height = (stage.clientHeight || 380) / scale + "px";
     frame.style.transform = `scale(${scale})`;
-    frame.style.left = Math.max(0, (avail - device.width * scale) / 2) + "px";
+    frame.style.left = Math.max(0, (avail - shown * scale) / 2) + "px";
   }
 
   const api = { el, layout, setDoc: (html) => { frame.srcdoc = html; } };

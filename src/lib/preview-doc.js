@@ -11,6 +11,10 @@ export function buildPreviewDoc(block, html, css, js, theme, baseCss) {
 <style>
   :root { --thinqi-navbar-height: 0px; --anchor-section-offset: 0px; }
   body { margin: 0; padding: 1.25rem; background: #fff; }
+  /* On a real desktop page a block sits in a ~600px column (3fr of the page grid in
+     .main-grid), not the full width, so show it that wide. Below 769px the base CSS goes
+     single column and fills the width, which is also what happens here. */
+  @media (min-width: 769px) { #page-container { max-width: 600px; } }
   ${baseRules}
   ${css || ""}
 </style>
