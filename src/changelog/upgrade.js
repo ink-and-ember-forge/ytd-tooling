@@ -6,6 +6,7 @@ import { CHANGELOG, BUILDER_VERSION } from "./index.js";
 import { checkPage } from "./checker.js";
 import { getPageCSS, getPageJS, BASE_CSS_SOURCE } from "../base/index.js";
 import { loadBaseline } from "../lib/baseline.js";
+import { suggestVersions } from "./sniff.js";
 import { findLocalEdits, overridesRegion, splitOverrides } from "./local-edits.js";
 import { parseCss } from "./css-tree.js";
 
@@ -107,8 +108,20 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
 }
 
 // buildUpgrade, after loading the stored code for the page's version so its own CSS edits can be found.
+// When the version can't be read from the page, or the CSS looks like a different version from the one
+// claimed, the result also carries `suggestions`: the stored versions the CSS is closest to.
 export async function upgradePage(page, options = {}) {
   const first = buildUpgrade(page, options);
-  if (first.error || options.baseline !== undefined || first.pageVersion === "legacy") return first;
-  return buildUpgrade(page, { ...options, baseline: await loadBaseline(first.pageVersion) });
+  if (first.error) return { ...first, suggestions: await suggestVersions(page.css) };
+  if (options.baseline !== undefined || first.pageVersion === "legacy") return first;
+  const result = buildUpgrade(page, { ...options, baseline: await loadBaseline(first.pageVersion) });
+  if (result.notes.some((n) => /may not really be version/.test(n))) {
+    const suggestions = await suggestVersions(page.css);
+    const best = suggestions[0];
+    if (best && best.version !== result.pageVersion) {
+      result.notes.push(`This CSS is closest to version ${best.version} (${best.differences} differences, against ${suggestions.find((x) => x.version === result.pageVersion)?.differences ?? "many"} for version ${result.pageVersion}).`);
+    }
+    return { ...result, suggestions };
+  }
+  return result;
 }

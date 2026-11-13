@@ -13,6 +13,7 @@ import { buildUpgrade, upgradePage } from "../src/changelog/upgrade.js";
 import { BASE_CSS_SOURCE, forToc, removeCssRule, getPageCSS } from "../src/base/index.js";
 import { assembleCSS } from "../src/lib/assemble.js";
 import { loadBaseline, baselinePage } from "../src/lib/baseline.js";
+import { suggestVersions } from "../src/changelog/sniff.js";
 
 const old = await loadBaseline("3.1.1");
 const USED = ["at-a-glance", "accordion", "buttons"];
@@ -193,4 +194,45 @@ test("lots of differences warn that the version may be wrong, and broken CSS is 
   assert.ok(r.notes.some((n) => /may not really be version 3\.1\.1/.test(n)), r.notes.join("|"));
   const broken = buildUpgrade(pageOf(pristineCss().replace(/\n<\/style>$/, "\n.x { color: red;\n</style>")), { baseline: old });
   assert.ok(broken.notes.some((n) => /unmatched braces/.test(n)));
+});
+
+// ---- guessing the version --------------------------------------------------
+
+const pristineOn = async (version, ids) => baselinePage(await loadBaseline(version), { blockIds: ids }).css;
+
+test("suggests the stored version a page's CSS is closest to", async () => {
+  for (const v of ["3.1.1", "3.2.0", "3.3.0"]) {
+    const [best] = await suggestVersions(await pristineOn(v, ["at-a-glance", "accordion"]));
+    assert.deepEqual([best.version, best.differences], [v, 0], `a pristine ${v} page`);
+  }
+  // A 3.1.1 page with two edits is still closest to 3.1.1.
+  const edited = edit(edit(pristineCss(), "color: var(--primary-colour);\n    line-height: 120%", "color: #123456;\n    line-height: 120%"), "font-style: italic;", "font-style: normal;");
+  const ranked = await suggestVersions(edited);
+  assert.deepEqual([ranked[0].version, ranked[0].differences], ["3.1.1", 2]);
+  assert.ok(ranked[1].differences > 2);
+  assert.deepEqual(await suggestVersions(""), []);
+});
+
+test("versions that differ in no CSS tie, newest first, so the guess is honest about being ambiguous", async () => {
+  // 3.2.0 and 3.3.0 have identical base CSS: with no At a glance block on the page, they cannot be told apart.
+  const ranked = await suggestVersions(await pristineOn("3.3.0", []));
+  assert.deepEqual(ranked.slice(0, 2).map((r) => [r.version, r.differences]), [["3.3.0", 0], ["3.2.0", 0]]);
+});
+
+test("no marker: the error comes with the closest versions", async () => {
+  const page = pageOf(pristineCss());
+  page.html = page.html.replace(/ data-base-version="[\d.]+"/, "");
+  const r = await upgradePage(page);
+  assert.match(r.error, /version/);
+  assert.equal(r.suggestions[0].version, "3.1.1");
+});
+
+test("a marker that disagrees with the CSS is called out", async () => {
+  const page = pageOf(pristineCss());
+  page.html = page.html.replace('data-base-version="3.1.1"', 'data-base-version="3.3.0"');
+  page.css = page.css.replace(/\n<\/style>$/, `\n${Array.from({ length: 40 }, (_, i) => `.mine-${i} { color: red; margin: ${i}px; }`).join("\n")}\n</style>`);
+  const r = await upgradePage(page);
+  assert.equal(r.pageVersion, "3.3.0");
+  assert.ok(r.notes.some((n) => /closest to version 3\.1\.1/.test(n)), r.notes.join(" | "));
+  assert.equal(r.suggestions[0].version, "3.1.1");
 });
