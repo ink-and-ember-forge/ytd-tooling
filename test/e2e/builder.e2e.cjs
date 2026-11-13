@@ -179,6 +179,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9 detected version", (await page.textContent(".upgrade-detected")).includes("3.1.1"));
   await page.click("#view-upgrade .primary-btn");
   await page.waitForSelector("#view-upgrade .upgrade-results", { state: "visible" });
+  ok("9 every section is actually visible to the author, not only present in the page", await page.isVisible("#view-upgrade .upgrade-block") && await page.isVisible("#view-upgrade .upgrade-tweaks") && await page.isVisible("#view-upgrade .upgrade-checks") && await page.isVisible('#view-upgrade textarea[aria-label="CSS code"]', { timeout: 500 }).then((v) => !v), "section 2, 3 and 5 visible; code stays behind its disclosure");
   ok("9 says which version it was built on", (await page.textContent("#view-upgrade .upgrade-message")).includes("built on version 3.1.1"));
   const ticked = await page.$$eval("#view-upgrade .upgrade-block", (l) => l.filter((x) => x.querySelector("input").checked).map((x) => x.textContent.replace(/found/i, "").trim()));
   ok("9 found exactly the blocks on the page", ticked.sort().join() === "Accordion,At-a-glance", ticked.join());
@@ -197,7 +198,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9 HTML: only the version marker changed", (await code("HTML")).includes(`data-base-version="${CURRENT}"`) && !(await code("HTML")).includes('data-base-version="3.1.1"'));
   ok("9 shows what is changing", (await page.textContent("#view-upgrade")).includes("Looks different") && (await page.$$("#view-upgrade .change-card")).length >= 4);
   ok("9 shows the author's own JS line, and does not merge it", (await page.textContent("#view-upgrade .upgrade-diff")).includes('console.log("mine");') && !(await code("JS")).includes('console.log("mine")'));
-  ok("9 self-check passes", (await page.textContent(".upgrade-check")).includes("nothing left to copy"));
+  ok("9 self-check passes", (await page.textContent(".upgrade-check")).includes("Every change made since your version is in the new code"));
 
   // no version marker: the error comes with the closest versions, and one click carries on
   await fillOld(oldHtml.replace(/ data-base-version="[\d.]+"/, ""));
@@ -214,6 +215,72 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.selectOption("#view-upgrade .upgrade-version", "auto");
   await page.waitForFunction(() => document.querySelector("#view-upgrade .upgrade-message")?.textContent.includes("already at version"));
   ok("9 already current: nothing to copy", !(await page.isVisible("#view-upgrade textarea[aria-label='CSS code']")));
+
+  // 9b. a page built before 3.1.0 is migrated, not upgraded (a real legacy page: flat CSS, --burgundy, no marker)
+  const L = (f) => fs.readFileSync(path.join(ROOT, "test", "fixtures", "legacy", f), "utf8");
+  await page.fill("#view-upgrade .upgrade-input >> nth=0", L("page.html"));
+  await page.fill("#view-upgrade .upgrade-input >> nth=1", L("page.css"));
+  await page.fill("#view-upgrade .upgrade-input >> nth=2", L("page.js"));
+  await page.click("#view-upgrade .primary-btn");
+  await page.waitForSelector("#view-upgrade .upgrade-signals", { state: "visible" });
+  ok("9b says why it is a migration", (await page.$$("#view-upgrade .upgrade-signals li")).length === 4);
+  ok("9b every section is visible", await page.isVisible("#view-upgrade .upgrade-signals") && await page.isVisible("#view-upgrade .upgrade-theme") && await page.isVisible("#view-upgrade .upgrade-checks"));
+  const groups = await page.$$eval("#view-upgrade .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
+  ok("9b the page's own styles are 12 groups, all kept by default", groups.length === 12 && groups.every((g) => g.kept), groups.map((g) => g.name).join(","));
+  ok("9b the theme is detected from the old colour", await page.isChecked('#view-upgrade .upgrade-theme input[value="gwella"]') && (await page.textContent("#view-upgrade .upgrade-theme")).includes("detected"));
+  ok("9b two HTML changes are shown with before and after", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 2);
+  const region = (await code("CSS")).slice((await code("CSS")).indexOf("PAGE-SPECIFIC OVERRIDES"));
+  ok("9b the carried styles are in the labelled block, with old tokens renamed", region.includes(".cta-button") && region.includes("var(--primary-colour)") && !/--burgundy|#a3195b/i.test(region));
+  ok("9b the HTML gets the theme class and the standard back-to-top icon", (await code("HTML")).includes('class="gwella"') && (await code("HTML")).includes("fa-circle-chevron-up") && !(await code("HTML")).includes("back-to-top.png"));
+  const checks = await page.textContent("#view-upgrade .upgrade-checks");
+  ok("9b checks: every class styled, the undefined --buttons and the broken tags are reported", checks.includes("Every class in your HTML has styling") && checks.includes("--buttons") && checks.includes("never closed"));
+
+  // the page really looks the same before and after: compare computed styles inside the real frames
+  await page.click("#view-upgrade .upgrade-preview summary");
+  const frameOf = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-frame"); return el.contentFrame(); };
+  const styles = (frame) => frame.evaluate(() => {
+    const pick = (sel, props) => { const e = document.querySelector(sel); if (!e) return null; const c = getComputedStyle(e); return Object.fromEntries(props.map((p) => [p, c[p]])); };
+    return {
+      cta: pick(".cta-button", ["backgroundColor", "borderRadius", "display", "color"]),
+      journey: pick(".journey-section", ["display", "gap"]),
+      info: pick(".info-section", ["display", "gap", "marginBottom"]),
+      link: pick(".burgundy-link", ["color"]),
+      icon: !!document.querySelector(".back-to-top i.fa-circle-chevron-up"),
+    };
+  });
+  await page.click('#view-upgrade .upgrade-seg-btn:has-text("Before")');
+  await page.waitForTimeout(400);
+  const stylesBefore = await styles(await frameOf());
+  await page.click('#view-upgrade .upgrade-seg-btn:has-text("After")');
+  await page.waitForTimeout(400);
+  const stylesAfter = await styles(await frameOf());
+  ok("9b the call-to-action button looks the same after migrating", JSON.stringify(stylesBefore.cta) === JSON.stringify(stylesAfter.cta) && stylesAfter.cta.backgroundColor === "rgb(163, 25, 91)", JSON.stringify(stylesAfter.cta));
+  ok("9b the journey and info sections keep their layout", JSON.stringify(stylesBefore.journey) === JSON.stringify(stylesAfter.journey) && stylesAfter.journey.display === "flex" && JSON.stringify(stylesBefore.info) === JSON.stringify(stylesAfter.info), JSON.stringify(stylesAfter.journey));
+  ok("9b the custom link keeps the theme colour", stylesBefore.link.color === stylesAfter.link.color && stylesAfter.link.color === "rgb(163, 25, 91)");
+  ok("9b the back-to-top icon is now the standard one", stylesAfter.icon === true && stylesBefore.icon === false);
+  await page.click('#view-upgrade .upgrade-seg-btn:has-text("Phone")');
+  await page.waitForTimeout(400);
+  const phone = await (await frameOf()).evaluate(() => ({ desktop: getComputedStyle(document.querySelector(".desktop-image")).display, mobile: getComputedStyle(document.querySelector(".mobile-image")).display }));
+  ok("9b the phone layout carries over (mobile image shown, desktop image hidden)", phone.desktop === "none" && phone.mobile === "block", JSON.stringify(phone));
+  await page.click('#view-upgrade .upgrade-seg-btn:has-text("Desktop")');
+
+  // untick a group: the check names exactly what lost its styling; tick it again to restore
+  await page.uncheck('#view-upgrade .upgrade-tweak:has(strong:text-is("cta-button")) input');
+  ok("9b unticking a group is reported as unstyled", (await page.textContent("#view-upgrade .upgrade-checks")).includes(".cta-button") && !(await code("CSS")).includes(".cta-button"));
+  await page.check('#view-upgrade .upgrade-tweak:has(strong:text-is("cta-button")) input');
+  ok("9b and ticking it again restores it", (await code("CSS")).includes(".cta-button") && (await page.textContent("#view-upgrade .upgrade-checks")).includes("Every class in your HTML has styling"));
+
+  // choose the other theme: the class, and the colours in the open frame, follow
+  await page.check('#view-upgrade .upgrade-theme input[value="ytydysgu"]');
+  await page.waitForTimeout(500);
+  ok("9b choosing Y Tŷ Dysgu changes the theme class", (await code("HTML")).includes('class="ytydysgu"') && !(await code("HTML")).includes('class="gwella"'));
+  ok("9b and the colours in the preview", (await styles(await frameOf())).cta.backgroundColor === "rgb(50, 80, 131)");
+  await page.check('#view-upgrade .upgrade-theme input[value="gwella"]');
+
+  // the way back to the normal flow
+  await page.click('#view-upgrade button:has-text("Treat it as a normal upgrade instead")');
+  await page.waitForFunction(() => document.querySelector("#view-upgrade .upgrade-message")?.textContent.includes("version marker"));
+  ok("9b the author can choose the normal upgrade flow instead", !(await page.isVisible("#view-upgrade .upgrade-theme")));
   await page.click('.mode-btn[data-view="changelog"]');
   ok("9 changelog view: visible, and no data warning when the changelog is valid", (await page.isVisible("#view-changelog")) && (await page.$$(".changelog-check")).length === 0);
   await page.click('.mode-btn[data-view="build"]');

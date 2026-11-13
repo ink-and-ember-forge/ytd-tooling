@@ -3,17 +3,21 @@
 //
 // One page, sections unlock after "Check my page":
 //   1 paste  2 what we found (version, blocks)  3 the author's own tweaks (opt in)
-//   4 what is changing  5 copy the upgraded page (with a self-check)
-import { makeEl, copyToClipboard } from "../lib/dom.js";
+//   4 what is changing  5 check (problems, before/after)  6 copy the upgraded page
+// A page built before 3.1.0 can't be upgraded piece by piece, so it is migrated instead (migrate-view.js).
+import { makeEl } from "../lib/dom.js";
 import { changeCard, ACTION_LABELS } from "./change-card.js";
 import { CHANGELOG, BUILDER_VERSION } from "../changelog/index.js";
 import { buildUpgrade, upgradePage } from "../changelog/upgrade.js";
+import { summariseNode } from "../changelog/css-tree.js";
+import { assessFit, lintPage } from "../changelog/migrate.js";
+import { createMigrationView } from "./migrate-view.js";
+import { outputCard, renderCheck, plural } from "./upgrade-parts.js";
 import { BLOCK_LIST } from "../blocks/index.js";
 import { associateLabels } from "./a11y.js";
 import { toast } from "./toast.js";
 
 const markerOf = (text) => (text.match(/data-base-version="([\d.]+)"/) || [])[1] || null;
-const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 // How a change is described to an author, in the order they are shown.
 const CHANGE_GROUPS = [["breaking", "Needs attention"], ["visual", "Looks different"], ["behaviour", "Works differently"], ["fix", "Fixes"], ["additive", "New"]];
@@ -25,7 +29,7 @@ function describeEdit(e) {
   switch (e.kind) {
     case "changed-decl": return [place(e.path), `${e.prop} is ${v(e.to)}`, v(e.from)];
     case "added-decl": return [place(e.path), `adds ${e.prop}: ${v(e.to)}`, null];
-    case "added-rule": return [place([...e.path, e.selector]), "a rule of your own", null];
+    case "added-rule": return [place([...e.path, e.selector]), `a rule of your own: ${summariseNode(e.node)}`, null];
     case "removed-decl": return [place(e.path), `removes ${e.prop}`, v(e.from)];
     default: return [place([...e.path, e.selector]), "rule removed", null];
   }
@@ -67,14 +71,16 @@ export function buildUpgradePanel() {
   const foundEl = makeEl("section", "step");
   const tweaksEl = makeEl("section", "step");
   const changesEl = makeEl("section", "step");
+  const checkEl = makeEl("section", "step");
   const copyEl = makeEl("section", "step");
-  [foundEl, tweaksEl, changesEl, copyEl].forEach((el) => el.setAttribute("aria-live", "polite"));
-  results.append(foundEl, tweaksEl, changesEl, copyEl);
+  [foundEl, tweaksEl, changesEl, checkEl, copyEl].forEach((el) => el.setAttribute("aria-live", "polite"));
+  results.append(foundEl, tweaksEl, changesEl, checkEl, copyEl);
   panel.appendChild(results);
 
   // ---- state -------------------------------------------------------------------
   const code = () => ({ html: inputs.html.value, css: inputs.css.value, js: inputs.js.value });
   const choice = { version: "auto" };   // "auto", "legacy" or a version, as chosen by the author
+  let forceUpgrade = false;             // the author asked for the normal upgrade flow for a page that looks legacy
   const state = { result: null, baseline: undefined, blocks: new Set(), keep: new Set() };
 
   inputs.html.addEventListener("input", () => {
@@ -89,6 +95,12 @@ export function buildUpgradePanel() {
     }
     checkBtn.disabled = true;
     try {
+      [foundEl, tweaksEl, changesEl, checkEl, copyEl].forEach((el) => { el.hidden = true; });
+      if (assessFit(code()).legacy && !forceUpgrade) {
+        results.hidden = false;
+        migration.start();
+        return;
+      }
       const result = await upgradePage(code(), { version: choice.version });
       state.result = result;
       state.baseline = result.baseline;
@@ -102,7 +114,11 @@ export function buildUpgradePanel() {
       checkBtn.disabled = false;
     }
   }
-  checkBtn.addEventListener("click", check);
+  const migration = createMigrationView(
+    { found: foundEl, tweaks: tweaksEl, changes: changesEl, check: checkEl, copy: copyEl },
+    { code, onUpgradeInstead: () => { forceUpgrade = true; check(); } },
+  );
+  checkBtn.addEventListener("click", () => { forceUpgrade = false; check(); });
 
   // Re-run the engine for the current ticks (instant: the baseline is already loaded).
   function recompute() {
@@ -114,6 +130,7 @@ export function buildUpgradePanel() {
   // ---- 2. what we found --------------------------------------------------------
   function renderFound() {
     const r = state.result;
+    foundEl.hidden = false;
     foundEl.replaceChildren(makeEl("h3", "step-title", "2. Here's what we found"));
     if (r.error) {
       foundEl.appendChild(makeEl("p", "upgrade-message", r.error));
@@ -148,6 +165,7 @@ export function buildUpgradePanel() {
         box.checked ? state.blocks.add(b.id) : state.blocks.delete(b.id);
         recompute();
         renderTweaks();
+        renderCheckSection();
         renderCopy();
       });
       label.append(box, " " + b.label);
@@ -222,6 +240,7 @@ export function buildUpgradePanel() {
       box.addEventListener("change", () => {
         box.checked ? state.keep.add(e.id) : state.keep.delete(e.id);
         recompute();
+        renderCheckSection();
         renderCopy();
         renderTweakWarning();
       });
@@ -276,36 +295,23 @@ export function buildUpgradePanel() {
     changesEl.appendChild(details);
   }
 
-  // ---- 5. copy ----------------------------------------------------------------
-  function outputCard(title, description, text) {
-    const card = makeEl("div", "upgrade-output");
-    const head = makeEl("div", "upgrade-output-head");
-    const t = makeEl("div");
-    t.append(makeEl("strong", "", title), makeEl("p", "upgrade-hint", description));
-    const btn = makeEl("button", "copy-btn copy-btn--inline", `Copy ${title}`);
-    btn.type = "button";
-    btn.addEventListener("click", () => copyToClipboard(text, btn));
-    head.append(t, btn);
-    card.appendChild(head);
-    const details = document.createElement("details");
-    details.appendChild(makeEl("summary", "", "Show the code"));
-    const area = document.createElement("textarea");
-    area.readOnly = true;
-    area.rows = 8;
-    area.className = "upgrade-input";
-    area.value = text;
-    area.setAttribute("aria-label", `${title} code`);
-    details.appendChild(area);
-    card.appendChild(details);
-    return card;
+  // ---- 5. check -----------------------------------------------------------------
+  function renderCheckSection() {
+    const r = state.result;
+    checkEl.hidden = r.upToDate;
+    if (r.upToDate) return;
+    const wasOpen = checkEl.querySelector(".upgrade-preview")?.open;
+    renderCheck(checkEl, { before: code(), after: { html: r.html, css: r.css, js: r.js }, lint: lintPage({ html: r.html, css: r.css }) });
+    if (wasOpen) checkEl.querySelector(".upgrade-preview").open = true;
   }
 
+  // ---- 6. copy ----------------------------------------------------------------
   function renderCopy() {
     const r = state.result;
     copyEl.replaceChildren();
     copyEl.hidden = r.upToDate;
     if (r.upToDate) return;
-    copyEl.appendChild(makeEl("h3", "step-title", "5. Copy your upgraded page"));
+    copyEl.appendChild(makeEl("h3", "step-title", "6. Copy your upgraded page"));
     copyEl.appendChild(makeEl("p", "upgrade-hint", "Replace the old HTML, CSS and JS on the page with these."));
 
     const blocksText = r.blocks.length ? plural(r.blocks.length, "block", "blocks") : "no blocks";
@@ -334,7 +340,7 @@ export function buildUpgradePanel() {
 
     const c = r.check;
     copyEl.appendChild(makeEl("p", c.ok ? "upgrade-check upgrade-check--ok" : "upgrade-check upgrade-check--warn",
-      c.ok ? "✔ We re-checked the upgraded code: nothing left to copy." : `⚠ ${plural(c.remaining.length, "change", "changes")} still need the new code. Check the notes above.`));
+      c.ok ? "✔ Every change made since your version is in the new code." : `⚠ ${plural(c.remaining.length, "change", "changes")} still need the new code. Check the notes above.`));
     if (c.manualSteps.length) {
       copyEl.appendChild(makeEl("h4", "upgrade-group", "Then, by hand"));
       c.manualSteps.forEach((m) => copyEl.appendChild(changeCard(m, ACTION_LABELS[m.action] || "Check manually", null)));
@@ -343,9 +349,10 @@ export function buildUpgradePanel() {
 
   function renderAll() {
     renderFound();
-    if (state.result.error) { tweaksEl.hidden = changesEl.hidden = copyEl.hidden = true; return; }
+    if (state.result.error) { tweaksEl.hidden = changesEl.hidden = checkEl.hidden = copyEl.hidden = true; return; }
     renderTweaks();
     renderChanges();
+    renderCheckSection();
     renderCopy();
   }
 

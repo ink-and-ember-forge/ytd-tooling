@@ -51,7 +51,7 @@ The Build view is a **workbench** that fills the window under a one-row header: 
 | `splitter.js` | The draggable divider between form and preview (mouse, touch, arrow keys; double-click resets). Width is shared by all blocks and remembered. |
 | `storage.js` | Autosave to `localStorage`, plus project save/load as a JSON file. All wrapped in try/catch. |
 | `tabs.js` | Accessible tabs (roles, arrow keys) used for the block rail, code tabs and the Build / Upgrade / What's changed views. |
-| `upgrade-panel.js`, `changelog-panel.js` | The Upgrade and What's changed views. Upgrade is one page whose sections unlock after "Check my page": what was found (version, blocks), the author's own CSS tweaks (opt-in), what is changing, and the upgraded HTML / CSS / JS to copy with an automatic self-check. It only displays what `src/changelog/upgrade.js` returns. |
+| `upgrade-panel.js`, `changelog-panel.js` | The Upgrade and What's changed views. Upgrade is one page whose sections unlock after "Check my page": what was found (version, blocks), the author's own CSS tweaks (opt-in), what is changing, and the upgraded HTML / CSS / JS to copy with an automatic self-check. It only displays what `src/changelog/upgrade.js` returns. A page built before 3.1.0 is routed to `migrate-view.js` instead (see below). `upgrade-parts.js` holds what both flows share: the copy cards, the problems list and the before/after frame. |
 | `guide-dialog.js` | The "How it works" lightbox: one shared native `<dialog>` that shows a block's `how-it-works.html` (focus trap, Esc, click-outside and ✕ to close, focus returns to the button). Opened from the "ⓘ How it works" button in each panel header. For blocks with an Explain tab it ends with "Explore it on my block →". |
 | `explain-panel.js` | The **Explain** tab: the block's own generated code, annotated. Hovering a line lights it up in the preview and explains it; hovering an attribute explains it and highlights every identical value; clicking pins. Numbered badges match the X-ray chips. |
 | `preview.js` (X-ray) | The **X-ray** toggle: numbered chips and outlines over every explained part of the preview. It switches on with the Explain tab and off when you leave it. |
@@ -79,6 +79,16 @@ Only blocks with an `explain.json` have the tab (currently Accordion and Text ar
 2. The version is read from `data-base-version` (if it is missing, or the CSS looks like a different version, the closest stored versions are offered). Blocks are detected from the HTML; the author can correct the list.
 3. The author's own CSS tweaks are listed. **Nothing is kept unless ticked**; ticked tweaks go in a labelled `PAGE-SPECIFIC OVERRIDES` block at the end of the new CSS and are carried forward next time. Differences in the page's JS are shown, not merged.
 4. The upgraded HTML (only the version marker changes), CSS and JS are copied back over the old ones. The tool re-checks its own output and lists anything that still needs doing by hand.
+
+### Migrating a page built before 3.1.0 (`src/changelog/migrate.js`, UI in `src/ui/migrate-view.js`)
+
+A flat stylesheet with `--burgundy` tokens can't be diffed against a stored baseline (comparing the real example with 3.1.1 gave 114 meaningless differences), so the page's **HTML** decides what matters. `assessFit` routes a page here when its CSS is flat or uses pre-3.1.0 tokens; the author can still choose the normal upgrade.
+
+- Every selector in the old CSS is judged on its own (comma lists are split) against the classes and ids the HTML uses: **base** (no class or id: replaced by the new base), **standard** (the new CSS styles it), **custom** (classes the page uses that nobody else styles: carried), **unused** (not in the HTML: dropped, listed so nothing vanishes silently).
+- Custom rules are translated (old tokens become `--primary-colour` / `--secondary-colour`; the theme's own brand colour written as a literal becomes the token), merged by *original specificity then source order* (so a stronger selector still beats a weaker later one), nested under `#page-container`, and written **in their original order** into the same `PAGE-SPECIFIC OVERRIDES` region upgrades use. Order matters: a media rule hoisted above a later plain rule for the same selector would silently lose to it. After migrating, the page is an ordinary template page.
+- HTML: only safe, itemised fixes: the version marker, the theme class (detected from the old brand colour, or chosen by the author) and the back-to-top `<img>` becoming the standard Font Awesome icon. Broken tags are reported with line numbers, never auto-fixed.
+- Checks on the result (`lintPage`): classes with no styling, undefined CSS variables, unclosed or stray tags. The UI also shows the page before and after in sandboxed frames.
+- Test fixture: `test/fixtures/legacy/` is a real legacy page (text shortened, structure and faults kept).
 
 ### The upgrade engine (`src/changelog/`; the UI is `src/ui/upgrade-panel.js`)
 

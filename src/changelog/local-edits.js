@@ -7,7 +7,7 @@
 import { assembleCSS } from "../lib/assemble.js";
 import { BLOCK_LIST } from "../blocks/index.js";
 import { forToc } from "../base/index.js";
-import { parseCss, serializeCss, keyedChildren, findNode, mergeTrees, cloneNode, countDecls } from "./css-tree.js";
+import { parseCss, serializeCss, keyedChildren, findNode, mergeTrees, cloneNode, countDecls, summariseNode } from "./css-tree.js";
 
 export const OVERRIDES_START = "/* ===== PAGE-SPECIFIC OVERRIDES: kept by the upgrade tool. Add or edit rules here; they are carried forward when the page is upgraded. ===== */";
 export const OVERRIDES_END = "/* ===== END PAGE-SPECIFIC OVERRIDES ===== */";
@@ -58,7 +58,7 @@ function describe(e) {
     case "changed-decl": return `${where}: ${e.prop} is ${show(e.to)} (standard: ${show(e.from)})`;
     case "added-decl": return `${where}: adds ${e.prop}: ${show(e.to)}`;
     case "removed-decl": return `${where}: removes ${e.prop} (standard: ${show(e.from)})`;
-    case "added-rule": return `${where}: a rule of your own`;
+    case "added-rule": return `${where}: a rule of your own — ${summariseNode(e.node)}`;
     case "removed-rule": return `${where}: rule removed`;
   }
 }

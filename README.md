@@ -3,7 +3,7 @@
 Everything needed to build pages in the Gwella template style, and to bring older pages up to the latest version.
 
 - **Builder** (`index.html`, *Build blocks*): a workbench with a block list on the left, the form in the middle, and a live preview and the code to paste on the right, all in view without scrolling the page. Click anything in the preview to jump to the field behind it, collapse list items to one line, and pop the preview out into its own window for a second screen. Your work autosaves in the browser and can be saved to / loaded from a file.
-- **Upgrade a page** (second view in the builder): paste an old page's code and get the upgraded HTML, CSS and JS back, ready to paste over the old ones. It finds which blocks the page uses, lets you keep your own CSS tweaks, and shows anything it can't do for you.
+- **Upgrade a page** (second view in the builder): paste an old page's code and get the upgraded HTML, CSS and JS back, ready to paste over the old ones. It finds which blocks the page uses, lets you keep your own CSS tweaks, and shows anything it can't do for you. Pages built before 3.1.0 can't be upgraded piece by piece, so they are *migrated*: your HTML decides which of your old styles are kept, and a before/after view shows the result.
 - **Template** (`template/`): the reference page showing every block, using the current base code.
 - **Changelog** (`changelog/changelog.json`): the version history, as data. The newest release *is* the current version.
 
