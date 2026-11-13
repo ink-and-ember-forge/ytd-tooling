@@ -189,19 +189,18 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     const back = makeEl("button", "copy-btn copy-btn--inline", "Back");
     back.type = "button";
     back.disabled = i === 0;
-    back.addEventListener("click", () => { state.index = i - 1; renderReview(); });
+    back.addEventListener("click", () => go(i - 1));
     next.type = "button";
-    next.addEventListener("click", () => { state.reviewed.add(step.id); state.index = i + 1; renderReview(); renderChecksAndCopy(); });
+    next.addEventListener("click", () => { state.reviewed.add(step.id); renderChecksAndCopy(); go(i + 1); });
     nav.append(back, next);
     if (i < n - 1) {
       const rest = makeEl("button", "upgrade-link", "Use the template for all the remaining decisions");
       rest.type = "button";
       rest.addEventListener("click", () => {
         state.steps.slice(i).forEach((s) => { state.decisions.set(s.id, { choice: "template", reason: "", note: "" }); state.reviewed.add(s.id); });
-        state.index = n;
         recompute();
-        renderReview();
         renderChecksAndCopy();
+        go(n);
       });
       nav.appendChild(rest);
     }
@@ -223,13 +222,25 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       li.append(makeEl("strong", "", s.title), d.choice === "keep" ? ` — keeping yours (${(REASONS.find(([id]) => id === d.reason) || REASONS[2])[1].toLowerCase()}${d.note.trim() ? `, ${d.note.trim()}` : ""}) ` : " — using the template ");
       const change = makeEl("button", "upgrade-link", "Change");
       change.type = "button";
-      change.addEventListener("click", () => { state.index = idx; renderReview(); });
+      change.addEventListener("click", () => go(idx));
       li.appendChild(change);
       list.appendChild(li);
     });
     box.appendChild(list);
     return box;
   }
+
+  // After moving between decisions, put the new card's top (its number, title and headline) where it can be read, instead of
+  // leaving the page wherever the old card's buttons were. Focus goes to the title too, for screen readers, without scrolling.
+  function showCard() {
+    const card = els.review.querySelector(".upgrade-review-card");
+    if (!card) return;
+    card.scrollIntoView({ block: "start", behavior: "auto" });
+    const title = card.querySelector(".upgrade-review-title");
+    title.tabIndex = -1;
+    title.focus({ preventScroll: true });
+  }
+  const go = (index) => { state.index = index; renderReview(); showCard(); };
 
   function renderReview() {
     els.review.hidden = state.steps.length === 0;

@@ -245,7 +245,7 @@ test("deviations: the page's own overrides of the template are found, each with 
   assert.deepEqual(d["#header-h1"], ["#header-h1: margin-block: 1.5rem 1rem  (template: 1.5rem)"], "a different value for a property the template sets");
   assert.deepEqual(d.h5, ["h5: color: var(--primary-colour)  (template: nothing)"], "an added property on a selector the template does style");
   assert.ok(d[".content-column h4"].some((l) => /font-weight: 600/.test(l)));
-  assert.ok(d["#at-a-glance #at-a-glance-heading"].some((l) => /color: #000 !important  \(template: #a3195b\)/.test(l)), "the page's black heading beats the themed one, as the page intended");
+  assert.ok(d["#at-a-glance #at-a-glance-heading"].some((l) => /color: #000 !important  \(template: var\(--primary-colour\)\)/.test(l)), "the page's black heading beats the themed one, as the page intended; the template's value is its token, not the colour it resolves to");
   assert.ok(d.ol.some((l) => /list-style-type: decimal !important  \(template: decimal\)/.test(l)), "!important is a difference");
   assert.ok(d[".main-grid"].some((l) => /@media \(max-width: 768px\) \.main-grid: gap: 1rem  \(template: 0\)/.test(l)), "the page's own mobile layout");
   assert.ok(d["#table-of-contents"].some((l) => /order: 2  \(template: 3\)/.test(l)));
@@ -354,4 +354,15 @@ test("html: an attribute with an unclosed quote is reported with its line, and w
   assert.match(quote, /<img> on line \d+/);
   assert.match(quote, /alt=" class=/);
   assert.deepEqual(tagProblems('<img src="a.png" alt="" class="x" /><p title="it\'s fine">a</p>'), []);
+});
+
+test("deviations: the template's value is shown as the template writes it, a token is never shown as the colour it resolves to", () => {
+  // The icon toggle's panel border is `var(--primary-colour)` in the template. Showing `#a3195b` made the template look hard-coded.
+  const lines = buildMigration(legacy3(), { reference }).groups.filter((g) => g.kind === "deviation").flatMap((g) => g.against);
+  assert.ok(lines.includes(".content-display: border: 3px solid var(--primary-colour)  (template: 2px solid var(--primary-colour))"), lines.filter((l) => /content-display: border/.test(l)).join(" | "));
+  assert.equal(lines.some((l) => /\.data-icon-card: border/.test(l)), false, "the page's #d3d3d3 is the template's var(--mid-grey): the same value is not a difference");
+  for (const dir of ["legacy", "legacy2", "legacy3"]) {
+    const shown = buildMigration(dir === "legacy" ? legacy() : dir === "legacy2" ? legacy2() : legacy3(), { reference }).groups.filter((g) => g.kind === "deviation").flatMap((g) => g.against);
+    assert.deepEqual(shown.filter((l) => /\(template: [^)]*#a3195b/i.test(l)), [], `${dir}: no template value is the brand colour written out`);
+  }
 });

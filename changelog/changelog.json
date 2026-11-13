@@ -1,6 +1,36 @@
 {
   "releases": [
     {
+      "version": "3.4.0",
+      "date": "2026-11-13",
+      "summary": "Icon toggle tiles show the pointer cursor on the tile itself.",
+      "changes": [
+        {
+          "id": "CHG-3.4.0-01",
+          "type": "fix",
+          "scope": "block:icon-toggle",
+          "blocks": [
+            "icon-toggle"
+          ],
+          "summary": "The Icon toggle tile (.data-icon-card) sets the pointer cursor itself. Before, only its wrapper (.data-icon-trigger) did, so tiles built with older markup, which has no trigger class, did not look clickable.",
+          "detect": {
+            "patterns": [
+              "data-icon-card"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "\\.data-icon-card\\s*\\{[^}]*cursor:\\s*pointer"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Icon toggle block's CSS (inside #page-container). Pages built with the current markup look the same either way, because the cursor was already inherited from the wrapper."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.3.0",
       "date": "2026-11-13",
       "summary": "Section block gets a \"directly below the page title\" option (the tight-heading class), and the At a glance heading keeps its theme colour.",

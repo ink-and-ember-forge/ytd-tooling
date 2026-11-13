@@ -294,6 +294,11 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.fill("#view-upgrade .upgrade-input >> nth=2", L2("page.js"));
   await page.click("#view-upgrade .primary-btn");
   await page.waitForSelector("#view-upgrade .upgrade-review-card", { state: "visible" });
+  // The preview frames used to call scrollIntoView, which also scrolls the PARENT page: it jumped ~2600px by itself when they loaded.
+  const y0 = await page.evaluate(() => Math.round(scrollY));
+  await page.waitForTimeout(1500);
+  const y1 = await page.evaluate(() => Math.round(scrollY));
+  ok("9c the page does not move by itself when the preview frames load", y0 === y1 && y1 < 1200, `${y0} -> ${y1}`);
   const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
   ok("9c the page's own components are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
   ok("9c the 21 differences are 5 decisions", /Decision 1 of 5/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
@@ -320,6 +325,20 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9c once it has a reason it can go on, and the reason is written into the CSS", !(await page.isDisabled('#view-upgrade button:has-text("Next decision")')) && (await code("CSS")).includes("/* kept: Text and headings: A deliberate design choice, bold is our house style */"));
   await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
   ok("9c going back to the template takes it out again", !(await code("CSS")).includes("kept:") && !(await page.isVisible("#view-upgrade .upgrade-reason")));
+
+  // moving between decisions: the new card's top (number, title, headline) is brought just below the sticky header, and stays there
+  const cardTop = () => page.evaluate(() => Math.round(document.querySelector(".upgrade-review-card").getBoundingClientRect().top));
+  await page.evaluate(() => document.querySelector("#view-upgrade .upgrade-review-nav").scrollIntoView({ block: "end" }));
+  await page.click('#view-upgrade button:has-text("Next decision")');
+  await page.waitForTimeout(1200);
+  const afterNext = await cardTop();
+  await page.waitForTimeout(800);
+  ok("9c Next brings the new decision's top into view, just below the header, and it stays put", afterNext >= 60 && afterNext <= 120 && afterNext === (await cardTop()), `top at ${afterNext}px`);
+  ok("9c and moves focus to its title for screen readers", await page.evaluate(() => document.activeElement?.classList.contains("upgrade-review-title")));
+  await page.click('#view-upgrade .upgrade-review-nav button:has-text("Back")');
+  await page.waitForTimeout(800);
+  const afterBack = await cardTop();
+  ok("9c Back does the same", afterBack >= 60 && afterBack <= 120 && (await page.textContent("#view-upgrade .upgrade-review-progress")).includes("Decision 1 of 5"), `top at ${afterBack}px`);
 
   // decide everything: the template (the default) for every decision, noting the titles on the way
   const decideAll = async (choice, collect = null) => {

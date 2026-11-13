@@ -116,3 +116,5 @@
 .upgrade-report-kept p { margin: 0.3rem 0; }
 .upgrade-report-check { margin: 0.4rem 0; padding-left: 1.2rem; }
 .upgrade-report-check li { margin: 0.35rem 0; color: #7a4a00; }
+.upgrade-review-card { scroll-margin-top: 84px; } /* clear the builder's sticky header when a decision is brought into view */
+.upgrade-review-title:focus { outline: none; }

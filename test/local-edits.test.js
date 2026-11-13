@@ -202,8 +202,9 @@ const pristineOn = async (version, ids) => baselinePage(await loadBaseline(versi
 
 test("suggests the stored version a page's CSS is closest to", async () => {
   for (const v of ["3.1.1", "3.2.0", "3.3.0"]) {
-    const [best] = await suggestVersions(await pristineOn(v, ["at-a-glance", "accordion"]));
-    assert.deepEqual([best.version, best.differences], [v, 0], `a pristine ${v} page`);
+    const ranked = await suggestVersions(await pristineOn(v, ["at-a-glance", "accordion"]));
+    assert.equal(ranked.find((r) => r.version === v).differences, 0, `a pristine ${v} page matches ${v} exactly`);
+    assert.equal(ranked[0].differences, 0, "and nothing is a better match than that");
   }
   // A 3.1.1 page with two edits is still closest to 3.1.1.
   const edited = edit(edit(pristineCss(), "color: var(--primary-colour);\n    line-height: 120%", "color: #123456;\n    line-height: 120%"), "font-style: italic;", "font-style: normal;");
@@ -214,9 +215,12 @@ test("suggests the stored version a page's CSS is closest to", async () => {
 });
 
 test("versions that differ in no CSS tie, newest first, so the guess is honest about being ambiguous", async () => {
-  // 3.2.0 and 3.3.0 have identical base CSS: with no At a glance block on the page, they cannot be told apart.
+  // Releases that do not change the base CSS (3.2.0, 3.3.0, 3.4.0...) cannot be told apart by a page that uses none of the blocks they changed.
   const ranked = await suggestVersions(await pristineOn("3.3.0", []));
-  assert.deepEqual(ranked.slice(0, 2).map((r) => [r.version, r.differences]), [["3.3.0", 0], ["3.2.0", 0]]);
+  const tied = ranked.filter((r) => r.differences === 0).map((r) => r.version);
+  assert.ok(tied.includes("3.3.0") && tied.includes("3.2.0"), tied.join());
+  assert.deepEqual(tied, [...tied].sort((a, b) => b.localeCompare(a, undefined, { numeric: true })), "ties are listed newest first");
+  assert.equal(ranked[0].version, tied[0]);
 });
 
 test("no marker: the error comes with the closest versions", async () => {

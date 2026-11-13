@@ -36,11 +36,13 @@ const wrap = (text, tag) => (!text.trim() || new RegExp(`^\\s*<${tag}`, "i").tes
 
 // A whole page as an iframe document. Scripts are allowed to run (it is the author's own page) but the frame is
 // sandboxed, so it cannot reach the builder.
-// `highlight`: selectors whose elements are outlined, and (scroll "first") the first scrolled into view; "top" leaves the page
-// at its top (for the review's side-by-side frames).
+// `highlight`: selectors whose elements are outlined, and (scroll "first") the first brought to the middle of the frame; "top"
+// leaves the page at its top (for the review's side-by-side frames). The frame is scrolled with window.scrollTo, NOT
+// scrollIntoView: scrollIntoView inside an iframe also scrolls the PARENT page to show the frame, which threw the whole
+// builder around every time a frame loaded.
 export const pageDoc = ({ html, css, js }, { highlight = [], scroll = "first" } = {}) => {
   const mark = highlight.length
-    ? `<style>.__hl{outline:3px dashed #e07b00!important;outline-offset:2px}</style><script>(function(){var first;${JSON.stringify(highlight).replace(/</g, "\\u003c")}.forEach(function(s){try{document.querySelectorAll(s).forEach(function(e){e.classList.add("__hl");first=first||e})}catch(x){}});${scroll === "first" ? "if(first)setTimeout(function(){first.scrollIntoView({block:\"center\"})},50);" : ""}})()<\/script>`
+    ? `<style>.__hl{outline:3px dashed #e07b00!important;outline-offset:2px}</style><script>(function(){var first;${JSON.stringify(highlight).replace(/</g, "\\u003c")}.forEach(function(s){try{document.querySelectorAll(s).forEach(function(e){e.classList.add("__hl");first=first||e})}catch(x){}});${scroll === "first" ? "if(first)setTimeout(function(){window.scrollTo(0,Math.max(0,first.getBoundingClientRect().top+window.pageYOffset-window.innerHeight\/2))},50);" : ""}})()<\/script>`
     : "";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0">${wrap(css, "style")}${html}${wrap(js, "script")}${mark}</body></html>`;
 };

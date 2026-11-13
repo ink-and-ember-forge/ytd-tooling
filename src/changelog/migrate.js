@@ -160,13 +160,15 @@ function comparable(value, theme) {
   return norm(v);
 }
 
-// What a stylesheet says, as media|selector -> Map(property -> value). #page-container is stripped from selectors.
+// What a stylesheet says, as media|selector -> Map(property -> { cmp, raw }). #page-container is stripped from selectors.
 function indexRules(cssText, theme) {
   const index = new Map();
   for (const rule of flattenRules(parseCss(cssText))) for (const item of rule.items) {
     const key = `${rule.media || ""}|${stripContainer(item).replace(/\s+/g, " ").trim()}`;
     const props = index.get(key) || new Map();
-    for (const [prop, values] of rule.decls) props.set(prop, values.map((v) => comparable(v, theme)).join(" / "));
+    // `cmp` is for comparing (tokens resolved to their values); `raw` is what the stylesheet actually says, which is what a person
+    // is shown: the template says var(--primary-colour), never the colour it happens to resolve to.
+    for (const [prop, values] of rule.decls) props.set(prop, { cmp: values.map((v) => comparable(v, theme)).join(" / "), raw: values.join(" / ") });
     index.set(key, props);
   }
   return index;
@@ -221,9 +223,9 @@ export function analyseLegacyCss(css, html, standardCss, { referenceCss = null, 
         // subnav), so carrying this would quietly switch that off.
         if (prop === "scroll-margin-top" && values.some((v) => v.includes("--thinqi-navbar-height"))) { same.set(prop, values); continue; }
         const mine = values.map((v) => comparable(v, theme)).join(" / ");
-        if (counterpart.some((c) => c?.get(prop) === mine)) { same.set(prop, values); continue; }
+        if (counterpart.some((c) => c?.get(prop)?.cmp === mine)) { same.set(prop, values); continue; }
         changed.set(prop, values);
-        standardValue.set(prop, currently?.get(prop) ?? previously?.get(prop) ?? null);
+        standardValue.set(prop, currently?.get(prop)?.raw ?? previously?.get(prop)?.raw ?? null);
       }
       if (same.size) dropped[kind].push({ selector: item, media: rule.media, css: show(same) });
       if (changed.size) {
