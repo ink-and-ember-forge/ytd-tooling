@@ -472,6 +472,27 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("10 no horizontal page scroll at 390px", overflow <= 0, "overflow=" + overflow);
   await m.screenshot({ path: path.join(OUT, "ui-mobile.png") });
 
+  // the generated page (template/): base CSS 3.2.0 behaviour in a real browser
+  const tctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+  await stubCdn(tctx);
+  const tp = await tctx.newPage();
+  await tp.goto(BASE + "/template/index.html", { waitUntil: "load" });
+  await tp.focus(".accordion-button");
+  await tp.keyboard.press("Shift+Tab");
+  await tp.keyboard.press("Tab");
+  const ring = await tp.evaluate(() => { const c = getComputedStyle(document.activeElement); return { cls: document.activeElement.className, w: c.outlineWidth, st: c.outlineStyle, col: c.outlineColor }; });
+  ok("template: keyboard focus on an accordion button shows a 3px black ring", /accordion-button/.test(ring.cls) && ring.st === "solid" && ring.w === "3px" && ring.col === "rgb(0, 0, 0)", JSON.stringify(ring));
+  const gap = () => tp.evaluate(() => document.querySelector(".content-body h2").getBoundingClientRect().top - document.querySelector("#header-h1").getBoundingClientRect().bottom);
+  const aagGap = await tp.evaluate(() => document.querySelector("#at-a-glance").getBoundingClientRect().top - document.querySelector("#header-h1").getBoundingClientRect().bottom);
+  ok("template: At a glance sits one normal H1 margin (24px) below the title; the base H1 margin is unchanged", Math.round(aagGap) === 24, "gap=" + aagGap);
+  await tp.evaluate(() => document.querySelector("#at-a-glance").remove());
+  const before = await gap();
+  await tp.evaluate(() => document.querySelector(".content-body h2").classList.add("tight-heading"));
+  const after = await gap();
+  ok("template: .tight-heading pulls an H2 up under the H1 (by 40px)", Math.round(before - after) === 40, `before=${before} after=${after}`);
+  ok("template: content-column H3 is black", await tp.evaluate(() => { const h = document.createElement("h3"); document.querySelector(".content-body").prepend(h); return getComputedStyle(h).color === "rgb(0, 0, 0)"; }));
+  ok("template: contents items have a themed border", await tp.$eval("#table-of-contents li", (e) => getComputedStyle(e).borderTopWidth === "1px"));
+
   ok("no page errors", errors.length === 0, errors.join("; "));
   await browser.close();
   server.close();

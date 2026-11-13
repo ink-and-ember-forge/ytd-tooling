@@ -1,4 +1,4 @@
-// Gwella base JS · version 3.1.1
+// Gwella base JS · version 3.2.0
 // The closing script tag near the end is escaped. Keep the backslash, or it ends this script early.
 // Set the top margin and anchor offset for the page container.
 // Also offsets for an optional #subnav, if the page has one.

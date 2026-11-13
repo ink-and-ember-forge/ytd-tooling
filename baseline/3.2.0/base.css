@@ -1,0 +1,317 @@
+/* Gwella base CSS · version 3.2.0 */
+/* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.gwella {
+  --primary-colour: #a3195b;
+  --secondary-colour: #faf3f7;
+  --light-grey: #f1f1f1;
+  --mid-grey: #d3d3d3;
+  --dark-grey: #545454;
+}
+
+.ytydysgu {
+  --primary-colour: #325083;
+  --secondary-colour: #f3f6fb;
+  --light-grey: #f1f1f1;
+  --mid-grey: #d3d3d3;
+  --dark-grey: #545454;
+}
+
+body > main > article.plain-text {
+  overflow: visible !important;
+}
+
+#page-container {
+  --heading-1: 1.625rem;
+  --heading-2: 1.375rem;
+  --heading-3: 1.125rem;
+  --numbered-subheading: 20px;
+
+
+  --bs-font-sans-serif: "Noto Sans", "Noto Sans Arabic", sans-serif;
+  --bs-body-font-family: "Noto Sans", "Noto Sans Arabic", sans-serif;
+
+  margin-top: var(--thinqi-navbar-height, 95px);
+  line-height: 160%;
+  background-color: white !important;
+  font-family: var(--bs-font-sans-serif) !important;
+
+  &,
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  p {
+    margin-block: 1em;
+  }
+
+  ul {
+    list-style-type: disc;
+    padding-left: 40px;
+  }
+
+  ol {
+    list-style-type: decimal;
+    padding-left: 40px;
+    margin-block: 1em;
+  }
+
+  ol > li {
+    display: list-item;
+  }
+
+  ol > li::marker {
+    font-weight: bold;
+  }
+
+  li {
+    line-height: 1.5em;
+  }
+
+  section {
+    /* Padding, not margin, gives the 64px gap between sections. */
+    padding-block: 1.25rem;
+    scroll-margin-top: var(--anchor-section-offset, 145px);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-weight: bold;
+    margin-block: 1.5rem;
+    /* Keeps anchored headings clear of the navbar. */
+    scroll-margin-top: var(--anchor-section-offset, 145px);
+  }
+
+  a {
+    color: var(--primary-colour);
+    text-decoration: underline;
+
+    &:hover {
+      text-decoration: none;
+    }
+  }
+
+  .standard-container {
+    max-width: 860px;
+    margin-inline: auto;
+
+    @media (max-width: 1200px) {
+      max-width: 750px;
+    }
+
+    @media (max-width: 768px) {
+      max-width: 100%;
+      padding-inline: 1.2rem;
+    }
+  }
+
+  .content-column {
+    h2 {
+      font-size: var(--heading-2);
+      font-weight: bold;
+      margin-block: 1.5rem;
+    }
+
+    h3 {
+      font-size: var(--heading-3);
+      font-weight: 600;
+      color: #000;
+    }
+
+    @media (max-width: 768px) {
+      display: contents;
+    }
+  }
+
+  /* For an H2 directly below the page title (H1): pulls it up to close the gap.
+     Same specificity as ".content-column h2" and later in the file, so it wins
+     without !important. */
+  h2.tight-heading {
+    margin-top: -1rem;
+  }
+
+  .button-icon {
+    margin-left: 0.25rem;
+  }
+
+  #breadcrumb-nav {
+    padding: 1rem;
+
+    #breadcrumb-nav__list {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      gap: 0.4rem;
+
+      li:not(:last-child)::after {
+        content: "|";
+        margin-left: 0.5rem;
+        color: var(--dark-grey);
+      }
+
+      li:last-child {
+        color: var(--dark-grey);
+      }
+    }
+
+    a {
+      color: var(--primary-colour);
+      text-decoration: underline;
+
+      &:hover {
+        text-decoration: none;
+      }
+    }
+  }
+
+  .header {
+    width: 100%;
+  }
+
+  #header-img {
+    width: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    display: block;
+
+    @media (max-width: 576px) {
+      object-fit: contain;
+    }
+  }
+
+  #header-h1 {
+    font-size: var(--heading-1);
+    color: var(--primary-colour);
+    line-height: 120%;
+    font-weight: bold;
+    margin-block: 1.5rem;
+
+    @media (max-width: 768px) {
+      order: 1;
+    }
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 3fr;
+    gap: 2rem;
+    align-items: start;
+    padding-inline: 1rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+
+  .content-body {
+    margin-top: 1rem;
+
+    /* The order belongs on .content-body, the grid item on mobile. */
+    @media (max-width: 768px) {
+      order: 4;
+    }
+  }
+
+  #table-of-contents {
+    position: sticky;
+    top: 110px;
+
+    @media (max-width: 768px) {
+      order: 3;
+      padding-top: 0;
+      position: relative;
+      top: 0;
+    }
+
+    #table-of-contents-heading {
+      border-radius: 20px;
+      background-color: var(--primary-colour);
+      color: white;
+      padding: 5px;
+      text-align: center;
+      font-weight: 400;
+      line-height: 1.5;
+      font-size: 1.2em;
+      margin-block: 1.5rem 0.75em;
+    }
+
+    ul {
+      padding-left: 0;
+    }
+
+    li {
+      list-style: none;
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid var(--primary-colour);
+      background-color: var(--secondary-colour);
+      margin-left: 0;
+
+      &:hover {
+        background-color: var(--light-grey);
+      }
+
+      & + li {
+        margin-top: 1rem;
+      }
+    }
+
+    .toc-link {
+      color: var(--primary-colour);
+
+      &:hover {
+        text-decoration: none;
+      }
+    }
+  }
+
+  .timestamp {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--dark-grey);
+    padding-inline: 1rem;
+  }
+
+  .back-to-top {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: var(--primary-colour);
+    font-weight: bold;
+    padding: 0.5rem 0.8rem;
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 99;
+
+    & > i {
+      font-size: 30px;
+      color: var(--primary-colour);
+    }
+  }
+
+  /* ============================================================
+     PLACE NEW BLOCK CSS ABOVE THIS LINE
+     ============================================================ */
+}

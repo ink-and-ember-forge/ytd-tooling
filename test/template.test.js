@@ -35,3 +35,19 @@ test("every block's CSS class root appears in the template page", () => {
     assert.ok(page.includes(root), `block "${b.id}" (.${root}) has no example in template/index.html`);
   }
 });
+
+test("no-ToC base CSS: single column, no ToC rule, whatever the ToC column ratio is", async () => {
+  const { getBaseCSS } = await import("../src/base/index.js");
+  const css = getBaseCSS(false);
+  const grid = css.match(/\.main-grid \{[\s\S]*?\n  \}/)[0];
+  assert.match(grid, /grid-template-columns:\s*1fr;/);
+  assert.doesNotMatch(grid, /\bfr 3fr/);
+  assert.doesNotMatch(css, /#table-of-contents/);
+});
+
+test(".tight-heading beats the content-column H2 margin without !important", async () => {
+  const { BASE_CSS } = await import("../src/base/index.js");
+  const tight = BASE_CSS.indexOf("h2.tight-heading");
+  assert.ok(tight > BASE_CSS.indexOf(".content-column {"), "must come after .content-column so equal specificity resolves in its favour");
+  assert.doesNotMatch(BASE_CSS.slice(tight, tight + 60), /!important/);
+});
