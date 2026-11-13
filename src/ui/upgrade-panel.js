@@ -95,10 +95,11 @@ export function buildUpgradePanel() {
     }
     checkBtn.disabled = true;
     try {
-      [foundEl, tweaksEl, changesEl, checkEl, copyEl].forEach((el) => { el.hidden = true; });
+      // A new page starts from nothing: no section, and no open preview, carries over from the previous check.
+      [foundEl, tweaksEl, changesEl, checkEl, copyEl].forEach((el) => { el.hidden = true; el.replaceChildren(); });
       if (assessFit(code()).legacy && !forceUpgrade) {
         results.hidden = false;
-        migration.start();
+        await migration.start();
         return;
       }
       const result = await upgradePage(code(), { version: choice.version });

@@ -52,7 +52,8 @@ export function renderCheck(container, { before, after, lint }) {
     list.appendChild(li);
   };
   line(!lint.unstyledClasses.length, lint.unstyledClasses.length ? `${plural(lint.unstyledClasses.length, "class", "classes")} in your HTML ${lint.unstyledClasses.length === 1 ? "has" : "have"} no styling` : "Every class in your HTML has styling",
-    lint.unstyledClasses.length ? lint.unstyledClasses.map((c) => `.${c}`).join(", ") + ". If you meant to keep their styles, tick them above." : "");
+    [lint.unstyledClasses.length ? lint.unstyledClasses.map((c) => `.${c}`).join(", ") + ". If you meant to keep their styles, tick them above." : "",
+      lint.neverStyled?.length ? `${lint.neverStyled.map((c) => `.${c}`).join(", ")} had no styling in your old CSS either, so nothing was lost.` : ""].filter(Boolean).join(" "));
   line(!lint.undefinedVars.length, lint.undefinedVars.length ? `${plural(lint.undefinedVars.length, "variable", "variables")} used but not defined` : "No undefined CSS variables",
     lint.undefinedVars.length ? lint.undefinedVars.join(", ") + `. Anything using ${lint.undefinedVars.length === 1 ? "it has" : "them has"} no effect.` : "");
   line(!lint.tagProblems.length, lint.tagProblems.length ? `${plural(lint.tagProblems.length, "problem", "problems")} in your HTML tags` : "Your HTML tags open and close properly",

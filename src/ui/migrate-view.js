@@ -1,10 +1,12 @@
 // The migration half of "Upgrade a page", for pages built before version 3.1.0. It fills the same five
 // sections the upgrade flow uses, so the page keeps one shape:
-//   2 why this is a migration   3 the page's own styles (kept by default)   4 theme + HTML changes
+//   2 why this is a migration   3 the page's own styles and where it differs from the template (all kept by default)
+//   4 theme + HTML changes
 //   5 check (problems, before/after)   6 copy
 // All the thinking is in src/changelog/migrate.js; this file only shows it.
 import { makeEl } from "../lib/dom.js";
 import { buildMigration, THEMES } from "../changelog/migrate.js";
+import { loadBaseline } from "../lib/baseline.js";
 import { outputCard, renderCheck, plural } from "./upgrade-parts.js";
 
 const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
@@ -12,10 +14,10 @@ const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
 // els: { found, tweaks, changes, check, copy } (the section elements). code(): the pasted { html, css, js }.
 // onUpgradeInstead(): the author wants the normal upgrade flow for this page.
 export function createMigrationView(els, { code, onUpgradeInstead }) {
-  const state = { theme: undefined, keep: new Set(), result: null };
+  const state = { theme: undefined, keep: new Set(), result: null, reference: null };
   let htmlList = null;
 
-  const recompute = () => { state.result = buildMigration(code(), { theme: state.theme, keepGroups: [...state.keep] }); };
+  const recompute = () => { state.result = buildMigration(code(), { theme: state.theme, keepGroups: [...state.keep], reference: state.reference }); };
 
   // ---- 2. why this is a migration ---------------------------------------------
   function renderFound() {
@@ -33,14 +35,10 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     els.found.appendChild(back);
   }
 
-  // ---- 3. the page's own styles --------------------------------------------------
-  function renderStyles() {
-    const r = state.result;
-    els.tweaks.hidden = false;
-    els.tweaks.replaceChildren(makeEl("h3", "step-title", `3. Your page's own styles (${plural(r.groups.length, "group", "groups")})`));
-    els.tweaks.appendChild(makeEl("p", "upgrade-hint", "These style classes your HTML uses that the current template doesn't. They are kept unless you untick them, and go in a labelled block at the end of the new CSS. Old colour tokens have been renamed to the current ones."));
-    const list = makeEl("ul", "upgrade-tweaks");
-    r.groups.forEach((g) => {
+  // ---- 3. the page's own styles, and where it differs from the template ------------------------------------
+  function groupList(groups, className, describe) {
+    const list = makeEl("ul", `upgrade-tweaks ${className}`);
+    groups.forEach((g) => {
       const li = makeEl("li", "upgrade-tweak");
       const label = makeEl("label");
       const box = document.createElement("input");
@@ -51,17 +49,32 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
         recompute();
         renderChecksAndCopy();
       });
-      label.append(box, " ", makeEl("strong", "", g.key));
+      label.append(box, " ", makeEl("strong", "", g.key.replace(/^differs:/, "")));
       li.appendChild(label);
-      li.appendChild(codeBlock(g.text));
+      li.appendChild(codeBlock(describe(g)));
       g.notes.forEach((n) => li.appendChild(makeEl("p", /not defined/.test(n) ? "upgrade-flag" : "upgrade-hint", n)));
       list.appendChild(li);
     });
-    els.tweaks.appendChild(list);
+    return list;
+  }
+
+  function renderStyles() {
+    const r = state.result;
+    const custom = r.groups.filter((g) => g.kind === "custom"), differs = r.groups.filter((g) => g.kind === "deviation");
+    els.tweaks.hidden = false;
+    els.tweaks.replaceChildren(makeEl("h3", "step-title", `3. Your page's own styles (${plural(custom.length, "group", "groups")})`));
+    els.tweaks.appendChild(makeEl("p", "upgrade-hint", "These style classes your HTML uses that the current template doesn't. They are kept unless you untick them, and go in a labelled block at the end of the new CSS. Old colour tokens have been renamed to the current ones."));
+    els.tweaks.appendChild(groupList(custom, "upgrade-custom", (g) => g.text));
+
+    if (differs.length) {
+      els.tweaks.appendChild(makeEl("h4", "upgrade-group", `Where your page differs from the template (${differs.length})`));
+      els.tweaks.appendChild(makeEl("p", "upgrade-hint", "The template styles these too, but your page overrides it. They are kept unless you untick them, so the page keeps looking as you built it. What the template says instead is shown beside each, so you can drop any you no longer need."));
+      els.tweaks.appendChild(groupList(differs, "upgrade-deviations", (g) => g.against.join("\n")));
+    }
 
     const leftovers = [
-      ["base", "Replaced by the new base", "The old rules for plain elements (p, a, body…). The new base styles these."],
-      ["standard", "Replaced by the new template's CSS", "Rules for classes the current template styles itself."],
+      ["base", "Replaced by the new base", "Old rules for plain elements (p, a, body…) that match what the new base does, or that the template has no equivalent of."],
+      ["standard", "Replaced by the new template's CSS", "Parts of rules for classes the current template styles itself, which match what it does."],
       ["unused", "Not used on this page", "Rules for classes that are not in your HTML, left over from other pages. They are dropped."],
     ];
     leftovers.forEach(([key, title, hint]) => {
@@ -149,9 +162,11 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   }
 
   return {
-    start() {
+    async start() {
       state.theme = undefined;
-      state.result = buildMigration(code());
+      // What the template said when it was first stored: a rule that matches that is the OLD template, not the author's choice.
+      state.reference ||= await loadBaseline("3.1.1");
+      state.result = buildMigration(code(), { reference: state.reference });
       state.keep = new Set(state.result.groups.map((g) => g.key));
       renderFound();
       renderStyles();

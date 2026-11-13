@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { BLOCKS } from "../src/blocks/index.js";
+import { getPageJS } from "../src/base/index.js";
 import { FIXTURES } from "./fixtures.js";
 import { BUILDER_VERSION } from "../src/changelog/index.js";
 import { parseCss } from "../src/changelog/css-tree.js";
@@ -16,6 +17,9 @@ import {
 
 const fixture = (name) => readFileSync(new URL(`./fixtures/legacy/${name}`, import.meta.url), "utf8");
 const legacy = () => ({ html: fixture("page.html"), css: fixture("page.css"), js: fixture("page.js") });
+const fixture2 = (name) => readFileSync(new URL(`./fixtures/legacy2/${name}`, import.meta.url), "utf8");
+const legacy2 = () => ({ html: fixture2("page.html"), css: fixture2("page.css"), js: fixture2("page.js") });
+const reference = await loadBaseline("3.1.1"); // what the template said when it was first stored
 
 // ---- is it a migration? ----------------------------------------------------
 
@@ -72,13 +76,14 @@ test("selectors: lists split on top-level commas, nesting resolves, specificity 
 
 // ---- the analysis of the real page -------------------------------------------
 
-test("analysis: 109 rules sort into what is replaced, what is dropped and the 12 groups of the page's own design", () => {
-  const m = buildMigration(legacy());
-  assert.deepEqual(Object.fromEntries(Object.entries(m.dropped).map(([k, v]) => [k, v.length])), { base: 26, standard: 45, unused: 26 });
-  assert.deepEqual(m.groups.map((g) => g.key), [
+test("analysis: the old CSS sorts into what is replaced, what is dropped and the 12 groups of the page's own design", () => {
+  const m = buildMigration(legacy(), { reference });
+  assert.deepEqual(m.groups.filter((g) => g.kind === "custom").map((g) => g.key), [
     "cta-button", "intro-text", "journey-section", "journey-image", "journey-content", "important-label",
     "gwella-message", "burgundy-link", "desktop-image", "mobile-image", "info-section", "text",
   ]);
+  assert.deepEqual(Object.fromEntries(Object.entries(m.dropped).map(([k, v]) => [k, v.length])), { base: 23, standard: 30, unused: 26 },
+    "dropped = rules that match the template, plus rules for classes that are not on this page");
   const unused = m.dropped.unused.map((d) => d.selector).join(" | ");
   assert.match(unused, /#at-a-glance/);
   assert.match(unused, /\.lower-image-section/);
@@ -198,8 +203,9 @@ test("lint: a page whose custom styles were not carried shows exactly the classe
 });
 
 test("js: the standard JS replaces the old one; a selector it does not know is reported", () => {
-  assert.deepEqual(customJs(legacy().js), [], "the old base JS only looks for elements the new JS also handles");
-  assert.deepEqual(customJs(legacy().js + '\ndocument.querySelector(".my-thing");'), [".my-thing"]);
+  const standard = getPageJS([]);
+  assert.deepEqual(customJs(legacy().js, standard), [], "the old base JS only looks for elements the new JS also handles");
+  assert.deepEqual(customJs(legacy().js + '\ndocument.querySelector(".my-thing");', standard), [".my-thing"]);
   const m = buildMigration({ ...legacy(), js: legacy().js + '\ndocument.getElementById("mine");' });
   assert.ok(m.notes.some((n) => /mine/.test(n)));
 });
@@ -215,4 +221,88 @@ test("a migrated page is an ordinary current page: it needs no migration and an 
   assert.equal(r.upToDate, true);
   assert.deepEqual(r.edits, [], "the carried styles are in the overrides region, so they are not new edits");
   assert.equal(r.css.replace(/\s+/g, " "), m.css.replace(/\s+/g, " "), "the region is carried forward unchanged");
+});
+
+
+// ---- where the page differs from the template -------------------------------------
+// The second real page: the template's own blocks plus many deliberate overrides of the standard. Sorting rules by
+// the NAMES they use dropped all of those (strong, h4, h5, the page's mobile ordering...), so each declaration is
+// now compared with what the template actually says.
+
+const deviations = (m) => Object.fromEntries(m.groups.filter((g) => g.kind === "deviation").map((g) => [g.key.replace("differs:", ""), g.against]));
+
+test("deviations: the page's own overrides of the template are found, each with what the template says instead", () => {
+  const m = buildMigration(legacy2(), { reference });
+  assert.equal(m.theme, "gwella");
+  assert.deepEqual(m.blocks, ["at-a-glance", "accordion", "icon-toggle"]);
+  assert.deepEqual(m.groups.filter((g) => g.kind === "custom").map((g) => g.key), ["inline-icon", "accordion-text", "resource-card-grid", "resource-card"]);
+  const d = deviations(m);
+  assert.deepEqual(d.strong, ["strong: font-weight: bold  (template: nothing)"], "a rule the template has no equivalent of");
+  assert.deepEqual(d["#header-h1"], ["#header-h1: margin-block: 1.5rem 1rem  (template: 1.5rem)"], "a different value for a property the template sets");
+  assert.deepEqual(d.h5, ["h5: color: var(--primary-colour)  (template: nothing)"], "an added property on a selector the template does style");
+  assert.ok(d[".content-column h4"].some((l) => /font-weight: 600/.test(l)));
+  assert.ok(d["#at-a-glance #at-a-glance-heading"].some((l) => /color: #000 !important  \(template: #a3195b\)/.test(l)), "the page's black heading beats the themed one, as the page intended");
+  assert.ok(d.ol.some((l) => /list-style-type: decimal !important  \(template: decimal\)/.test(l)), "!important is a difference");
+  assert.ok(d[".main-grid"].some((l) => /@media \(max-width: 768px\) \.main-grid: gap: 1rem  \(template: 0\)/.test(l)), "the page's own mobile layout");
+  assert.ok(d["#table-of-contents"].some((l) => /order: 2  \(template: 3\)/.test(l)));
+});
+
+test("deviations: not noise: matches of the template, dead rules and legacy tokens are not carried", () => {
+  const m = buildMigration(legacy2(), { reference });
+  const keys = m.groups.filter((g) => g.kind === "deviation").map((g) => g.key.replace("differs:", ""));
+  for (const matching of ["p", "ul", "li", ".standard-container", ".header", ".content-column h2", ".data-icon-card"]) assert.equal(keys.includes(matching), false, `${matching} matches the template`);
+  assert.equal(keys.includes(".back-to-top > img"), false, "its image became the standard icon, so the rule that sized the image is dead");
+  assert.equal(keys.includes("#data-icons-grid"), false, "an id the page does not have");
+  const region = m.css.slice(m.css.indexOf("/* ===== PAGE-SPECIFIC"));
+  assert.doesNotMatch(region, /--burgundy|--light-burgundy/, "legacy tokens are not redefined");
+  assert.match(region, /--heading-4: 1rem/, "but a custom property that carried rules use is");
+  assert.match(region, /font-size: var\(--heading-4\)/);
+});
+
+test("deviations: an old template value is not mistaken for the author's choice (that is what the stored version is for)", () => {
+  const without = deviations(buildMigration(legacy2()));
+  const withReference = deviations(buildMigration(legacy2(), { reference }));
+  assert.ok(without[".main-grid"].some((l) => /grid-template-columns: 1fr 3fr  \(template: 1\.3fr 3fr\)/.test(l)), "alone, the old 1fr 3fr looks like a deviation");
+  assert.deepEqual(withReference[".main-grid"].map((l) => l.replace(/\s+\(template:.*$/, "")), ["@media (max-width: 768px) .main-grid: gap: 1rem"], "it was the template's own old value, so only the real difference is left");
+});
+
+test("deviations: selectors written more simply than the template's still match, and var() fallbacks are not differences", () => {
+  const css = ".x {} #breadcrumb-nav__list { display: flex; gap: 0.4rem; }\n#table-of-contents-heading { text-align: center; }\n#page-container { margin-top: var(--thinqi-navbar-height); }";
+  const html = '<div id="page-container"><nav id="breadcrumb-nav"><ol id="breadcrumb-nav__list"></ol></nav><nav id="table-of-contents"><h3 id="table-of-contents-heading"></h3></nav></div>';
+  const m = buildMigration({ html, css, js: "" }, { reference });
+  assert.deepEqual(m.groups.filter((g) => g.kind === "deviation").map((g) => g.key), [], "all three match the template once ancestors and fallbacks are ignored");
+});
+
+test("deviations: they are carried like the custom styles, and can be left out", () => {
+  const all = buildMigration(legacy2(), { reference });
+  assert.match(all.css, /strong \{\s*font-weight: bold;/);
+  assert.match(all.css, /#header-h1 \{\s*margin-block: 1\.5rem 1rem;/);
+  const none = buildMigration(legacy2(), { reference, keepGroups: [] });
+  assert.doesNotMatch(none.css, /PAGE-SPECIFIC/);
+  const some = buildMigration(legacy2(), { reference, keepGroups: ["differs:strong"] });
+  assert.match(some.css, /strong \{/);
+  assert.doesNotMatch(some.css, /#header-h1 \{\s*margin-block/);
+  assert.equal(some.groups.find((g) => g.key === "differs:strong").kept, true);
+  assert.equal(some.groups.find((g) => g.key === "differs:h5").kept, false);
+});
+
+test("checks: what the migration lost is told apart from what was never styled, and Bootstrap classes are not reported", () => {
+  const m = buildMigration(legacy2(), { reference });
+  assert.deepEqual(m.lint.unstyledClasses, [], "nothing the old CSS styled has lost its styling");
+  assert.deepEqual(m.lint.neverStyled, ["number-text"], "number-text had no rule in the old CSS either (and stretched-link is Bootstrap's)");
+  const dropped = buildMigration(legacy2(), { reference, keepGroups: [] });
+  assert.ok(dropped.lint.unstyledClasses.includes("resource-card") && dropped.lint.unstyledClasses.includes("inline-icon"), "unticked groups lose their styling, and the check says so");
+  assert.equal(dropped.lint.unstyledClasses.includes("number-text"), false);
+});
+
+test("js: the selectors of the page's own blocks are standard, not the author's", () => {
+  assert.deepEqual(buildMigration(legacy2(), { reference }).customJs, [], "the icon toggle's own JS looks for .data-icon-card and .content-display.active");
+  assert.deepEqual(buildMigration({ ...legacy2(), js: legacy2().js + '\ndocument.querySelector(".mine")' }, { reference }).customJs, [".mine"]);
+});
+
+test("deviations: the old navbar-offset for anchors is replaced by the template's, not carried", () => {
+  const section = buildMigration(legacy(), { reference }).groups.find((g) => g.key === "differs:section");
+  assert.ok(section, "the page's own section padding is still a deviation");
+  assert.equal(section.against.some((l) => /scroll-margin-top/.test(l)), false);
+  assert.doesNotMatch(buildMigration(legacy(), { reference }).css.slice(buildMigration(legacy(), { reference }).css.indexOf("PAGE-SPECIFIC")), /scroll-margin-top: calc\(var\(--thinqi-navbar-height\)/);
 });

@@ -225,8 +225,10 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.waitForSelector("#view-upgrade .upgrade-signals", { state: "visible" });
   ok("9b says why it is a migration", (await page.$$("#view-upgrade .upgrade-signals li")).length === 4);
   ok("9b every section is visible", await page.isVisible("#view-upgrade .upgrade-signals") && await page.isVisible("#view-upgrade .upgrade-theme") && await page.isVisible("#view-upgrade .upgrade-checks"));
-  const groups = await page.$$eval("#view-upgrade .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
+  const groups = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
   ok("9b the page's own styles are 12 groups, all kept by default", groups.length === 12 && groups.every((g) => g.kept), groups.map((g) => g.name).join(","));
+  const differs = await page.$$eval("#view-upgrade .upgrade-deviations .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked, text: x.querySelector("pre").textContent })));
+  ok("9b where the page differs from the template is listed too, kept by default, with the template's value beside each", differs.length === 18 && differs.every((g) => g.kept) && differs.every((g) => /\(template: /.test(g.text)), differs.length + " groups");
   ok("9b the theme is detected from the old colour", await page.isChecked('#view-upgrade .upgrade-theme input[value="gwella"]') && (await page.textContent("#view-upgrade .upgrade-theme")).includes("detected"));
   ok("9b two HTML changes are shown with before and after", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 2);
   const region = (await code("CSS")).slice((await code("CSS")).indexOf("PAGE-SPECIFIC OVERRIDES"));
@@ -281,6 +283,53 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.click('#view-upgrade button:has-text("Treat it as a normal upgrade instead")');
   await page.waitForFunction(() => document.querySelector("#view-upgrade .upgrade-message")?.textContent.includes("version marker"));
   ok("9b the author can choose the normal upgrade flow instead", !(await page.isVisible("#view-upgrade .upgrade-theme")));
+
+  // 9c. a second real page: the template's own blocks plus many deliberate overrides of the standard.
+  // Sorting rules by the names they use dropped those overrides; each declaration is now compared with the template.
+  const L2 = (f) => fs.readFileSync(path.join(ROOT, "test", "fixtures", "legacy2", f), "utf8");
+  await page.fill("#view-upgrade .upgrade-input >> nth=0", L2("page.html"));
+  await page.fill("#view-upgrade .upgrade-input >> nth=1", L2("page.css"));
+  await page.fill("#view-upgrade .upgrade-input >> nth=2", L2("page.js"));
+  await page.click("#view-upgrade .primary-btn");
+  await page.waitForSelector("#view-upgrade .upgrade-deviations", { state: "visible" });
+  const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
+  ok("9c the page's own classes are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
+  const dev2 = await page.$$eval("#view-upgrade .upgrade-deviations .upgrade-tweak", (l) => l.map((x) => x.querySelector("strong").textContent));
+  ok("9c the overrides of the template are listed (strong, h4, h5, the header margin, the mobile layout...)", ["strong", ".content-column h4", "h5", "#header-h1", ".main-grid", "#table-of-contents", "ol"].every((k) => dev2.includes(k)), dev2.length + " groups");
+  ok("9c and not the rules that merely match it", !dev2.includes("p") && !dev2.includes(".standard-container") && !dev2.includes("#data-icons-grid"));
+  const checks2 = await page.textContent("#view-upgrade .upgrade-checks");
+  ok("9c checks: nothing lost, and the class that was never styled is said to be exactly that", checks2.includes("Every class in your HTML has styling") && checks2.includes(".number-text") && checks2.includes("nothing was lost") && !checks2.includes("stretched-link"));
+
+  await page.click("#view-upgrade .upgrade-preview summary");
+  const frame2 = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-frame"); return el.contentFrame(); };
+  const probe = (frame) => frame.evaluate(() => {
+    const cs = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e) : null; };
+    return {
+      strong: cs(".accordion-text strong").fontWeight, h4: cs("h4.number-text").fontWeight, h1Margin: cs("#header-h1").marginBottom,
+      h5: cs("section#culture > h5").color, glanceHeading: cs("#at-a-glance-heading").color,
+      h3: cs("section#culture > h3").color, tocItemBorder: cs("#table-of-contents li").borderTopWidth,
+      card: { radius: cs(".resource-card").borderTopLeftRadius, grid: cs(".resource-card-grid").display }, icon: cs(".inline-icon").width,
+    };
+  });
+  await page.click('#view-upgrade .upgrade-seg-btn:has-text("Before")');
+  await page.waitForTimeout(400);
+  const was = await probe(await frame2());
+  await page.click('#view-upgrade .upgrade-seg-btn:has-text("After")');
+  await page.waitForTimeout(400);
+  const now = await probe(await frame2());
+  ok("9c everything the author overrode looks exactly as it did", now.strong === was.strong && now.h4 === was.h4 && now.h1Margin === was.h1Margin && now.h5 === was.h5 && now.glanceHeading === was.glanceHeading,
+    JSON.stringify({ was: [was.strong, was.h4, was.h1Margin, was.h5, was.glanceHeading], now: [now.strong, now.h4, now.h1Margin, now.h5, now.glanceHeading] }));
+  ok("9c the older resource cards and inline icons are untouched", JSON.stringify(now.card) === JSON.stringify(was.card) && now.icon === was.icon);
+  ok("9c the template's own changes are adopted, and only those (black sub-headings, bordered contents items)", was.h3 === "rgb(163, 25, 91)" && now.h3 === "rgb(0, 0, 0)" && was.tocItemBorder === "0px" && now.tocItemBorder === "1px");
+
+  // untick one override: the check shows the page really changes
+  await page.uncheck('#view-upgrade .upgrade-deviations .upgrade-tweak:has(strong:text-is("strong")) input');
+  await page.waitForTimeout(500);
+  const without = await probe(await frame2());
+  ok("9c unticking an override takes it out of the result", without.strong !== was.strong && !(await code("CSS")).match(/strong \{\s*font-weight: bold/), `${was.strong} -> ${without.strong}`);
+  await page.check('#view-upgrade .upgrade-deviations .upgrade-tweak:has(strong:text-is("strong")) input');
+  await page.waitForTimeout(500);
+  ok("9c and ticking it puts it back", (await probe(await frame2())).strong === was.strong);
   await page.click('.mode-btn[data-view="changelog"]');
   ok("9 changelog view: visible, and no data warning when the changelog is valid", (await page.isVisible("#view-changelog")) && (await page.$$(".changelog-check")).length === 0);
   await page.click('.mode-btn[data-view="build"]');
