@@ -59,10 +59,15 @@ body > main > article.plain-text {
   ol {
     list-style-type: decimal;
     padding-left: 40px;
+    margin-block: 1em;
   }
 
   ol > li {
     display: list-item;
+  }
+
+  ol > li::marker {
+    font-weight: bold;
   }
 
   li {
@@ -119,12 +124,19 @@ body > main > article.plain-text {
     h3 {
       font-size: var(--heading-3);
       font-weight: 600;
-      color: var(--primary-colour);
+      color: #000;
     }
 
     @media (max-width: 768px) {
       display: contents;
     }
+  }
+
+  /* For an H2 directly below the page title (H1): pulls it up to close the gap.
+     Same specificity as ".content-column h2" and later in the file, so it wins
+     without !important. */
+  h2.tight-heading {
+    margin-top: -1rem;
   }
 
   .button-icon {
@@ -193,7 +205,7 @@ body > main > article.plain-text {
 
   .main-grid {
     display: grid;
-    grid-template-columns: 1fr 3fr;
+    grid-template-columns: 1.3fr 3fr;
     gap: 2rem;
     align-items: start;
     padding-inline: 1rem;
@@ -244,6 +256,7 @@ body > main > article.plain-text {
       list-style: none;
       border-radius: 10px;
       padding: 10px;
+      border: 1px solid var(--primary-colour);
       background-color: var(--secondary-colour);
       margin-left: 0;
 

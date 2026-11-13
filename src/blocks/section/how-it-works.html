@@ -10,6 +10,8 @@
 <p>...and, separately, the matching table of contents entry:</p>
 <pre><code>&lt;li&gt;&lt;a href="#putting-into-practice" class="toc-link"&gt;Putting into practice&lt;/a&gt;&lt;/li&gt;</code></pre>
 <p>Notice the id (<code>putting-into-practice</code>) and the link's <code>href</code> are exactly the same text — that's what makes clicking the table of contents entry actually jump down to this section. Both get built from the same title you type, once, so there's no way for them to quietly drift apart the way hand-typed ids sometimes do.</p>
+<h4>The "directly below the page title" tick box</h4>
+<p>Headings normally keep a generous gap above them. That's right between sections, but when the very first section sits straight under the page title (a page with no At a glance box) the gap looks too big. Ticking the box adds <code>class="tight-heading"</code> to the heading, and the Base CSS pulls it up. Leave it unticked for every other section, and for pages that do have an At a glance box.</p>
 <h4>Where the other blocks fit in</h4>
 <p>The comment in the middle — <code>&lt;!-- Content goes here --&gt;</code> — is where you paste whatever you build on the other tabs: an image-text-section, an accordion, at-a-glance, anything. One section can hold more than one block if the content calls for it; just paste them one after another in place of the comment.</p>
 <h4>Why there's no CSS output for this one</h4>

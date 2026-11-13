@@ -40,7 +40,10 @@ export function removeCssRule(css, selectorStart) {
 
 export function getBaseCSS(includeToc) {
   if (includeToc) return BASE_CSS;
-  let css = BASE_CSS.replace("grid-template-columns: 1fr 3fr;", "grid-template-columns: 1fr;");
+  // Match the property, not its current value, so changing the column ratio
+  // can't silently break this variant. The first match is .main-grid's own
+  // (desktop) columns; the mobile override comes later in the rule.
+  let css = BASE_CSS.replace(/(\.main-grid \{[^}]*?grid-template-columns:\s*)[^;]+;/, (_, head) => `${head}1fr;`);
   css = removeCssRule(css, "#table-of-contents {");
   return css;
 }

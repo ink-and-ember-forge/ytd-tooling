@@ -17,6 +17,7 @@ export const FIXTURES = {
   section: {
     basic: { title: "Putting into practice" },
     special: { title: "  Q&A: What's <new>?  " },
+    "tight-heading": { title: "Putting into practice", tightHeading: true },
   },
   "nav-cards": {
     standard: { cardsData: { style: "standard", autoNumber: true, cards: [navCard(), navCard({ buttonLabel: "Go external", buttonUrl: "https://example.org/x", newTab: true }), navCard({ buttonLabel: "" })] } },

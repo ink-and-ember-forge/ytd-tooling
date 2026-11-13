@@ -1,6 +1,174 @@
 {
   "releases": [
     {
+      "version": "3.3.0",
+      "date": "2026-11-13",
+      "summary": "Section block gets a \"directly below the page title\" option (the tight-heading class), and the At a glance heading keeps its theme colour.",
+      "changes": [
+        {
+          "id": "CHG-3.3.0-01",
+          "type": "additive",
+          "scope": "block:section",
+          "blocks": [
+            "section"
+          ],
+          "summary": "New Section option: \"This section comes directly below the page title\". When ticked the heading gets class=\"tight-heading\", which closes the gap under the H1.",
+          "detect": {
+            "patterns": []
+          },
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Off by default, so existing sections are unchanged. The class needs base CSS 3.2.0 or later. To use it on an existing page, replace the base CSS, then add class=\"tight-heading\" to the H2 by hand or rebuild the section."
+        },
+        {
+          "id": "CHG-3.3.0-02",
+          "type": "fix",
+          "scope": "block:at-a-glance",
+          "blocks": [
+            "at-a-glance"
+          ],
+          "summary": "The At a glance heading sets its own theme colour. In 3.2.0 the content-column H3 became black, which also turned this heading black.",
+          "detect": {
+            "patterns": [
+              "at-a-glance-heading"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "#at-a-glance-heading\\s*\\{[^}]*color:\\s*var\\(--primary-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the At a glance block's CSS (inside #page-container) together with the base CSS. Pages still on a base before 3.2.0 are themed already; this keeps them themed once they take the new base."
+        }
+      ],
+      "deprecations": []
+    },
+    {
+      "version": "3.2.0",
+      "date": "2026-11-13",
+      "summary": "Base CSS refinements (numbered lists, sub-heading colour, wider contents column, bordered contents items, a tight-heading class) and a visible keyboard focus ring on the Accordion.",
+      "changes": [
+        {
+          "id": "CHG-3.2.0-01",
+          "type": "visual",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "Numbered lists get the same vertical spacing as paragraphs and bullet lists, and their numbers are bold.",
+          "detect": {
+            "patterns": [
+              "list-style-type:\\s*decimal"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "ol\\s*>\\s*li::marker"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS. Adds margin-block: 1em on ol and a bold ::marker on ol > li. The breadcrumb list is unaffected: it resets its own margin and has no markers."
+        },
+        {
+          "id": "CHG-3.2.0-02",
+          "type": "visual",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "Sub-headings (H3) in the content column are black instead of the theme colour.",
+          "detect": {
+            "patterns": [
+              "--heading-3"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "h3\\s*\\{[^}]*color:\\s*#000"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS. Only the plain .content-column h3 changes. Image and text sections and accordion buttons set their own colour and are unchanged."
+        },
+        {
+          "id": "CHG-3.2.0-03",
+          "type": "additive",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "New .tight-heading class: put it on an H2 that sits directly below the page title (H1) to close the gap between them.",
+          "detect": {
+            "patterns": []
+          },
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Pages without it are unaffected. To use it on an existing page, replace the base CSS first, then add class=\"tight-heading\" to the H2 (h2.tight-heading). The base H1 margin is deliberately unchanged, so pages with an At a glance box keep their spacing."
+        },
+        {
+          "id": "CHG-3.2.0-04",
+          "type": "visual",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "The contents column is a little wider (1.3fr to 3fr instead of 1fr to 3fr), so long contents labels wrap less.",
+          "detect": {
+            "patterns": [
+              "\\.main-grid"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "grid-template-columns:\\s*(1\\.3fr 3fr|1fr);"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS. Pages built without a contents list are unaffected."
+        },
+        {
+          "id": "CHG-3.2.0-05",
+          "type": "visual",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "Contents items get a 1px border in the theme colour.",
+          "detect": {
+            "patterns": [
+              "#table-of-contents"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "padding:\\s*10px;\\s*border:\\s*1px solid var\\(--primary-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS. The background stays on var(--secondary-colour) so both themes keep their own tint."
+        },
+        {
+          "id": "CHG-3.2.0-06",
+          "type": "fix",
+          "scope": "block:accordion",
+          "blocks": [
+            "accordion"
+          ],
+          "summary": "Accordion buttons show a visible black focus ring for keyboard users. The block removed Bootstrap's own focus shadow, which left nothing visible.",
+          "detect": {
+            "patterns": [
+              "accordion-button"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "focus-visible"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Accordion block's CSS (inside #page-container). Pages are only affected if they use the Accordion."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.1.1",
       "date": "2026-11-12",
       "summary": "Patch: the page container background is set explicitly to white, so the supplier's grey default no longer shows.",

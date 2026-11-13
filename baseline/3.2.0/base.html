@@ -1,0 +1,56 @@
+<!-- Gwella base HTML · version 3.2.0 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+<!-- Bundle JS: Popper.js is required for tooltips -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<div id="page-container" class="__THEME__" data-base-version="3.2.0">
+
+  <!-- One <li><a> per parent level; the last <li> is plain text -->
+  <nav aria-label="breadcrumb" id="breadcrumb-nav">
+    <ol id="breadcrumb-nav__list">
+      <li><a href="/">Home</a></li>
+      <li>Current page title</li>
+    </ol>
+  </nav>
+
+  <header class="header">
+    <img id="header-img"
+      src="REPLACE_WITH_HERO_IMAGE_URL"
+      alt="" />
+  </header>
+
+  <main class="main-grid standard-container">
+
+    <!-- Each ToC href must match a section id below -->
+    <nav id="table-of-contents">
+      <h3 id="table-of-contents-heading">Table of Contents</h3>
+      <ul>
+        <li><a href="#section-id" class="toc-link">Section label</a></li>
+      </ul>
+    </nav>
+
+    <div class="content-column">
+
+      <h1 id="header-h1">Page title</h1>
+
+      <!-- Optional at-a-glance block -->
+
+      <div class="content-body">
+
+        <!-- Content blocks go here, one <section id> each -->
+
+        <p class="timestamp">
+          Webpage last updated on [date].
+        </p>
+
+      </div>
+    </div>
+  </main>
+
+  <button class="back-to-top" aria-label="Back to top">
+    <i class="fa-solid fa-circle-chevron-up" aria-hidden="true"></i>
+    <span>Back to Top</span>
+  </button>
+
+</div>

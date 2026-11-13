@@ -50,3 +50,33 @@ test("guided fixes: base-css change yields replacement code", () => {
   assert.equal(replacementFor({ action: "hand-edit", scope: "base-css" }, code, BLOCKS), null);
   assert.equal(replacementFor({ action: "copy", scope: "block:buttons" }, code, BLOCKS).text, BLOCKS.buttons.css);
 });
+
+test("upgrade checker: a 3.1.1 page is flagged for every 3.2.0 base and accordion change", async () => {
+  const { BASE_CSS } = await import("../src/base/index.js");
+  // Reconstruct a 3.1.1-style page by undoing each 3.2.0 change in the current CSS.
+  const old = BASE_CSS
+    .replace(/\n\s*margin-block: 1em;\n(\s*\})/, "\n$1")
+    .replace(/\s*ol > li::marker \{[^}]*\}/, "")
+    .replace("color: #000;", "color: var(--primary-colour);")
+    .replace("grid-template-columns: 1.3fr 3fr;", "grid-template-columns: 1fr 3fr;")
+    .replace(/\n\s*border: 1px solid var\(--primary-colour\);/, "");
+  const page = `<div id="page-container" data-base-version="3.1.1"></div>\n${old}\n.accordion-button { color: red; }`;
+  const ids = Object.values(checkPage(page, "auto", CHANGELOG).groups).flat().map((c) => c.id);
+  for (const n of [1, 2, 4, 5, 6]) assert.ok(ids.includes(`CHG-3.2.0-0${n}`), `CHG-3.2.0-0${n} should be reported`);
+});
+
+test("upgrade checker: a page built on the current base CSS and accordion is not flagged", async () => {
+  const { BASE_CSS } = await import("../src/base/index.js");
+  const page = `<div id="page-container" data-base-version="3.1.1"></div>\n${BASE_CSS}\n${BLOCKS.accordion.css}`;
+  const { current, ...needAction } = checkPage(page, "auto", CHANGELOG).groups;
+  assert.deepEqual(Object.values(needAction).flat(), [], "nothing should need action");
+  assert.deepEqual(current.map((c) => c.id).sort(), ["CHG-3.2.0-01", "CHG-3.2.0-02", "CHG-3.2.0-04", "CHG-3.2.0-05", "CHG-3.2.0-06"]);
+});
+
+test("3.3.0: an At a glance block without its own heading colour is flagged; the current one is not", () => {
+  const head = '<div id="page-container" data-base-version="3.2.0"></div>\n';
+  const flagged = (css) => Object.entries(checkPage(head + css, "auto", CHANGELOG).groups)
+    .some(([group, list]) => group !== "current" && list.some((c) => c.id === "CHG-3.3.0-02"));
+  assert.ok(flagged(BLOCKS["at-a-glance"].css.replace("      color: var(--primary-colour);\n", "")), "old At a glance CSS should be flagged");
+  assert.ok(!flagged(BLOCKS["at-a-glance"].css), "current At a glance CSS should not be flagged");
+});
