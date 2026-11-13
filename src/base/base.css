@@ -8,17 +8,11 @@ html {
 .gwella {
   --primary-colour: #a3195b;
   --secondary-colour: #faf3f7;
-  --light-grey: #f1f1f1;
-  --mid-grey: #d3d3d3;
-  --dark-grey: #545454;
 }
 
 .ytydysgu {
   --primary-colour: #325083;
   --secondary-colour: #f3f6fb;
-  --light-grey: #f1f1f1;
-  --mid-grey: #d3d3d3;
-  --dark-grey: #545454;
 }
 
 body > main > article.plain-text {
@@ -31,13 +25,32 @@ body > main > article.plain-text {
   --heading-3: 1.125rem;
   --numbered-subheading: 20px;
 
+  /* Neutral colours, named for what they are used for (not for the colour), so a change says what it affects.
+     They are the same in every theme; the theme colours are --primary-colour and --secondary-colour above. */
+  --page-background: #fff;                                 /* behind the whole page */
+  --text-on-primary: #fff;                                 /* text on a primary-coloured surface: buttons, the contents heading */
+  --floating-button-background: rgba(255, 255, 255, 0.8);  /* the back-to-top button, over the content */
+  --subheading-colour: #000;                               /* sub-headings (h3) in the content column */
+  --card-text-colour: #000;                                /* text inside cards */
+  --focus-ring-colour: #000;                               /* the outline that shows keyboard focus */
+  --panel-background: #e8e8e8;                             /* the At a glance panel */
+  --shadow-colour: #000;                                   /* shadows under cards and tiles (mixed with transparent for strength) */
+  --divider-colour: #545454;                               /* the | between breadcrumb items */
+  --secondary-text-colour: #545454;                        /* quieter text: the current page in the breadcrumb, the timestamp */
+  --hover-background: #f1f1f1;                             /* background of a contents item under the pointer */
+  --tile-border-colour: #d3d3d3;                           /* the border round an icon toggle tile */
+
+  /* Deprecated: named for the colour, not the use. Kept as aliases so pages that use them keep working; removed in 3.6.0. */
+  --dark-grey: var(--secondary-text-colour);
+  --light-grey: var(--hover-background);
+  --mid-grey: var(--tile-border-colour);
 
   --bs-font-sans-serif: "Noto Sans", "Noto Sans Arabic", sans-serif;
   --bs-body-font-family: "Noto Sans", "Noto Sans Arabic", sans-serif;
 
   margin-top: var(--thinqi-navbar-height, 95px);
   line-height: 160%;
-  background-color: white !important;
+  background-color: var(--page-background) !important;
   font-family: var(--bs-font-sans-serif) !important;
 
   &,
@@ -124,7 +137,7 @@ body > main > article.plain-text {
     h3 {
       font-size: var(--heading-3);
       font-weight: 600;
-      color: #000;
+      color: var(--subheading-colour);
     }
 
     @media (max-width: 768px) {
@@ -158,11 +171,11 @@ body > main > article.plain-text {
       li:not(:last-child)::after {
         content: "|";
         margin-left: 0.5rem;
-        color: var(--dark-grey);
+        color: var(--divider-colour);
       }
 
       li:last-child {
-        color: var(--dark-grey);
+        color: var(--secondary-text-colour);
       }
     }
 
@@ -239,7 +252,7 @@ body > main > article.plain-text {
     #table-of-contents-heading {
       border-radius: 20px;
       background-color: var(--primary-colour);
-      color: white;
+      color: var(--text-on-primary);
       padding: 5px;
       text-align: center;
       font-weight: 400;
@@ -261,7 +274,7 @@ body > main > article.plain-text {
       margin-left: 0;
 
       &:hover {
-        background-color: var(--light-grey);
+        background-color: var(--hover-background);
       }
 
       & + li {
@@ -283,7 +296,7 @@ body > main > article.plain-text {
     margin-bottom: 1rem;
     font-style: italic;
     font-size: 13px;
-    color: var(--dark-grey);
+    color: var(--secondary-text-colour);
     padding-inline: 1rem;
   }
 
@@ -293,7 +306,7 @@ body > main > article.plain-text {
     position: fixed;
     right: 2rem;
     bottom: 2rem;
-    background-color: rgba(255, 255, 255, 0.8);
+    background-color: var(--floating-button-background);
     border: none;
     justify-content: center;
     align-items: center;

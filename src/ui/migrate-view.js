@@ -24,9 +24,12 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   };
   let htmlList = null;
 
-  const decisionOf = (step) => state.decisions.get(step.id) || { choice: "template", reason: "", note: "" };
-  const keptKeys = (steps = state.steps) => steps.filter((s) => decisionOf(s).choice === "keep").flatMap((s) => s.keys);
-  const ledger = () => state.steps.filter((s) => decisionOf(s).choice === "keep").map((s) => ledgerLine(s, decisionOf(s)));
+  // Decisions are per RULE (a "row" of a step), keyed by the row's id.
+  const decisionOf = (row) => state.decisions.get(row.id) || { choice: "template", reason: "", note: "" };
+  const rowsOf = (steps = state.steps) => steps.flatMap((s) => s.rows);
+  const keptRows = (steps = state.steps) => rowsOf(steps).filter((r) => decisionOf(r).choice === "keep");
+  const keptKeys = (steps = state.steps) => keptRows(steps).flatMap((r) => r.keys);
+  const ledger = () => keptRows().map((r) => ledgerLine(r, decisionOf(r)));
   const reviewDone = () => state.steps.every((s) => state.reviewed.has(s.id));
   const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [] });
   const recompute = () => { state.result = migrate([...state.keep, ...keptKeys()], true); };
@@ -91,11 +94,13 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   }
 
   // ---- 4. the review --------------------------------------------------------------------------------------
-  // Two frames of the page for one decision: the template's way and yours, with the affected elements outlined.
-  function stepFrames(step) {
+  // Two frames of the page for one step: the template's way, and yours (as you wrote it) with the affected elements outlined.
+  // `focus` is one row: then only that rule is shown, and only its elements are outlined.
+  function stepFrames(step, focus) {
     const others = keptKeys(state.steps.filter((s) => s !== step));
     const base = [...state.keep, ...others];
-    const variants = [["The template", migrate(base, false)], ["Yours", migrate([...base, ...step.keys], false)]];
+    const mine = focus ? focus.keys : step.keys, outline = focus ? focus.selectors : step.selectors;
+    const variants = [["The template", migrate(base, false)], [focus ? `Yours: just ${focus.label}` : "Yours, as you wrote it", migrate([...base, ...mine], false)]];
     const phone = step.width === "phone";
     const wrap = makeEl("div", `upgrade-compare${phone ? " upgrade-compare--phone" : ""}`);
     variants.forEach(([label, r]) => {
@@ -106,7 +111,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       frame.title = `${label}: ${step.title}`;
       frame.setAttribute("sandbox", "allow-scripts");
       frame.style.width = phone ? "390px" : "100%";
-      frame.srcdoc = pageDoc({ html: r.html, css: r.css, js: r.js }, { highlight: step.selectors, scroll: step.scroll });
+      frame.srcdoc = pageDoc({ html: r.html, css: r.css, js: r.js }, { highlight: outline, scroll: step.scroll });
       cell.appendChild(frame);
       wrap.appendChild(cell);
     });
@@ -114,94 +119,130 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   }
 
   function reviewStep(step) {
-    const n = state.steps.length, i = state.index, dec = decisionOf(step);
+    const n = state.steps.length, i = state.index;
     const card = makeEl("div", "upgrade-review-card");
-    const progress = makeEl("p", "upgrade-review-progress", `Decision ${i + 1} of ${n}`);
+    const progress = makeEl("p", "upgrade-review-progress", `Group ${i + 1} of ${n}`);
     progress.setAttribute("aria-live", "polite");
     card.append(progress, makeEl("h4", "upgrade-review-title", step.title));
-    card.appendChild(makeEl("p", "upgrade-review-headline", `${step.headline}. ${step.elements === null ? "" : step.elements === 0 ? "No element on this page matches, so this has no effect here." : `It affects ${plural(step.elements, "element", "elements")} on this page.`}`));
+    card.appendChild(makeEl("p", "upgrade-review-headline", `${plural(step.rows.length, "rule", "rules")} to decide. ${step.elements === null ? "" : step.elements === 0 ? "No element on this page matches, so this has no effect here." : `Together they affect ${plural(step.elements, "element", "elements")} on this page.`}`));
     card.appendChild(makeEl("p", "upgrade-hint", step.why));
-    if (step.linked.length && !step.id.startsWith("linked-")) {
-      card.appendChild(makeEl("p", "upgrade-hint upgrade-review-linked", `Some of these rules work together, so they are decided together: ${step.linked.join("; ")}.`));
+
+    let frames = stepFrames(step, null);
+    card.appendChild(frames);
+    const show = (row) => { const next = stepFrames(step, row); frames.replaceWith(next); frames = next; };
+
+    const next = makeEl("button", "primary-btn", i === n - 1 ? "Finish the review" : "Next group");
+    const controls = []; // one per row: { row, sync() }
+    const sync = () => {
+      controls.forEach((c) => c.sync());
+      const missing = step.rows.filter((r) => decisionOf(r).choice === "keep" && !decisionOf(r).reason).length;
+      next.disabled = missing > 0;
+      next.title = missing ? `Say why you're keeping ${missing === 1 ? "the rule" : "each rule"} you kept first` : "";
+    };
+    const set = (row, patch) => state.decisions.set(row.id, { ...decisionOf(row), ...patch });
+    const changed = () => { recompute(); sync(); renderChecksAndCopy(); };
+
+    // Shortcuts for the whole group. The template is still the default; "keep all" is a deliberate act.
+    if (step.rows.length > 1) {
+      const bar = makeEl("div", "upgrade-review-shortcuts");
+      const all = (choice, label, cls) => {
+        const b = makeEl("button", cls, label);
+        b.type = "button";
+        b.addEventListener("click", () => { step.rows.forEach((r) => set(r, { choice })); changed(); });
+        return b;
+      };
+      const reasonAll = document.createElement("select");
+      reasonAll.className = "upgrade-reason";
+      reasonAll.setAttribute("aria-label", "Give every kept rule in this group the same reason");
+      reasonAll.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Same reason for every rule I keep…" }));
+      REASONS.forEach(([id, label]) => reasonAll.appendChild(Object.assign(document.createElement("option"), { value: id, textContent: label })));
+      reasonAll.addEventListener("change", () => {
+        if (!reasonAll.value) return;
+        step.rows.filter((r) => decisionOf(r).choice === "keep").forEach((r) => set(r, { reason: reasonAll.value }));
+        reasonAll.value = "";
+        changed();
+      });
+      bar.append(all("template", "Use the template for all of these", "copy-btn copy-btn--inline"), all("keep", "Keep all of mine", "copy-btn copy-btn--inline"), reasonAll);
+      card.appendChild(bar);
     }
 
-    const list = makeEl("ul", "upgrade-review-lines");
-    step.lines.forEach((l) => {
-      const li = makeEl("li");
-      li.append(makeEl("strong", "", `${l.media ? "On small screens: " : ""}${l.where}`), ` — ${l.label}: yours `, makeEl("code", "", l.mine), ", template ", makeEl("code", "", l.template ?? "not set"));
+    const list = makeEl("ol", "upgrade-review-rows");
+    step.rows.forEach((row, idx) => {
+      const li = makeEl("li", "upgrade-review-row");
+      const head = makeEl("div", "upgrade-review-row-head");
+      head.appendChild(makeEl("strong", "upgrade-review-row-label", row.label));
+      head.appendChild(makeEl("span", "upgrade-muted", row.elements === null ? "" : row.elements === 0 ? " — matches nothing on this page" : ` — ${plural(row.elements, "element", "elements")}`));
+      const peek = makeEl("button", "upgrade-link", "Show just this one");
+      peek.type = "button";
+      peek.addEventListener("click", () => show(row));
+      head.appendChild(peek);
+      li.appendChild(head);
+      li.appendChild(makeEl("p", "upgrade-hint upgrade-review-hint", row.hint));
+      const lines = makeEl("ul", "upgrade-review-lines");
+      row.lines.forEach((l) => {
+        const item = makeEl("li");
+        item.append(`${l.media ? "On small screens: " : ""}${l.where} — ${l.label}: yours `, makeEl("code", "", l.mine), ", template ", makeEl("code", "", l.template ?? "not set"));
+        lines.appendChild(item);
+      });
+      li.appendChild(lines);
+
+      const choice = makeEl("div", "upgrade-review-choice");
+      const radios = {};
+      [["template", "Use the template"], ["keep", "Keep mine"]].forEach(([value, label]) => {
+        const lab = makeEl("label", "upgrade-review-option");
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = `review-choice-${step.id}-${idx}`;
+        radio.value = value;
+        radio.addEventListener("change", () => { set(row, { choice: value }); changed(); });
+        radios[value] = radio;
+        lab.append(radio, " ", makeEl("strong", "", label), value === "template" ? makeEl("span", "upgrade-muted", " (the default)") : "");
+        choice.appendChild(lab);
+      });
+      const extras = makeEl("div", "upgrade-review-reason");
+      const select = document.createElement("select");
+      select.className = "upgrade-reason";
+      select.setAttribute("aria-label", `Why are you keeping ${row.label}?`);
+      select.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Why are you keeping it?" }));
+      REASONS.forEach(([id, label]) => select.appendChild(Object.assign(document.createElement("option"), { value: id, textContent: label })));
+      const note = document.createElement("input");
+      note.type = "text";
+      note.className = "upgrade-note";
+      note.placeholder = "Optional: say a little more. This is saved in your CSS.";
+      note.setAttribute("aria-label", `A note about ${row.label}`);
+      select.addEventListener("change", () => { set(row, { reason: select.value }); changed(); });
+      note.addEventListener("input", () => { set(row, { note: note.value }); changed(); });
+      extras.append(select, note);
+      choice.appendChild(extras);
+      li.appendChild(choice);
       list.appendChild(li);
+      controls.push({ row, sync() {
+        const d = decisionOf(row);
+        radios.template.checked = d.choice !== "keep";
+        radios.keep.checked = d.choice === "keep";
+        extras.hidden = d.choice !== "keep";
+        if (select.value !== d.reason) select.value = d.reason;
+        if (document.activeElement !== note && note.value !== d.note) note.value = d.note;
+      } });
     });
     card.appendChild(list);
-    card.appendChild(stepFrames(step));
-
-    const fieldset = document.createElement("fieldset");
-    fieldset.className = "upgrade-review-choice";
-    fieldset.appendChild(makeEl("legend", "", "Your decision"));
-    const extras = makeEl("div", "upgrade-review-reason");
-    const next = makeEl("button", "primary-btn", i === n - 1 ? "Finish the review" : "Next decision");
-    const sync = () => {
-      const d = decisionOf(step);
-      extras.hidden = d.choice !== "keep";
-      next.disabled = d.choice === "keep" && !d.reason;
-      next.title = next.disabled ? "Say why you're keeping it first" : "";
-    };
-    [["template", "Use the template", "recommended"], ["keep", "Keep mine", "this page will differ from the template"]].forEach(([value, label, hint]) => {
-      const row = makeEl("label", "upgrade-review-option");
-      const radio = document.createElement("input");
-      radio.type = "radio";
-      radio.name = "review-choice";
-      radio.value = value;
-      radio.checked = dec.choice === value;
-      radio.addEventListener("change", () => {
-        state.decisions.set(step.id, { ...decisionOf(step), choice: value });
-        recompute();
-        sync();
-        renderChecksAndCopy();
-      });
-      row.append(radio, " ", makeEl("strong", "", label), makeEl("span", "upgrade-muted", ` — ${hint}`));
-      fieldset.appendChild(row);
-    });
-
-    const select = document.createElement("select");
-    select.className = "upgrade-reason";
-    select.setAttribute("aria-label", "Why are you keeping it?");
-    select.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Why are you keeping it?" }));
-    REASONS.forEach(([id, label]) => select.appendChild(Object.assign(document.createElement("option"), { value: id, textContent: label, selected: dec.reason === id })));
-    const note = document.createElement("input");
-    note.type = "text";
-    note.className = "upgrade-note";
-    note.placeholder = "Optional: say a little more. This is saved in your CSS.";
-    note.setAttribute("aria-label", "A note about why");
-    note.value = dec.note;
-    const save = () => {
-      state.decisions.set(step.id, { ...decisionOf(step), reason: select.value, note: note.value });
-      recompute();
-      sync();
-      renderChecksAndCopy();
-    };
-    select.addEventListener("change", save);
-    note.addEventListener("input", save);
-    extras.append(select, note);
-    fieldset.appendChild(extras);
-    card.appendChild(fieldset);
 
     const nav = makeEl("div", "upgrade-review-nav");
     const back = makeEl("button", "copy-btn copy-btn--inline", "Back");
     back.type = "button";
     back.disabled = i === 0;
-    back.addEventListener("click", () => { state.index = i - 1; renderReview(); });
+    back.addEventListener("click", () => go(i - 1));
     next.type = "button";
-    next.addEventListener("click", () => { state.reviewed.add(step.id); state.index = i + 1; renderReview(); renderChecksAndCopy(); });
+    next.addEventListener("click", () => { state.reviewed.add(step.id); renderChecksAndCopy(); go(i + 1); });
     nav.append(back, next);
     if (i < n - 1) {
-      const rest = makeEl("button", "upgrade-link", "Use the template for all the remaining decisions");
+      const rest = makeEl("button", "upgrade-link", "Use the template for everything in the remaining groups");
       rest.type = "button";
       rest.addEventListener("click", () => {
-        state.steps.slice(i).forEach((s) => { state.decisions.set(s.id, { choice: "template", reason: "", note: "" }); state.reviewed.add(s.id); });
-        state.index = n;
+        state.steps.slice(i).forEach((s) => { s.rows.forEach((r) => set(r, { choice: "template", reason: "", note: "" })); state.reviewed.add(s.id); });
         recompute();
-        renderReview();
         renderChecksAndCopy();
+        go(n);
       });
       nav.appendChild(rest);
     }
@@ -211,32 +252,49 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   }
 
   function reviewSummary() {
-    const kept = state.steps.filter((s) => decisionOf(s).choice === "keep");
+    const rows = rowsOf(), kept = keptRows();
     const box = makeEl("div", "upgrade-review-card upgrade-review-summary");
     box.appendChild(makeEl("h4", "upgrade-review-title", kept.length
-      ? `You're keeping ${plural(kept.length, "of your own choices", "of your own choices")}; the template covers the other ${state.steps.length - kept.length}`
+      ? `You're keeping ${plural(kept.length, "rule", "rules")} of your own; the template covers the other ${rows.length - kept.length}`
       : "Your page will follow the template"));
     box.appendChild(makeEl("p", "upgrade-hint", kept.length ? "The ones you kept are written into the CSS with your reasons, so they can be revisited at the next upgrade." : "Everything your page overrode now comes from the template, so it matches every other page."));
     const list = makeEl("ul", "upgrade-review-lines");
     state.steps.forEach((s, idx) => {
-      const d = decisionOf(s), li = makeEl("li");
-      li.append(makeEl("strong", "", s.title), d.choice === "keep" ? ` — keeping yours (${(REASONS.find(([id]) => id === d.reason) || REASONS[2])[1].toLowerCase()}${d.note.trim() ? `, ${d.note.trim()}` : ""}) ` : " — using the template ");
+      const k = s.rows.filter((r) => decisionOf(r).choice === "keep"), li = makeEl("li");
+      li.append(makeEl("strong", "", s.title), ` — ${k.length ? `keeping ${k.length} of ${s.rows.length}` : `using the template for all ${s.rows.length}`} `);
       const change = makeEl("button", "upgrade-link", "Change");
       change.type = "button";
-      change.addEventListener("click", () => { state.index = idx; renderReview(); });
+      change.addEventListener("click", () => go(idx));
       li.appendChild(change);
+      if (k.length) {
+        const inner = makeEl("ul");
+        k.forEach((r) => { const d = decisionOf(r); inner.appendChild(makeEl("li", "", `${r.label}: ${(REASONS.find(([id]) => id === d.reason) || REASONS[2])[1].toLowerCase()}${d.note.trim() ? `, ${d.note.trim()}` : ""}`)); });
+        li.appendChild(inner);
+      }
       list.appendChild(li);
     });
     box.appendChild(list);
     return box;
   }
 
+  // After moving between decisions, put the new card's top (its number, title and headline) where it can be read, instead of
+  // leaving the page wherever the old card's buttons were. Focus goes to the title too, for screen readers, without scrolling.
+  function showCard() {
+    const card = els.review.querySelector(".upgrade-review-card");
+    if (!card) return;
+    card.scrollIntoView({ block: "start", behavior: "auto" });
+    const title = card.querySelector(".upgrade-review-title");
+    title.tabIndex = -1;
+    title.focus({ preventScroll: true });
+  }
+  const go = (index) => { state.index = index; renderReview(); showCard(); };
+
   function renderReview() {
     els.review.hidden = state.steps.length === 0;
     if (!state.steps.length) return;
     const total = state.result.groups.filter((g) => g.kind === "deviation").length;
     els.review.replaceChildren(makeEl("h3", "step-title", "4. Where your page differs from the template"));
-    els.review.appendChild(makeEl("p", "upgrade-hint", `Your page overrides the template in ${plural(total, "place", "places")}, grouped into ${plural(state.steps.length, "decision", "decisions")}. The template is where this is heading, so "Use the template" is already chosen. To keep one of yours, choose it and say why. Each decision shows the page both ways, with what it affects outlined.`));
+    els.review.appendChild(makeEl("p", "upgrade-hint", `Your page overrides the template in ${plural(total, "place", "places")}, grouped by purpose into ${plural(state.steps.length, "group", "groups")}. Every rule has its own choice. The template is where this is heading, so "Use the template" is already chosen. To keep one of yours, choose it and say why. Each group shows the page both ways, with what it affects outlined.`));
     els.review.appendChild(state.index >= state.steps.length ? reviewSummary() : reviewStep(state.steps[state.index]));
   }
 
@@ -305,7 +363,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     els.copy.replaceChildren(makeEl("h3", "step-title", "7. Copy your migrated page"));
     els.copy.appendChild(makeEl("p", "upgrade-hint", "Replace the old HTML, CSS and JS on the page with these. After that it is an ordinary template page, and future upgrades carry your styles and your reasons forward."));
     const left = state.steps.filter((s) => !state.reviewed.has(s.id)).length;
-    const blocked = !r.ready ? "Choose the page's theme in step 5 first." : left ? `Finish the review in step 4 first (${plural(left, "decision", "decisions")} left).` : null;
+    const blocked = !r.ready ? "Choose the page's theme in step 5 first." : left ? `Finish the review in step 4 first (${plural(left, "group", "groups")} left).` : null;
     const keptOwn = r.groups.filter((g) => g.kept).length;
     const blocksText = r.blocks.length ? plural(r.blocks.length, "block", "blocks") : "no blocks";
     els.copy.appendChild(outputCard("HTML", `Your HTML, with ${plural(r.htmlChanges.length, "change", "changes")} (see step 5).`, r.html, { blocked }));
@@ -325,7 +383,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     els.report.replaceChildren(makeEl("h3", "step-title", "8. Your migration report"));
     els.report.appendChild(makeEl("p", "upgrade-hint", "What was decided about every place your page differed from the template, and why. Keep it with the page, or give it to whoever looks after the template."));
     const summary = makeEl("ul", "upgrade-report-summary");
-    [`${plural(t.differences, "difference", "differences")} from the template, in ${plural(t.decisions, "decision", "decisions")}.`,
+    [`${plural(t.differences, "difference", "differences")} from the template, decided as ${plural(t.decisions, "rule", "rules")}.`,
       `Kept as your own: ${t.kept}. Following the template: ${t.template}.`,
       `Your own components carried over: ${t.componentsKept} of ${t.components}.`,
       `${plural(t.htmlChanges, "change", "changes")} to your HTML.`].forEach((x) => summary.appendChild(makeEl("li", "", x)));

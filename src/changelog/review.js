@@ -102,6 +102,19 @@ function linkGroups(doc, groups) {
 
 const nameOf = (group) => group.key.replace(/^differs:/, "");
 
+// One sentence about a row, to help the decision without making it: what it is, never what to pick.
+function rowHint(row) {
+  if (row.linked.length) return "Works together with another rule on the same elements, so they are decided as one.";
+  if (row.groups.every(importantOnly)) return "Written with !important, usually to beat another stylesheet on the site. Try the template without it first.";
+  const things = [...new Set(row.lines.map((l) => l.label))].slice(0, 3).join(", ");
+  if (row.groups.every((g) => g.rules.every((r) => /max-width/.test(r.media || "")))) return `Phones and tablets only: changes ${things}.`;
+  if (row.lines.every((l) => l.where === "#page-container" && l.prop.startsWith("--"))) return "A design variable this page defines, which other rules may use.";
+  const unset = row.lines.filter((l) => l.template === null).length;
+  if (unset === row.lines.length) return `The template doesn't set ${things}, so dropping it leaves the browser's own default.`;
+  const first = row.lines.find((l) => l.template !== null), more = row.lines.length - 1;
+  return `The template sets ${first.label} to ${first.template}${more ? `, and differs on ${more} other ${more === 1 ? "thing" : "things"}` : ""}.`;
+}
+
 // migration: the result of buildMigration(). html: the page's HTML. Returns the steps, in the order they are asked.
 // A step: { id, title, why, keys[] (the migration's group keys it covers), lines[], headline, elements, selectors[], width,
 //           scroll, linked } where `linked` lists why rules were decided together (empty for an ordinary decision).
@@ -126,26 +139,35 @@ export function buildReview(migration, html) {
   };
 
   const steps = new Map(), stepOf = new Map();
-  const add = (step, g) => {
+  // A ROW is one thing the author decides about: a rule of theirs (or several that depend on each other, kept together).
+  const rowFor = (step, groups, linked = []) => {
+    const label = groups.map((g) => (g === containerVars ? "Design variables this page sets" : nameOf(g))).join(" + ");
+    const row = { id: groups[0].key, keys: groups.map((g) => g.key), label, path: `${step.title} \u203a ${label}`, lines: [], selectors: [], linked, groups };
+    step.rows.push(row);
+    return row;
+  };
+  const add = (step, g, row) => {
     step.keys.push(g.key);
     stepOf.set(g, step);
     for (const r of g.rules) {
       for (const [prop, values] of r.decls) {
-        step.lines.push({ where: r.selector || "#page-container", media: r.media || null, prop, label: labelOf(prop), mine: values.join(" / "), template: r.standard.get(prop) ?? null });
+        const line = { where: r.selector || "#page-container", media: r.media || null, prop, label: labelOf(prop), mine: values.join(" / "), template: r.standard.get(prop) ?? null };
+        step.lines.push(line);
+        row.lines.push(line);
       }
-      if (r.selector) step.selectors.push(r.selector);
+      if (r.selector) { step.selectors.push(r.selector); row.selectors.push(r.selector); }
       if (!/max-width/.test(r.media || "")) step.phone = false;
     }
   };
   const stepFor = (id, title, why, extra = {}) => {
-    if (!steps.has(id)) steps.set(id, { id, title, why, keys: [], lines: [], selectors: [], phone: true, linked: [], ...extra });
+    if (!steps.has(id)) steps.set(id, { id, title, why, keys: [], rows: [], lines: [], selectors: [], phone: true, linked: [], ...extra });
     return steps.get(id);
   };
 
   const doc = (() => { try { return new DOMParser().parseFromString(html, "text/html"); } catch { return null; } })();
   const { sets, links } = linkGroups(doc, deviations.filter((g) => g !== containerVars));
   for (const set of sets) {
-    if (set.length === 1) { const c = categorise(set[0]); add(stepFor(slug(c.category), c.category, c.why), set[0]); continue; }
+    if (set.length === 1) { const c = categorise(set[0]); const step = stepFor(slug(c.category), c.category, c.why); add(step, set[0], rowFor(step, [set[0]])); continue; }
     const mine = links.filter((l) => set.includes(l.a));
     // One sentence per pair of rules, naming every property they share.
     const pairs = new Map();
@@ -161,7 +183,8 @@ export function buildReview(migration, html) {
       // Already decided together: no need for a decision of its own, only a note that they belong together.
       const c = categorise(set[0]), step = stepFor(slug(c.category), c.category, c.why);
       step.linked.push(...sentences);
-      set.forEach((g) => add(step, g));
+      const row = rowFor(step, set, sentences);
+      set.forEach((g) => add(step, g, row));
       continue;
     }
     // Rules that work together but would land in different decisions become one decision, named after what they have in common.
@@ -169,14 +192,15 @@ export function buildReview(migration, html) {
     const step = stepFor(`linked-${slug(nameOf(set[0]))}`, `Rules that work together: ${labels.join(" and ")}`,
       `These rules depend on each other: ${sentences.join("; ")}. One is often there to undo what the other does, so keeping one without the other could leave the page in a state you didn't choose. They are decided together.`);
     step.linked.push(...sentences);
-    set.forEach((g) => add(step, g));
+    const row = rowFor(step, set, sentences);
+    set.forEach((g) => add(step, g, row));
   }
   // A custom property the page defines (--heading-4) belongs with whatever uses it.
   if (containerVars) {
     const mention = (name) => deviations.find((g) => g !== containerVars && g.rules.some((r) => [...r.decls.values()].some((vs) => vs.some((v) => v.includes(`var(${name}`)))));
     const home = containerVars.rules.flatMap((r) => [...r.decls.keys()]).map(mention).find(Boolean);
     const step = home ? stepOf.get(home) : stepFor(slug(OTHER), OTHER, WHY[OTHER]);
-    add(step, containerVars);
+    add(step, containerVars, rowFor(step, [containerVars]));
   }
 
   return [...steps.values()].map((step) => {
@@ -186,14 +210,19 @@ export function buildReview(migration, html) {
     const selectors = [...new Set(step.selectors)].map((sel) => ({ sel, n: affectedElements(html, [sel]).count ?? 0 })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n).map((x) => x.sel);
     const things = [...new Set(step.lines.map((l) => l.label))];
     const headline = `Changes ${things.slice(0, 3).join(", ")}${things.length > 3 ? ` and ${things.length - 3} more` : ""}`;
-    return { id: step.id, title: step.title, why: step.why, keys: step.keys, lines: step.lines, headline, elements: count, selectors, width: step.phone ? "phone" : "desktop", scroll: step.phone ? "top" : "first", linked: step.linked };
+    const rows = step.rows.map((row) => {
+      const found = affectedElements(html, row.selectors);
+      const { groups, ...rest } = row;
+      return { ...rest, hint: rowHint(row), elements: found.count, selectors: found.selectors };
+    }).sort((a, b) => (b.elements ?? -1) - (a.elements ?? -1) || a.label.localeCompare(b.label));
+    return { id: step.id, title: step.title, why: step.why, keys: step.keys, rows, lines: step.lines, headline, elements: count, selectors, width: step.phone ? "phone" : "desktop", scroll: step.phone ? "top" : "first", linked: step.linked };
   }).sort((a, b) => (b.elements ?? -1) - (a.elements ?? -1) || a.title.localeCompare(b.title));
 }
 
 // The reason line written into the CSS: "Text and headings: A deliberate design choice, bold is the house style".
 export function ledgerLine(step, { reason = "unsure", note = "" } = {}) {
   const label = (REASONS.find(([id]) => id === reason) || REASONS[2])[1];
-  return `${step.title}: ${label}${note.trim() ? `, ${note.trim()}` : ""}`;
+  return `${step.path || step.title}: ${label}${note.trim() ? `, ${note.trim()}` : ""}`;
 }
 
 // The guarantee the linking exists to give: no two decisions set the same property on the same element in the same media

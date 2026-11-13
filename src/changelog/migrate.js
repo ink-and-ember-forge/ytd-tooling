@@ -149,24 +149,43 @@ const stripContainer = (sel) => (sel === "#page-container" ? "" : sel.replace(/^
 const norm = (v) => v.replace(/\s+/g, " ").trim().toLowerCase();
 // Legacy page-wide rules (:root, *, html, body) have no counterpart in the template, which scopes everything to #page-container.
 const GLOBAL_KEY = /^(:root|html|body|\*)/;
-// Greys the template defines once; written as a token in one place and a literal in another they are the same value.
-const KNOWN_TOKENS = { "--dark-grey": "#545454", "--light-grey": "#f1f1f1", "--mid-grey": "#d3d3d3" };
+// Greys the template defines once (the colour-named ones are deprecated aliases since 3.4.0); written as a token in one place and a literal in another they are the same value.
+const KNOWN_TOKENS = {
+  "--dark-grey": "#545454", "--light-grey": "#f1f1f1", "--mid-grey": "#d3d3d3",
+  // The neutral colours the template names by usage (3.3.2). The same in every theme.
+  "--page-background": "#fff", "--text-on-primary": "#fff", "--floating-button-background": "rgba(255, 255, 255, 0.8)", "--subheading-colour": "#000",
+  "--card-text-colour": "#000", "--focus-ring-colour": "#000", "--panel-background": "#e8e8e8", "--shadow-colour": "#000",
+  // 3.4.0: the greys, named by usage (the old names above are aliases of these)
+  "--divider-colour": "#545454", "--secondary-text-colour": "#545454", "--hover-background": "#f1f1f1", "--tile-border-colour": "#d3d3d3",
+};
+
+// The same colour written differently is the same colour: white / #ffffff / #fff, .25 / 0.25, and a shadow written as
+// rgba(0, 0, 0, .25) or as the template's color-mix(in srgb, black 25%, transparent).
+function normaliseColours(v) {
+  return v
+    .replace(/\bwhite\b/g, "#fff").replace(/\bblack\b/g, "#000")
+    .replace(/#ffffff\b/g, "#fff").replace(/#000000\b/g, "#000")
+    .replace(/color-mix\(in srgb, (#000|#fff) (\d+(?:\.\d+)?)%, transparent\)/g, (m, c, pct) => `rgba(${c === "#000" ? "0, 0, 0" : "255, 255, 255"}, ${+(pct / 100).toFixed(3)})`)
+    .replace(/(?<![\d.])\.(\d)/g, "0.$1");
+}
 
 // A value as it would be compared: old tokens renamed, and tokens resolved to their value, so
 // "var(--dark-grey)" and "#545454" are the same thing.
 function comparable(value, theme) {
   let v = translateValue(value, theme).value.replace(/var\(\s*(--[\w-]+)\s*,[^()]*\)/g, "var($1)"); // a fallback is not a different value
   v = v.replace(/var\(\s*(--[\w-]+)\s*\)/g, (m, name) => KNOWN_TOKENS[name] || (name === "--primary-colour" && theme ? THEMES[theme].primary : m));
-  return norm(v);
+  return normaliseColours(norm(v));
 }
 
-// What a stylesheet says, as media|selector -> Map(property -> value). #page-container is stripped from selectors.
+// What a stylesheet says, as media|selector -> Map(property -> { cmp, raw }). #page-container is stripped from selectors.
 function indexRules(cssText, theme) {
   const index = new Map();
   for (const rule of flattenRules(parseCss(cssText))) for (const item of rule.items) {
     const key = `${rule.media || ""}|${stripContainer(item).replace(/\s+/g, " ").trim()}`;
     const props = index.get(key) || new Map();
-    for (const [prop, values] of rule.decls) props.set(prop, values.map((v) => comparable(v, theme)).join(" / "));
+    // `cmp` is for comparing (tokens resolved to their values); `raw` is what the stylesheet actually says, which is what a person
+    // is shown: the template says var(--primary-colour), never the colour it happens to resolve to.
+    for (const [prop, values] of rule.decls) props.set(prop, { cmp: values.map((v) => comparable(v, theme)).join(" / "), raw: values.join(" / ") });
     index.set(key, props);
   }
   return index;
@@ -221,9 +240,9 @@ export function analyseLegacyCss(css, html, standardCss, { referenceCss = null, 
         // subnav), so carrying this would quietly switch that off.
         if (prop === "scroll-margin-top" && values.some((v) => v.includes("--thinqi-navbar-height"))) { same.set(prop, values); continue; }
         const mine = values.map((v) => comparable(v, theme)).join(" / ");
-        if (counterpart.some((c) => c?.get(prop) === mine)) { same.set(prop, values); continue; }
+        if (counterpart.some((c) => c?.get(prop)?.cmp === mine)) { same.set(prop, values); continue; }
         changed.set(prop, values);
-        standardValue.set(prop, currently?.get(prop) ?? previously?.get(prop) ?? null);
+        standardValue.set(prop, currently?.get(prop)?.raw ?? previously?.get(prop)?.raw ?? null);
       }
       if (same.size) dropped[kind].push({ selector: item, media: rule.media, css: show(same) });
       if (changed.size) {

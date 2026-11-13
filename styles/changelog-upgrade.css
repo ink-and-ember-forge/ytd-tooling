@@ -100,6 +100,16 @@
 .upgrade-review-choice legend { font-weight: 700; color: var(--navy); padding: 0 0.4rem; }
 .upgrade-review-option { display: block; margin: 0.35rem 0; cursor: pointer; }
 .upgrade-review-option input { width: auto; accent-color: var(--green); }
+.upgrade-review-rows { list-style: none; margin: 1rem 0 0; padding: 0; }
+.upgrade-review-row { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 1rem; margin: 0 0 0.8rem; }
+.upgrade-review-row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.4rem; }
+.upgrade-review-row-label { color: var(--navy); word-break: break-word; }
+.upgrade-review-row-head .upgrade-link { margin-left: auto; }
+.upgrade-review-hint { margin: 0.3rem 0; }
+.upgrade-review-row .upgrade-review-choice { border: 0; padding: 0; margin: 0.4rem 0 0; }
+.upgrade-review-row .upgrade-review-option { display: inline-block; margin: 0.2rem 1.2rem 0.2rem 0; }
+.upgrade-review-shortcuts select { max-width: 320px; }
+.upgrade-review-shortcuts { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin: 0.8rem 0 0; }
 .upgrade-review-reason { display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 0.6rem; margin: 0.5rem 0 0.2rem 1.6rem; }
 .upgrade-review-reason[hidden] { display: none; }
 .upgrade-review-nav { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 0.8rem; }
@@ -116,3 +126,5 @@
 .upgrade-report-kept p { margin: 0.3rem 0; }
 .upgrade-report-check { margin: 0.4rem 0; padding-left: 1.2rem; }
 .upgrade-report-check li { margin: 0.35rem 0; color: #7a4a00; }
+.upgrade-review-card { scroll-margin-top: 84px; } /* clear the builder's sticky header when a decision is brought into view */
+.upgrade-review-title:focus { outline: none; }

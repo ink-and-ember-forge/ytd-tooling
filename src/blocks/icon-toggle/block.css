@@ -26,20 +26,21 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    border: 1px solid var(--mid-grey);
+    border: 1px solid var(--tile-border-colour);
     border-radius: 15px;
     padding: 0.5rem 0.2rem;
     text-align: center;
+    cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
 
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 4px 8px color-mix(in srgb, var(--shadow-colour) 25%, transparent);
     }
 
     &.active {
       border: 3px solid var(--primary-colour);
-      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+      box-shadow: 0 0.5rem 1rem color-mix(in srgb, var(--shadow-colour) 15%, transparent);
     }
 
     img {

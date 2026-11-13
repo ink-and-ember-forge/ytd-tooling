@@ -1,0 +1,85 @@
+  .data-icons-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-block: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    h5 {
+      font-size: 14px;
+      margin: 0.5rem 0 0;
+      color: var(--primary-colour);
+      font-weight: 600;
+    }
+  }
+
+  .data-icon-trigger {
+    cursor: pointer;
+  }
+
+  .data-icon-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid var(--tile-border-colour);
+    border-radius: 15px;
+    padding: 0.5rem 0.2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 8px color-mix(in srgb, var(--shadow-colour) 25%, transparent);
+    }
+
+    &.active {
+      border: 3px solid var(--primary-colour);
+      box-shadow: 0 0.5rem 1rem color-mix(in srgb, var(--shadow-colour) 15%, transparent);
+    }
+
+    img {
+      width: 45px;
+    }
+  }
+
+  .content-display {
+    display: none;
+    margin-block: 1rem;
+    padding: 1.2rem;
+    border: 2px solid var(--primary-colour);
+    background-color: transparent;
+    border-radius: 12px;
+    /* Extra offset so the clicked icon stays visible above the panel. */
+    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 110px);
+
+    &.active {
+      display: block;
+    }
+  }
+
+  .content-display-inner-grid {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 2rem;
+    align-items: center;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+
+      img {
+        order: -1;
+      }
+    }
+
+    img {
+      width: 150px;
+      height: auto;
+      justify-self: center;
+    }
+  }
