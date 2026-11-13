@@ -158,8 +158,9 @@ test("linking: no two decisions touch the same property of the same element, on 
 
 const report = (dir, decide, options = {}) => {
   const { p, m, steps } = review(dir, options);
-  const decisions = new Map(steps.map((s) => [s.id, decide(s)]));
-  const keys = steps.filter((s) => decisions.get(s.id).choice === "keep").flatMap((s) => s.keys);
+  // decide(step, row): one decision per rule
+  const decisions = new Map(steps.flatMap((s) => s.rows.map((row) => [row.id, decide(s, row)])));
+  const keys = steps.flatMap((s) => s.rows).filter((row) => decisions.get(row.id).choice === "keep").flatMap((row) => row.keys);
   const final = buildMigration(p, { reference, keepGroups: [...m.groups.filter((g) => g.kind === "custom").map((g) => g.key), ...keys] });
   return { steps, r: buildReport(final, steps, decisions, { date: "2026-11-20" }), final };
 };
@@ -167,38 +168,46 @@ const keep = (reason, note = "") => ({ choice: "keep", reason, note });
 const tpl = { choice: "template", reason: "", note: "" };
 
 test("report: totals, the reasons for what was kept, and what the page takes from the template", () => {
-  const { steps, r } = report("legacy2", (s) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Your phone and tablet layout" ? keep("problem", "the contents list must come first on phones") : tpl));
-  assert.deepEqual(r.totals, { differences: 21, decisions: 5, kept: 2, template: 3, components: 4, componentsKept: 4, htmlChanges: 2 });
-  assert.deepEqual(r.kept.map((k) => [k.title, k.reason, k.note]), [
-    ["Text and headings", "A deliberate design choice", "bold is our house style"],
-    ["Your phone and tablet layout", "It fixes a problem (say which)", "the contents list must come first on phones"],
-  ]);
-  assert.deepEqual(r.template.map((t) => t.title), steps.filter((s) => !["Text and headings", "Your phone and tablet layout"].includes(s.title)).map((s) => s.title));
+  const { steps, r } = report("legacy2", (s, row) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Your phone and tablet layout" && row.label === ".main-grid" ? keep("problem", "the contents list must come first on phones") : tpl));
+  const textRows = steps.find((s) => s.title === "Text and headings").rows.length;
+  assert.equal(r.totals.decisions, steps.flatMap((s) => s.rows).length);
+  assert.deepEqual({ ...r.totals, decisions: 0, template: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, components: 4, componentsKept: 4, htmlChanges: 2 });
+  assert.equal(r.totals.template, r.totals.decisions - r.totals.kept);
+  assert.ok(r.kept.some((k) => k.title === "Text and headings \u203a strong" && k.reason === "A deliberate design choice" && k.note === "bold is our house style"));
+  assert.ok(r.kept.some((k) => k.title === "Your phone and tablet layout \u203a .main-grid" && k.reason === "It fixes a problem (say which)"));
+  assert.ok(r.template.every((t) => !r.kept.some((k) => k.title === t.title)), "a rule is either kept or following the template");
+  assert.ok(r.template.some((t) => t.title === "Your phone and tablet layout \u203a h2"), "the other phone rules follow the template");
   assert.equal(r.theme, "Gwella");
   assert.equal(r.date, "2026-11-20");
 });
 
+test("report: one rule in a group can be kept while the others follow the template", () => {
+  const { r } = report("legacy2", (s, row) => (row.label === "strong" ? keep("design", "bold is our house style") : tpl));
+  assert.deepEqual(r.kept.map((k) => k.title), ["Text and headings \u203a strong"]);
+  assert.ok(r.template.some((t) => t.title === "Text and headings \u203a h5"), "its neighbours follow the template");
+});
+
 test("report: Markdown a person can keep, with the reasons, the changes and what is still worth a look", () => {
-  const { r } = report("legacy2", (s) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Fixes that use !important" ? keep("unsure") : tpl));
+  const { r } = report("legacy2", (s, row) => (row.label === "strong" ? keep("design", "bold is our house style") : row.label === "a" ? keep("unsure") : tpl));
   const md = reportMarkdown(r);
   assert.match(md, /^# Migration report\n\nMigrated to template version [\d.]+ · theme Gwella · 2026-11-20/);
-  assert.match(md, /- \*\*Kept as your own: 2\.\*\* Following the template: 3\./);
+  assert.match(md, /- \*\*Kept as your own: 2\.\*\* Following the template: \d+\./);
   const kept = md.slice(md.indexOf("## Kept as your own"), md.indexOf("## Following the template"));
-  assert.match(kept, /### Text and headings\n\n- \*\*Why:\*\* A deliberate design choice\. bold is our house style/);
+  assert.match(kept, /### Text and headings \u203a strong\n\n- \*\*Why:\*\* A deliberate design choice\. bold is our house style/);
   assert.match(kept, /- \*\*Affects:\*\* \d+ elements on this page/);
   assert.match(kept, /strong — text weight: yours `bold`, template `not set`/, "what it overrides, against the template");
-  assert.match(kept, /### Fixes that use !important\n\n- \*\*Why:\*\* Not sure yet/);
+  assert.match(kept, /### Fixes that use !important \u203a a\n\n- \*\*Why:\*\* Not sure yet/);
   const following = md.slice(md.indexOf("## Following the template"), md.indexOf("## Your own components"));
-  assert.match(following, /### Your phone and tablet layout/);
+  assert.match(following, /### Your phone and tablet layout \u203a \.main-grid/);
   assert.match(following, /On small screens: \.main-grid — gap between items: yours `1rem`, template `0`/);
   assert.match(md, /## Your own components \(4\)\n\n- inline-icon: carried over/);
   assert.match(md, /## Changes to your HTML\n\n- Added the Gwella theme class/);
-  assert.match(md, /## Still worth a look\n\n- Revisit "Fixes that use !important": you kept it but weren't sure why\./);
+  assert.match(md, /## Still worth a look\n\n- Revisit "Fixes that use !important \u203a a": you kept it but weren't sure why\./);
 });
 
 test("report: everything that needs a second look is listed, and a clean migration says so", () => {
-  const { r } = report("legacy3", (s) => (s.title === "Text and headings" ? keep("problem") : tpl));
-  assert.ok(r.toCheck.some((c) => /"Text and headings" was kept to fix a problem, but no note says which/.test(c)));
+  const { r } = report("legacy3", (s, row) => (row.label === "strong" ? keep("problem") : tpl));
+  assert.ok(r.toCheck.some((c) => /"Text and headings \u203a strong" was kept to fix a problem, but no note says which/.test(c)));
   assert.ok(r.toCheck.some((c) => /problems? in the page's own HTML tags/.test(c)), "the page's own HTML faults");
   assert.ok(r.toCheck.some((c) => /older version of the Icon-toggle block/.test(c)), "the migration's own notes");
   const none = report("legacy2", () => tpl).r;
@@ -215,4 +224,51 @@ test("report: a component that was not carried is called out", () => {
   assert.equal(r.totals.componentsKept, 1);
   assert.match(reportMarkdown(r), /- resource-card: \*\*not carried\*\*/);
   assert.ok(r.toCheck.some((c) => /Not carried: resource-card\. Anything using it has lost its styling/.test(c)));
+});
+
+// ---- one choice per rule, with a hint ------------------------------------------------------
+
+test("rows: every difference is in exactly one row, each with its element count and a one-sentence hint that never picks", () => {
+  for (const dir of ["legacy", "legacy2", "legacy3"]) {
+    const { m, steps } = review(dir);
+    const rows = steps.flatMap((s) => s.rows);
+    assert.deepEqual(rows.flatMap((r) => r.keys).sort(), keysOf(m).sort(), `${dir}: nothing is lost or asked twice`);
+    assert.equal(new Set(rows.map((r) => r.id)).size, rows.length, "row ids are unique");
+    for (const r of rows) {
+      assert.ok(r.label && r.path.includes(r.label) && r.lines.length, `${dir}/${r.id}`);
+      assert.match(r.hint, /^[A-Z][^\n]+\.$/, `${dir}/${r.id}: one sentence`);
+      assert.doesNotMatch(r.hint, /\b(should|recommend|you must|keep it|drop it now)\b/i, "a hint informs; it does not choose");
+      assert.ok(typeof r.elements === "number" || r.elements === null);
+    }
+    for (const s of steps) assert.deepEqual(s.rows.flatMap((r) => r.keys).sort(), [...s.keys].sort(), "a step's rows are its keys");
+  }
+});
+
+test("rows: hints say what is true of the rule", () => {
+  const rows = review("legacy2").steps.flatMap((s) => s.rows), by = (label) => rows.find((r) => r.label === label);
+  assert.match(by("a").hint, /!important/);
+  assert.match(by(".main-grid").hint, /^Phones and tablets only/);
+  assert.match(by("#header-h1").hint, /^The template sets space above and below to 1\.5rem/);
+  assert.match(by("strong").hint, /template doesn't set text weight/);
+  assert.match(rows.find((r) => r.linked.length).hint, /^Works together with another rule/);
+});
+
+test("rows: rules that depend on each other are ONE row, so they cannot be split", () => {
+  const { steps } = review("legacy2");
+  const row = steps.flatMap((s) => s.rows).find((r) => r.linked.length);
+  assert.ok(row.keys.length >= 2 && row.label.includes(" + "));
+  assert.equal(steps.flatMap((s) => s.rows).filter((r) => r.keys.some((k) => row.keys.includes(k))).length, 1);
+});
+
+test("rows: the reason written into the CSS names the rule, so it can be found again", () => {
+  const { steps } = review("legacy2");
+  const row = steps.find((s) => s.title === "Text and headings").rows.find((r) => r.label === "strong");
+  assert.equal(ledgerLine(row, { reason: "design", note: "bold is our house style" }), "Text and headings \u203a strong: A deliberate design choice, bold is our house style");
+});
+
+test("rows: no two rows touch the same property of the same element", () => {
+  for (const dir of ["legacy", "legacy2", "legacy3"]) {
+    const { p, steps } = review(dir);
+    assert.deepEqual(crossDecisionLinks(steps.flatMap((s) => s.rows.map((r) => ({ title: r.path, lines: r.lines }))), p.html), [], dir);
+  }
 });

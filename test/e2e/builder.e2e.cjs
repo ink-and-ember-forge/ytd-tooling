@@ -228,9 +228,10 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const groups = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
   ok("9b the page's own styles are 12 groups, all kept by default", groups.length === 12 && groups.every((g) => g.kept), groups.map((g) => g.name).join(","));
   const progress1 = await page.textContent("#view-upgrade .upgrade-review-progress");
-  ok("9b the 18 differences from the template are 5 decisions, not 18 checkboxes", /Decision 1 of 5/.test(progress1), progress1);
-  ok("9b the template is already chosen, and each decision says what it affects", await page.isChecked('#view-upgrade .upgrade-review-choice input[value="template"]') && (await page.textContent("#view-upgrade .upgrade-review-headline")).includes("affects"));
-  ok("9b copying is locked until the review is finished, and says why", await page.isDisabled('#view-upgrade button:has-text("Copy CSS")') && (await page.textContent("#view-upgrade .upgrade-results")).includes("Finish the review in step 4 first (5 decisions left)"));
+  ok("9b the 18 differences from the template are 5 groups, not 18 checkboxes", /Group 1 of 5/.test(progress1), progress1);
+  ok("9b the template is already chosen, and each decision says what it affects", await page.isChecked('#view-upgrade .upgrade-review-choice input[value="template"] >> nth=0') && (await page.textContent("#view-upgrade .upgrade-review-headline")).includes("affect"));
+  ok("9b every rule in the group has its own choice, hint and element count", (await page.$$("#view-upgrade .upgrade-review-row")).length > 1 && (await page.$$eval("#view-upgrade .upgrade-review-row", (l) => l.every((x) => x.querySelector(".upgrade-review-hint")?.textContent.length > 20 && x.querySelector('input[value="keep"]')))));
+  ok("9b copying is locked until the review is finished, and says why", await page.isDisabled('#view-upgrade button:has-text("Copy CSS")') && (await page.textContent("#view-upgrade .upgrade-results")).includes("Finish the review in step 4 first (5 groups left)"));
   ok("9b the theme is detected from the old colour", await page.isChecked('#view-upgrade .upgrade-theme input[value="gwella"]') && (await page.textContent("#view-upgrade .upgrade-theme")).includes("detected"));
   ok("9b two HTML changes are shown with before and after", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 2);
   const region = (await code("CSS")).slice((await code("CSS")).indexOf("PAGE-SPECIFIC OVERRIDES"));
@@ -301,7 +302,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9c the page does not move by itself when the preview frames load", y0 === y1 && y1 < 1200, `${y0} -> ${y1}`);
   const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
   ok("9c the page's own components are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
-  ok("9c the 21 differences are 5 decisions", /Decision 1 of 5/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
+  ok("9c the 21 differences are 5 groups", /Group 1 of 5/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
   ok("9c nothing is kept yet, and copying is locked", !(await code("CSS")).includes("kept:") && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
 
   // the first decision, before choosing: the template and yours side by side, the affected elements outlined
@@ -315,21 +316,41 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   }
   ok("9c the first decision (Text and headings) shows the page both ways, with what it affects outlined", firstTitle === "Text and headings" && weights[0].strong !== weights[1].strong && weights[0].outlined > 0 && weights[1].outlined > 0, JSON.stringify(weights));
   ok("9c and it never numbers the breadcrumb: the list rule that does is decided with its fix, not here", weights.every((w) => w.crumb === "none"), JSON.stringify(weights.map((w) => w.crumb)));
-  ok("9c and says what it changes in plain words, and what the template does", (await page.textContent("#view-upgrade .upgrade-review-headline")).includes("text weight") && (await page.textContent("#view-upgrade .upgrade-review-lines")).includes("template"));
+  ok("9c and says what it changes in plain words, and what the template does", (await page.textContent("#view-upgrade .upgrade-review-rows")).includes("text weight") && (await page.textContent("#view-upgrade .upgrade-review-rows")).includes("template"));
 
-  // keeping one needs a reason: Next stays disabled until one is given
-  await page.check('#view-upgrade .upgrade-review-choice input[value="keep"]');
-  ok("9c keeping yours asks why, and will not go on without an answer", await page.isVisible("#view-upgrade .upgrade-reason") && await page.isDisabled('#view-upgrade button:has-text("Next decision")'));
-  await page.selectOption("#view-upgrade .upgrade-reason", "design");
-  await page.fill("#view-upgrade .upgrade-note", "bold is our house style");
-  ok("9c once it has a reason it can go on, and the reason is written into the CSS", !(await page.isDisabled('#view-upgrade button:has-text("Next decision")')) && (await code("CSS")).includes("/* kept: Text and headings: A deliberate design choice, bold is our house style */"));
-  await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
-  ok("9c going back to the template takes it out again", !(await code("CSS")).includes("kept:") && !(await page.isVisible("#view-upgrade .upgrade-reason")));
+  // keeping one needs a reason, and is decided PER RULE: Next stays disabled until each kept rule has one
+  const R = (label) => `#view-upgrade .upgrade-review-row:has(.upgrade-review-row-label:text-is("${label}"))`;
+  const NEXT = '#view-upgrade button:has-text("Next group")';
+  ok("9c no rule's reason box is showing until it is kept", !(await page.isVisible("#view-upgrade .upgrade-review-row .upgrade-reason")));
+  await page.check(`${R("strong")} input[value="keep"]`);
+  ok("9c keeping one rule asks why for that rule only, and will not go on without an answer", await page.isVisible(`${R("strong")} .upgrade-reason`) && !(await page.isVisible(`${R("h5")} .upgrade-reason`)) && await page.isDisabled(NEXT));
+  await page.selectOption(`${R("strong")} .upgrade-reason`, "design");
+  await page.fill(`${R("strong")} .upgrade-note`, "bold is our house style");
+  const css1 = await code("CSS");
+  ok("9c once it has a reason it can go on, and the reason is written into the CSS against that rule", !(await page.isDisabled(NEXT)) && css1.includes("/* kept: Text and headings \u203a strong: A deliberate design choice, bold is our house style */"));
+  ok("9c the rule next to it still follows the template", await page.isChecked(`${R("h5")} input[value="template"]`) && !css1.includes("Text and headings \u203a h5"));
+  await page.click(`${R("strong")} button:has-text("Show just this one")`);
+  const justWeights = [];
+  for (const nth of [0, 1]) {
+    await page.waitForTimeout(400);
+    const f = await (await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth]).contentFrame();
+    justWeights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".accordion-text strong")).fontWeight, h5: getComputedStyle(document.querySelector("h5")).fontWeight, outlined: document.querySelectorAll(".__hl").length })));
+  }
+  ok("9c 'show just this one' previews that rule alone, outlining only what it touches", justWeights[0].strong !== justWeights[1].strong && justWeights[0].h5 === justWeights[1].h5 && justWeights[1].outlined > 0, JSON.stringify(justWeights));
+  await page.check(`${R("strong")} input[value="template"]`);
+  ok("9c going back to the template takes it out again", !(await code("CSS")).includes("kept:") && !(await page.isVisible(`${R("strong")} .upgrade-reason`)) && !(await page.isDisabled(NEXT)));
+  // the group shortcuts: keep all, one reason for all, template for all
+  await page.click('#view-upgrade button:has-text("Keep all of mine")');
+  ok("9c 'keep all of mine' keeps every rule in the group, and each still needs a reason", (await page.$$eval("#view-upgrade .upgrade-review-row", (l) => l.every((x) => x.querySelector('input[value="keep"]').checked))) && await page.isDisabled(NEXT));
+  await page.selectOption("#view-upgrade .upgrade-review-shortcuts select", "design");
+  ok("9c one reason can be given to every kept rule at once", !(await page.isDisabled(NEXT)) && (await code("CSS")).includes("Text and headings \u203a h5: A deliberate design choice"));
+  await page.click('#view-upgrade button:has-text("Use the template for all of these")');
+  ok("9c and 'use the template for all of these' takes them all out", !(await code("CSS")).includes("kept:") && !(await page.isDisabled(NEXT)));
 
   // moving between decisions: the new card's top (number, title, headline) is brought just below the sticky header, and stays there
   const cardTop = () => page.evaluate(() => Math.round(document.querySelector(".upgrade-review-card").getBoundingClientRect().top));
   await page.evaluate(() => document.querySelector("#view-upgrade .upgrade-review-nav").scrollIntoView({ block: "end" }));
-  await page.click('#view-upgrade button:has-text("Next decision")');
+  await page.click('#view-upgrade button:has-text("Next group")');
   await page.waitForTimeout(1200);
   const afterNext = await cardTop();
   await page.waitForTimeout(800);
@@ -338,37 +359,40 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.click('#view-upgrade .upgrade-review-nav button:has-text("Back")');
   await page.waitForTimeout(800);
   const afterBack = await cardTop();
-  ok("9c Back does the same", afterBack >= 60 && afterBack <= 120 && (await page.textContent("#view-upgrade .upgrade-review-progress")).includes("Decision 1 of 5"), `top at ${afterBack}px`);
+  ok("9c Back does the same", afterBack >= 60 && afterBack <= 120 && (await page.textContent("#view-upgrade .upgrade-review-progress")).includes("Group 1 of 5"), `top at ${afterBack}px`);
 
   // decide everything: the template (the default) for every decision, noting the titles on the way
   const decideAll = async (choice, collect = null) => {
     if (await page.isVisible("#view-upgrade .upgrade-review-summary")) await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=0');
     for (;;) {
       if (collect) collect.push(await page.textContent("#view-upgrade .upgrade-review-title"));
-      await page.check(`#view-upgrade .upgrade-review-choice input[value="${choice}"]`);
-      if (choice === "keep") await page.selectOption("#view-upgrade .upgrade-reason", "design");
+      for (const row of await page.$$("#view-upgrade .upgrade-review-row")) {
+        await (await row.$(`input[value="${choice}"]`)).check();
+        if (choice === "keep") await (await row.$(".upgrade-reason")).selectOption("design");
+      }
       const last = await page.isVisible('#view-upgrade button:has-text("Finish the review")');
-      await page.click(last ? '#view-upgrade button:has-text("Finish the review")' : '#view-upgrade button:has-text("Next decision")');
+      await page.click(last ? '#view-upgrade button:has-text("Finish the review")' : '#view-upgrade button:has-text("Next group")');
       if (last) break;
     }
   };
   const decisionTitles = [];
   await decideAll("template", decisionTitles);
-  ok("9c the five decisions, biggest first", decisionTitles.join(" | ") === "Text and headings | Fixes that use !important | Your phone and tablet layout | Rules that work together: list markers and spacing inside (left) | Page header, contents list and layout", decisionTitles.join(" | "));
+  ok("9c the five groups, biggest first", decisionTitles.join(" | ") === "Text and headings | Fixes that use !important | Your phone and tablet layout | Rules that work together: list markers and spacing inside (left) | Page header, contents list and layout", decisionTitles.join(" | "));
   ok("9c using the template for all of them says so, and unlocks copying", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("Your page will follow the template") && !(await page.isDisabled('#view-upgrade button:has-text("Copy CSS")')));
   await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=3');
   const linkedTitle = await page.textContent("#view-upgrade .upgrade-review-title");
   const linkedWhy = await page.textContent("#view-upgrade .upgrade-review-card");
+  ok("9c the linked rules are a single row, so they cannot be split", (await page.$$("#view-upgrade .upgrade-review-row")).length === 1);
   const crumbs = [];
   for (const nth of [0, 1]) {
     const f = await (await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth]).contentFrame();
     await page.waitForTimeout(300);
     crumbs.push(await f.evaluate(() => ({ crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, numbered: getComputedStyle(document.querySelector("section#understand-vision ol, section#culture ol")).listStyleType })));
   }
-  ok("9c rules that depend on each other are one decision, and it says why", linkedTitle.startsWith("Rules that work together") && linkedWhy.includes("both set list markers") && linkedWhy.includes("decided together"), linkedTitle);
+  ok("9c rules that depend on each other are one row with one choice, and it says why", linkedTitle.startsWith("Rules that work together") && linkedWhy.includes("both set list markers") && linkedWhy.includes("decided together"), linkedTitle);
   ok("9c kept together, the breadcrumb stays un-numbered and the page's own numbered list stays numbered", crumbs[1].crumb === "none" && crumbs[1].numbered === "decimal", JSON.stringify(crumbs));
   await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
-  await page.click('#view-upgrade button:has-text("Next decision")');
+  await page.click(NEXT);
   await page.click('#view-upgrade button:has-text("Finish the review")');
   ok("9c checks: nothing lost, and the class that was never styled is said to be exactly that", await (async () => { const c = await page.textContent("#view-upgrade .upgrade-checks"); return c.includes("Every class in your HTML has styling") && c.includes(".number-text") && c.includes("nothing was lost") && !c.includes("stretched-link"); })());
 
@@ -400,23 +424,23 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
     JSON.stringify({ was: [was.strong, was.h4, was.h1Margin, was.h5, was.glanceHeading], now: [kept.strong, kept.h4, kept.h1Margin, kept.h5, kept.glanceHeading] }));
   ok("9c and the template's own changes are adopted either way (black sub-headings, bordered contents items)", was.h3 === "rgb(163, 25, 91)" && kept.h3 === "rgb(0, 0, 0)" && was.tocItemBorder === "0px" && kept.tocItemBorder === "1px");
   const css2 = await code("CSS");
-  ok("9c every kept decision has its reason in the CSS", ["Text and headings", "Fixes that use !important", "Your phone and tablet layout", "Rules that work together: list markers and spacing inside (left)", "Page header, contents list and layout"].every((t) => new RegExp(`/\\* kept: ${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: A deliberate design choice(, [^*]*)? \\*/`).test(css2)) && css2.includes("bold is our house style"), css2.split("\n").filter((l) => l.includes("kept:")).join(" ~ "));
-  ok("9c and the summary lists what was kept", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("You're keeping 5 of your own choices"));
+  ok("9c every kept rule has its reason in the CSS, under its group and its own name", ["Text and headings", "Fixes that use !important", "Your phone and tablet layout", "Rules that work together: list markers and spacing inside (left)", "Page header, contents list and layout"].every((t) => new RegExp(`/\\* kept: ${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} \u203a [^*]*?: A deliberate design choice(, [^*]*)? \\*/`).test(css2)) && css2.includes("bold is our house style"), css2.split("\n").filter((l) => l.includes("kept:")).join(" ~ "));
+  ok("9c and the summary lists what was kept", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("You're keeping 20 rules of your own"));
 
   // the final report: what was decided and why, to keep
-  ok("9c the report appears once the review is finished, and says what was kept", await page.isVisible("#view-upgrade .upgrade-report-summary") && (await page.textContent("#view-upgrade .upgrade-report-summary")).includes("Kept as your own: 5. Following the template: 0."));
+  ok("9c the report appears once the review is finished, and says what was kept", await page.isVisible("#view-upgrade .upgrade-report-summary") && (await page.textContent("#view-upgrade .upgrade-report-summary")).includes("Kept as your own: 20. Following the template: 0."));
   const reportCards = await page.$$eval("#view-upgrade .upgrade-report-kept", (l) => l.map((x) => x.textContent));
-  ok("9c every kept decision is in the report with its reason and note", reportCards.length === 5 && reportCards.every((t) => t.includes("Why: A deliberate design choice")) && reportCards.some((t) => t.includes("bold is our house style")), reportCards.length + " cards");
+  ok("9c every kept rule is in the report with its reason and note", reportCards.length === 20 && reportCards.every((t) => t.includes("Why: A deliberate design choice")) && reportCards.some((t) => t.includes("bold is our house style")), reportCards.length + " cards");
   const [download] = await Promise.all([page.waitForEvent("download"), page.click('#view-upgrade button:has-text("Download report")')]);
   const reportText = fs.readFileSync(await download.path(), "utf8");
-  ok("9c the downloaded report is a Markdown file a person can keep", download.suggestedFilename() === "migration-report.md" && reportText.startsWith("# Migration report") && reportText.includes("## Kept as your own (5)") && reportText.includes("- **Why:** A deliberate design choice. bold is our house style") && reportText.includes("strong — text weight: yours `bold`, template `not set`") && reportText.includes("## Still worth a look"), reportText.slice(0, 80));
+  ok("9c the downloaded report is a Markdown file a person can keep", download.suggestedFilename() === "migration-report.md" && reportText.startsWith("# Migration report") && reportText.includes("## Kept as your own (20)") && reportText.includes("- **Why:** A deliberate design choice. bold is our house style") && reportText.includes("strong — text weight: yours `bold`, template `not set`") && reportText.includes("## Still worth a look"), reportText.slice(0, 80));
 
-  // change one decision afterwards: back to the template for the first
+  // change one group afterwards: back to the template for the first
   await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=0');
-  await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
+  await page.click('#view-upgrade button:has-text("Use the template for all of these")');
   await page.waitForTimeout(500);
-  ok("9c changing one decision takes only that one out", !(await code("CSS")).includes("kept: Text and headings") && (await code("CSS")).includes("kept: Your phone and tablet layout") && (await probe(await frame2())).strong !== was.strong);
-  await page.click('#view-upgrade button:has-text("Next decision")');
+  ok("9c changing one group takes only that one out", !(await code("CSS")).includes("kept: Text and headings") && (await code("CSS")).includes("kept: Your phone and tablet layout") && (await probe(await frame2())).strong !== was.strong);
+  await page.click(NEXT);
   await decideAll("template"); // finish again, so the page is in a settled state for what follows
 
 

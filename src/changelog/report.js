@@ -9,11 +9,13 @@ const reasonLabel = (id) => (REASONS.find(([k]) => k === id) || REASONS[2])[1];
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const line = (l) => `${l.media ? "On small screens: " : ""}${l.where} — ${l.label}: yours \`${l.mine}\`, template \`${l.template ?? "not set"}\``;
 
-// migration: buildMigration() result. steps: buildReview(). decisions: Map(step id -> { choice, reason, note }).
+// migration: buildMigration() result. steps: buildReview(). decisions: Map(row id -> { choice, reason, note }): one decision
+// per RULE (a row of a step), so the report says what was decided about each.
 export function buildReport(migration, steps, decisions, { date }) {
   const decided = (s) => decisions.get(s.id) || { choice: "template", reason: "", note: "" };
-  const kept = steps.filter((s) => decided(s).choice === "keep");
-  const template = steps.filter((s) => decided(s).choice !== "keep");
+  const rows = steps.flatMap((st) => st.rows.map((r) => ({ ...r, title: r.path, step: st.title })));
+  const kept = rows.filter((s) => decided(s).choice === "keep");
+  const template = rows.filter((s) => decided(s).choice !== "keep");
   const components = migration.groups.filter((g) => g.kind === "custom");
   const differences = migration.groups.filter((g) => g.kind === "deviation").length;
   const lint = migration.lint;
@@ -33,7 +35,7 @@ export function buildReport(migration, steps, decisions, { date }) {
 
   return {
     date, version: BUILDER_VERSION, theme: migration.theme ? THEMES[migration.theme].label : "not chosen",
-    totals: { differences, decisions: steps.length, kept: kept.length, template: template.length, components: components.length, componentsKept: components.filter((c) => c.kept).length, htmlChanges: migration.htmlChanges.length },
+    totals: { differences, decisions: rows.length, kept: kept.length, template: template.length, components: components.length, componentsKept: components.filter((c) => c.kept).length, htmlChanges: migration.htmlChanges.length },
     kept: kept.map((s) => ({ title: s.title, reason: reasonLabel(decided(s).reason), note: decided(s).note.trim(), elements: s.elements, lines: s.lines, linked: s.linked })),
     template: template.map((s) => ({ title: s.title, elements: s.elements, lines: s.lines })),
     components: components.map((g) => ({ name: g.key, kept: g.kept })),
@@ -47,7 +49,7 @@ export function reportMarkdown(r) {
   const t = r.totals, out = [];
   out.push("# Migration report", "", `Migrated to template version ${r.version} · theme ${r.theme} · ${r.date}`, "");
   out.push("## Summary", "");
-  out.push(`- The page differed from the template in ${plural(t.differences, "place", "places")}, grouped into ${plural(t.decisions, "decision", "decisions")}.`);
+  out.push(`- The page differed from the template in ${plural(t.differences, "place", "places")}, decided as ${plural(t.decisions, "rule", "rules")} (rules that depend on each other are decided together).`);
   out.push(`- **Kept as your own: ${t.kept}.** Following the template: ${t.template}.`);
   out.push(`- Your own components carried over: ${t.componentsKept} of ${t.components}.`);
   out.push(`- ${plural(t.htmlChanges, "change", "changes")} to the HTML. ${plural(r.dropped.unused, "rule", "rules")} for classes not used on the page were dropped.`, "");
