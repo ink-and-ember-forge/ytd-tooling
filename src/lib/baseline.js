@@ -9,14 +9,20 @@ import { assembleCSS, assembleJS } from "./assemble.js";
 const fileUrl = (version, file) => new URL(`../../baseline/${version}/${file}`, import.meta.url);
 const tryLoad = (url) => loadText(url).catch(() => null);
 
+// baseline/index.json says which files each version has, so only files that exist are fetched
+// (a probe for a missing file would log a 404 in the browser console). Loaded once.
+let indexPromise;
+const loadIndex = () => (indexPromise ||= tryLoad(new URL("../../baseline/index.json", import.meta.url)).then((t) => (t ? JSON.parse(t) : {})));
+
 // { version, html, css, js, blocks: { <id>: { id, css, js } } } or null.
 export async function loadBaseline(version) {
-  const css = await tryLoad(fileUrl(version, "base.css"));
-  if (css === null) return null;
-  const [html, js] = await Promise.all([tryLoad(fileUrl(version, "base.html")), tryLoad(fileUrl(version, "base.js"))]);
+  const files = (await loadIndex())[version];
+  if (!files || !files.includes("base.css")) return null;
+  const get = (file) => (files.includes(file) ? tryLoad(fileUrl(version, file)) : Promise.resolve(null));
+  const [css, html, js] = await Promise.all([get("base.css"), get("base.html"), get("base.js")]);
   const blocks = {};
   await Promise.all(BLOCK_LIST.map(async (b) => {
-    const [bcss, bjs] = await Promise.all([tryLoad(fileUrl(version, `blocks/${b.id}.css`)), tryLoad(fileUrl(version, `blocks/${b.id}.js`))]);
+    const [bcss, bjs] = await Promise.all([get(`blocks/${b.id}.css`), get(`blocks/${b.id}.js`)]);
     if (bcss !== null || bjs !== null) blocks[b.id] = { id: b.id, css: bcss, js: bjs };
   }));
   return { version, html, css, js, blocks };

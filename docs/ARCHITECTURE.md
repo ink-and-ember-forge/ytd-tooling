@@ -51,7 +51,7 @@ The Build view is a **workbench** that fills the window under a one-row header: 
 | `splitter.js` | The draggable divider between form and preview (mouse, touch, arrow keys; double-click resets). Width is shared by all blocks and remembered. |
 | `storage.js` | Autosave to `localStorage`, plus project save/load as a JSON file. All wrapped in try/catch. |
 | `tabs.js` | Accessible tabs (roles, arrow keys) used for the block rail, code tabs and the Build / Upgrade / What's changed views. |
-| `upgrade-panel.js`, `changelog-panel.js` | The Upgrade (three steps + checklist) and What's changed views. |
+| `upgrade-panel.js`, `changelog-panel.js` | The Upgrade and What's changed views. Upgrade is one page whose sections unlock after "Check my page": what was found (version, blocks), the author's own CSS tweaks (opt-in), what is changing, and the upgraded HTML / CSS / JS to copy with an automatic self-check. It only displays what `src/changelog/upgrade.js` returns. |
 | `guide-dialog.js` | The "How it works" lightbox: one shared native `<dialog>` that shows a block's `how-it-works.html` (focus trap, Esc, click-outside and ✕ to close, focus returns to the button). Opened from the "ⓘ How it works" button in each panel header. For blocks with an Explain tab it ends with "Explore it on my block →". |
 | `explain-panel.js` | The **Explain** tab: the block's own generated code, annotated. Hovering a line lights it up in the preview and explains it; hovering an attribute explains it and highlights every identical value; clicking pins. Numbered badges match the X-ray chips. |
 | `preview.js` (X-ray) | The **X-ray** toggle: numbered chips and outlines over every explained part of the preview. It switches on with the Explain tab and off when you leave it. |
@@ -75,17 +75,18 @@ Only blocks with an `explain.json` have the tab (currently Accordion and Text ar
 
 ## Upgrading an old page
 
-1. Paste the page's HTML/CSS/JS into Tools → Upgrade page.
-2. The checker reads `data-base-version` (or you pick the version) and walks every later release.
-3. Each change the page is affected by is listed under *Rebuild*, *Copy directly*, *Hand edit* or *Check manually*. For "copy" changes a button copies the current replacement code (base CSS/JS/HTML, or the block's CSS).
-4. Set `data-base-version` to the new version.
+1. Paste the page's HTML, CSS and JS into **Upgrade a page** and press *Check my page*.
+2. The version is read from `data-base-version` (if it is missing, or the CSS looks like a different version, the closest stored versions are offered). Blocks are detected from the HTML; the author can correct the list.
+3. The author's own CSS tweaks are listed. **Nothing is kept unless ticked**; ticked tweaks go in a labelled `PAGE-SPECIFIC OVERRIDES` block at the end of the new CSS and are carried forward next time. Differences in the page's JS are shown, not merged.
+4. The upgraded HTML (only the version marker changes), CSS and JS are copied back over the old ones. The tool re-checks its own output and lists anything that still needs doing by hand.
 
-### The upgrade engine (`src/changelog/`, no UI yet)
+### The upgrade engine (`src/changelog/`; the UI is `src/ui/upgrade-panel.js`)
 
 - `upgrade.js`: `detectBlocks(html)` finds which blocks a pasted page uses (from each block's `detect`); `buildUpgrade({ html, css, js })` returns the complete upgraded CSS and JS for exactly those blocks, the HTML with only its version marker changed, notes for anything it could not do, and the checker's report.
 - `css-tree.js` + `local-edits.js`: find the changes an author made by hand to a page's CSS. The page's CSS and the pristine CSS of its version (rebuilt from `baseline/`, for the blocks the page has) are both parsed into rule trees and compared by meaning (rule path, property, value), so whitespace, comments and formatting never count. Changed and added properties and the author's own rules are **kept**, in a labelled `PAGE-SPECIFIC OVERRIDES` region at the end of the stylesheet, which is recognised and carried forward on every later upgrade. Removed properties or rules can't be expressed as overrides, so they are reported, not kept. Each edit also says whether the *new* standard changed the same thing (`standardChanged`) or no longer has the rule (`obsolete`). `upgradePage()` loads the baseline for the page's version and calls `buildUpgrade`.
 - `sniff.js`: `suggestVersions(css)` ranks the stored versions by how few differences the page's CSS has from each. `upgradePage()` attaches it when the version marker is missing or the CSS looks like a different version from the one claimed. Versions whose base CSS is identical tie (3.2.0 and 3.3.0 can't be told apart without an At a glance block), and the ranking says so by listing them together.
-- `verify.js` + `lib/baseline.js`: check every changelog rule against the frozen code in `baseline/` (see [RELEASING.md](RELEASING.md)).
+- `js-edits.js`: a line diff of the page's JS against the standard JS for its version (shown to the author, never merged).
+- `verify.js` + `lib/baseline.js`: check every changelog rule against the frozen code in `baseline/` (see [RELEASING.md](RELEASING.md)). `baseline/index.json` lists each version's files so the browser fetches only files that exist; `npm run release` rewrites it (`npm run release -- --reindex` rewrites it alone) and a test keeps it in sync.
 
 ## Files and loading
 

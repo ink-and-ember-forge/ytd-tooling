@@ -148,7 +148,7 @@ test("upgrade: the author can drop an edit, and edits for an unused block are dr
   const dropped = buildUpgrade(editedPage(), { baseline: old, dropEdits: ["E1"] });
   assert.doesNotMatch(dropped.css, /#123456/);
   assert.match(dropped.css, /letter-spacing/);
-  assert.equal(dropped.edits.find((e) => e.id === "E1").why, "Dropped by the author.");
+  assert.equal(dropped.edits.find((e) => e.id === "E1").why, "Not kept.");
   // The accordion CSS is in the page but its markup is not, so the accordion is left out and so is its edit.
   const page = editedPage();
   page.html = page.html.replace(/<div class="accordion"[\s\S]*?<\/div>\s*<\/div>\s*(?=<)/, "");
@@ -235,4 +235,43 @@ test("a marker that disagrees with the CSS is called out", async () => {
   assert.equal(r.pageVersion, "3.3.0");
   assert.ok(r.notes.some((n) => /closest to version 3\.1\.1/.test(n)), r.notes.join(" | "));
   assert.equal(r.suggestions[0].version, "3.1.1");
+});
+
+// ---- opt-in tweaks, JS edits and the self-check -----------------------------
+
+test("keepEdits: only the chosen tweaks are kept (nothing, if none are chosen)", () => {
+  const none = buildUpgrade(editedPage(), { baseline: old, keepEdits: [] });
+  assert.doesNotMatch(none.css, /PAGE-SPECIFIC|#123456|letter-spacing/);
+  assert.deepEqual(none.edits.map((e) => e.kept), [false, false, false]);
+  assert.equal(none.edits[0].why, "Not kept.");
+  const one = buildUpgrade(editedPage(), { baseline: old, keepEdits: ["E3"] });
+  assert.match(one.css, /letter-spacing/);
+  assert.doesNotMatch(one.css, /#123456/);
+  assert.deepEqual(one.edits.map((e) => e.kept), [false, false, true]);
+  const all = buildUpgrade(editedPage(), { baseline: old });
+  assert.deepEqual(all.edits.map((e) => [e.kind, e.kept]), [["changed-decl", true], ["removed-decl", false], ["added-decl", true]], "leaving keepEdits out keeps every keepable tweak");
+});
+
+test("JS: the page's own lines are reported, formatting and comments are not", () => {
+  const page = editedPage();
+  assert.deepEqual(buildUpgrade(page, { baseline: old }).jsEdits, { added: [], removed: [] });
+  const reformatted = page.js.replace(/\n  /g, "\n      ").replace("<script>", "<script>\n// a comment\n\n");
+  assert.deepEqual(buildUpgrade({ ...page, js: reformatted }, { baseline: old }).jsEdits, { added: [], removed: [] });
+  const withOwn = buildUpgrade({ ...page, js: page.js.replace("</script>", 'console.log("mine");\n</script>') }, { baseline: old });
+  assert.deepEqual(withOwn.jsEdits, { added: ['console.log("mine");'], removed: [] });
+  assert.ok(withOwn.notes.some((n) => /JS differs.*1 line/.test(n)));
+  assert.doesNotMatch(withOwn.js, /console\.log\("mine"\)/, "the upgraded JS is the standard JS; the author's line is reported, not merged");
+  const lines = page.js.split("\n");
+  const cut = lines.findIndex((l) => l.includes("scroll-behavior") || l.includes("backToTopBtn.addEventListener"));
+  const missing = buildUpgrade({ ...page, js: lines.filter((_, i) => i !== cut).join("\n") }, { baseline: old }).jsEdits;
+  assert.equal(missing.removed.length, 1);
+  assert.equal(buildUpgrade(page).jsEdits, null, "no baseline, no comparison");
+});
+
+test("self-check: the upgraded code has nothing left to copy", () => {
+  const r = buildUpgrade(editedPage(), { baseline: old });
+  assert.equal(r.check.ok, true);
+  assert.deepEqual(r.check.remaining, []);
+  assert.deepEqual(r.check.manualSteps, []);
+  assert.ok(buildUpgrade(pageOf(pristineCss()), { baseline: old }).check.ok);
 });

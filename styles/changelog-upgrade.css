@@ -37,3 +37,26 @@
 .change-done { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0 1rem; font-weight: 600; cursor: pointer; }
 .change-done input { width: auto; accent-color: var(--green); }
 .change-card.is-done { opacity: 0.6; border-color: var(--green); }
+
+/* ---- upgrade results ------------------------------------------------------ */
+.upgrade-hint { margin: 0.2rem 0 0.5rem; font-size: 0.85rem; color: var(--dark-grey); }
+.upgrade-muted { color: var(--dark-grey); }
+.upgrade-flag { margin: 0.2rem 0 0 1.6rem; font-size: 0.82rem; color: #7a4a00; }
+.upgrade-blocks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.4rem 1rem; }
+.upgrade-block { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; }
+.upgrade-block input, .upgrade-tweak input { width: auto; accent-color: var(--green); }
+.upgrade-found { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #00695c; background: #e6f4f1; border-radius: 999px; padding: 0.1rem 0.45rem; }
+.upgrade-tweaks { list-style: none; margin: 0.5rem 0; padding: 0; }
+.upgrade-tweak { padding: 0.5rem 0; border-top: 1px solid var(--line); }
+.upgrade-tweak label { cursor: pointer; }
+.upgrade-suggest { margin: 0.6rem 0; }
+.upgrade-suggest .copy-btn { margin-right: 0.5rem; }
+.upgrade-version-details { margin: 0.8rem 0; }
+.upgrade-output { border: 1px solid var(--line); border-radius: 8px; padding: 0.8rem 1rem; margin: 0.7rem 0; background: #fff; }
+.upgrade-output-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.upgrade-output-head .upgrade-hint { margin-bottom: 0; }
+.upgrade-output details { margin-top: 0.5rem; }
+.upgrade-diff { background: #f5f5f5; padding: 0.6rem; border-radius: 6px; overflow-x: auto; font-size: 0.8rem; margin: 0.3rem 0 0.6rem; }
+.upgrade-check { font-weight: 700; margin: 1rem 0; }
+.upgrade-check--ok { color: #2e6b3a; }
+.upgrade-check--warn { color: #9b1c1c; }

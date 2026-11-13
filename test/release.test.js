@@ -22,3 +22,8 @@ test(`code still matches the released baseline for ${BUILDER_VERSION}`, async ()
     );
   }
 });
+
+test("baseline/index.json lists exactly the files on disk (run `npm run release -- --reindex`)", async () => {
+  const { buildBaselineIndex } = await import("../scripts/release.js");
+  assert.deepEqual(JSON.parse(readFileSync(new URL("../baseline/index.json", import.meta.url), "utf8")), buildBaselineIndex());
+});
