@@ -115,13 +115,13 @@
             ]
           },
           "outdated": {
-            "missing": [
-              "grid-template-columns:\\s*(1\\.3fr 3fr|1fr);"
+            "present": [
+              "grid-template-columns:\\s*1fr 3fr;"
             ]
           },
           "action": "copy",
           "page_rebuild": false,
-          "notes": "Replace the base CSS. Pages built without a contents list are unaffected."
+          "notes": "Replace the base CSS. Pages built without a contents list are unaffected (they only have the single-column rule, so they are not flagged)."
         },
         {
           "id": "CHG-3.2.0-05",

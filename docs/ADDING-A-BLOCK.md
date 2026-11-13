@@ -46,6 +46,10 @@ The Explain tab shows the block's real generated code. Hover a line and it light
 - **Tests keep it honest** (`test/explain.test.js`): every element your block can output must belong to a part, no selector may be stale, and every attribute needs a note. If you change a block's HTML and a test complains, update the `explain.json`.
 - Not yet covered by the tests: the wording. Read it aloud as a beginner would.
 
+## Telling the upgrade tool how to spot your block
+
+Give the block a `detect` signature in `index.js`, using the class names or ids its generated HTML carries (`detect: { classes: ["my-block"] }` or `{ ids: ["my-block"] }`). The upgrade tool uses it to work out which blocks a pasted page uses, so it can output CSS for exactly those blocks. A test (`test/upgrade.test.js`) fails if a block with CSS or JS has no signature, if the signature doesn't match the block's own output, or if it also matches a different block's output.
+
 ## New field types
 
 If no existing field type fits, add one to **both** `buildField` and `collectValue` in `src/ui/fields.js`, and add its value shape to a fixture.

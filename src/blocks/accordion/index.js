@@ -7,6 +7,8 @@ export default {
   // How the block appears in the builder's tab bar (display only).
   group: "Interactive",
   tabLabel: "Accordion",
+  // How the upgrade tool recognises this block on a page (class names / ids in its HTML).
+  detect: { classes: ["accordion"] },
   description: "A stack of expandable items — only one open at a time. This block only builds the structure (titles + correctly-linked ids); the content inside each panel is left as a placeholder for you to fill in — paste generated content from another tab, or write it directly.",
   fields: [
     { type: "text", id: "groupName", label: "Group name (used to build a readable id — leave blank to fall back to a random id)", placeholder: "e.g. Digital literacy resources" },

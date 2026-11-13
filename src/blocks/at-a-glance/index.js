@@ -7,6 +7,8 @@ export default {
   // How the block appears in the builder's tab bar (display only).
   group: "Structure",
   tabLabel: "At a glance",
+  // How the upgrade tool recognises this block on a page (class names / ids in its HTML).
+  detect: { ids: ["at-a-glance"] },
   description: "A short bulleted summary box that sits above the table of contents on the page.",
   fields: [
     { type: "bullet-list", id: "bullets", label: "Bullet points", defaultCount: 2 }

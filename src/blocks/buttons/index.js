@@ -8,6 +8,8 @@ export default {
   // How the block appears in the builder's tab bar (display only).
   group: "Links",
   tabLabel: "Buttons",
+  // How the upgrade tool recognises this block on a page (class names / ids in its HTML).
+  detect: { classes: ["buttons"] },
   description: "A row of call-to-action buttons (e.g. 'Sign the pledge'). Wraps as needed on smaller screens.",
   fields: [
     { type: "button-items", id: "buttons", label: "Buttons", defaultCount: 1 }

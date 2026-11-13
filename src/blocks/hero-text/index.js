@@ -8,6 +8,8 @@ export default {
   // How the block appears in the builder's tab bar (display only).
   group: "Structure",
   tabLabel: "Intro text",
+  // How the upgrade tool recognises this block on a page (class names / ids in its HTML).
+  detect: { classes: ["hero-text"] },
   description: "Sits just below at-a-glance and just above the first section — one rich text editor, same as elsewhere. The first paragraph you write is automatically rendered larger (1.25em); everything after it is normal size. No separate field for the opening line — the tool finds it for you.",
   fields: [
     { type: "rich-text", id: "content", label: "Content", placeholder: "Write freely — the first paragraph is automatically styled larger..." }

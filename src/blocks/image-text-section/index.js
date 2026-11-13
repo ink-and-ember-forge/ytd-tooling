@@ -8,6 +8,8 @@ export default {
   // How the block appears in the builder's tab bar (display only).
   group: "Content",
   tabLabel: "Text around media",
+  // How the upgrade tool recognises this block on a page (class names / ids in its HTML).
+  detect: { classes: ["image-text-section"] },
   description: "Text that wraps around a small image or video and flows underneath it once it passes the media's height. Use it when the writing is the main thing and the media is a supporting extra. The media is optional. If you want a clean side-by-side split instead, use Equal columns or Media beside text.",
   fields: [
     { type: "media-picker", id: "media", label: "Media", allowSize: true },

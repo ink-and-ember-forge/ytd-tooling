@@ -27,6 +27,7 @@ Nothing is hand-copied between these. If two outputs disagree, a test fails (`np
 | `warnings(values)` | Optional. Messages shown when output is empty/incomplete. |
 | `secondaryHTML` | Optional second output (the Section block's table-of-contents entry). |
 | `htmlOutputLabel` | Optional heading for the output box. |
+| `detect` | `{ classes?: [...], ids?: [...] }`: how the upgrade tool recognises the block on a page (matched against the page's HTML). Required for any block with CSS or JS; a test checks it against the block's own output. |
 | `css` | From `block.css`. Nested inside `#page-container`. |
 | `js` | Optional, from `block.js`. Pasted into the Base JS script. |
 | `guide` | From `how-it-works.html`. Plain-English explanation under the tab. |
@@ -78,6 +79,11 @@ Only blocks with an `explain.json` have the tab (currently Accordion and Text ar
 2. The checker reads `data-base-version` (or you pick the version) and walks every later release.
 3. Each change the page is affected by is listed under *Rebuild*, *Copy directly*, *Hand edit* or *Check manually*. For "copy" changes a button copies the current replacement code (base CSS/JS/HTML, or the block's CSS).
 4. Set `data-base-version` to the new version.
+
+### The upgrade engine (`src/changelog/`, no UI yet)
+
+- `upgrade.js`: `detectBlocks(html)` finds which blocks a pasted page uses (from each block's `detect`); `buildUpgrade({ html, css, js })` returns the complete upgraded CSS and JS for exactly those blocks, the HTML with only its version marker changed, notes for anything it could not do, and the checker's report.
+- `verify.js` + `lib/baseline.js`: check every changelog rule against the frozen code in `baseline/` (see [RELEASING.md](RELEASING.md)).
 
 ## Files and loading
 
