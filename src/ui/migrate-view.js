@@ -1,10 +1,15 @@
-// The migration half of "Upgrade a page", for pages built before version 3.1.0. It fills the sections the upgrade flow
-// uses, plus one of its own, so the page keeps one shape:
-//   2 why this is a migration   3 the page's own components (kept: the template has nothing to replace them with)
-//   4 THE REVIEW: where the page differs from the template, one decision at a time (the template is the default)
-//   5 theme + HTML changes   6 check (problems, before/after)   7 copy (locked until the review is finished)
-//   8 the report: what was decided and why (once the review is finished), to download
-// All the thinking is in src/changelog/ (migrate.js, review.js); this file only shows it.
+// The migration half of "Upgrade a page", for pages built before version 3.1.0. It is a WIZARD: one thing at a time, each on its
+// own full slide with Back and Next, instead of one long page:
+//   found          why this is a migration
+//   components     the page's own components (kept: the template has nothing to replace them with)
+//   review         where the page differs from the template: ONE RULE PER SLIDE, with a large preview (the template is the default)
+//                  and a summary slide at the end
+//   html           the theme, and the changes to the HTML
+//   check          problems found, and the page before and after
+//   copy           the new HTML, CSS and JS (locked until the review is finished)
+//   report         what was decided and why, to download
+// The sections it shows are the same elements the ordinary upgrade uses; only one is visible at a time.
+// All the thinking is in src/changelog/ (migrate.js, review.js, report.js); this file only shows it.
 import { makeEl, downloadText, copyToClipboard } from "../lib/dom.js";
 import { buildMigration, THEMES } from "../changelog/migrate.js";
 import { buildReview, ledgerLine, REASONS } from "../changelog/review.js";
@@ -14,49 +19,76 @@ import { outputCard, renderCheck, pageDoc, plural } from "./upgrade-parts.js";
 import { createCloseup } from "./closeup.js";
 
 const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
+const STEPS = [["found", "What we found"], ["components", "Your components"], ["review", "Review"], ["html", "Theme and HTML"], ["check", "Check"], ["copy", "Copy"], ["report", "Report"]];
 
-// els: { found, tweaks, review, changes, check, copy, report } (the section elements). code(): the pasted { html, css, js }.
-// onUpgradeInstead(): the author wants the normal upgrade flow for this page.
+// els: { found, tweaks, review, changes, check, copy, report, paste } (the section elements; paste is the paste step, hidden
+// while the wizard is open). code(): the pasted { html, css, js }. onUpgradeInstead(): the author wants the normal upgrade flow.
 export function createMigrationView(els, { code, onUpgradeInstead }) {
   const state = {
     theme: undefined, reference: null, result: null,
     keep: new Set(),          // the page's own components to carry
-    steps: [], decisions: new Map(), reviewed: new Set(), index: 0, // the review
+    steps: [], rules: [],     // the review: groups, and the flat list of rules (one slide each)
+    decisions: new Map(), reviewed: new Set(), // by rule id
+    pos: 0, visited: new Set(), active: false,
+    prefs: { mode: "stacked", show: "template" }, // how previews are shown, shared by every slide
   };
   let htmlList = null;
+  const bar = makeEl("nav", "wizard-bar");
+  bar.setAttribute("aria-label", "Migration steps");
+  const foot = makeEl("div", "wizard-foot");
+  const back = makeEl("button", "copy-btn copy-btn--inline", "Back");
+  const next = makeEl("button", "primary-btn", "Next");
+  const hint = makeEl("span", "wizard-foot-hint");
+  back.type = next.type = "button";
+  foot.append(back, hint, next);
+  els.found.parentElement.insertBefore(bar, els.found);
+  els.found.parentElement.appendChild(foot);
+  bar.hidden = foot.hidden = true;
 
-  // Decisions are per RULE (a "row" of a step), keyed by the row's id.
+  // ---- decisions: one per rule, keyed by the rule's id ---------------------------------------------------
   const decisionOf = (row) => state.decisions.get(row.id) || { choice: "template", reason: "", note: "" };
-  const rowsOf = (steps = state.steps) => steps.flatMap((s) => s.rows);
-  const keptRows = (steps = state.steps) => rowsOf(steps).filter((r) => decisionOf(r).choice === "keep");
-  const keptKeys = (steps = state.steps) => keptRows(steps).flatMap((r) => r.keys);
+  const setDecision = (row, patch) => state.decisions.set(row.id, { ...decisionOf(row), ...patch });
+  const keptRows = () => state.rules.map((r) => r.row).filter((r) => decisionOf(r).choice === "keep");
+  const keptKeys = () => keptRows().flatMap((r) => r.keys);
   const ledger = () => keptRows().map((r) => ledgerLine(r, decisionOf(r)));
-  const reviewDone = () => state.steps.every((s) => state.reviewed.has(s.id));
+  const reviewLeft = () => state.rules.filter((r) => !state.reviewed.has(r.row.id)).length;
+  const reviewDone = () => reviewLeft() === 0;
   const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [] });
   const recompute = () => { state.result = migrate([...state.keep, ...keptKeys()], true); };
 
-  // ---- 2. why this is a migration ---------------------------------------------
+  // ---- the order of the slides ----------------------------------------------------------------------------
+  const customCount = () => state.result.groups.filter((g) => g.kind === "custom").length;
+  function sequence() {
+    const seq = [{ slide: "found" }];
+    if (customCount()) seq.push({ slide: "components" });
+    state.rules.forEach((_, index) => seq.push({ slide: "review", index }));
+    if (state.rules.length) seq.push({ slide: "review", index: state.rules.length }); // the summary
+    seq.push({ slide: "html" }, { slide: "check" }, { slide: "copy" }, { slide: "report" });
+    return seq;
+  }
+  const here = () => sequence()[state.pos];
+  const firstOf = (slide) => Math.max(0, sequence().findIndex((s) => s.slide === slide));
+
+  // ---- 1. why this is a migration -------------------------------------------------------------------------
   function renderFound() {
     const r = state.result;
-    els.found.hidden = false;
-    els.found.replaceChildren(makeEl("h3", "step-title", "2. This page needs migrating, not upgrading"));
+    els.found.replaceChildren(makeEl("h3", "step-title", "This page needs migrating, not upgrading"));
     els.found.appendChild(makeEl("p", "upgrade-message", "This page was built before version 3.1.0, so it can't be brought up to date piece by piece."));
-    els.found.appendChild(makeEl("p", "", "Instead, your HTML is read to see what the page really uses, and the page is moved onto the current template. The template is where this is heading: your page's own components are kept, and you'll decide each place where it differs from the template."));
+    els.found.appendChild(makeEl("p", "", "Instead, your HTML is read to see what the page really uses, and the page is moved onto the current template. The template is where this is heading: your page's own components are kept, and you'll decide each place where your page differs from it, one rule at a time."));
     const list = makeEl("ul", "upgrade-signals");
     r.fit.signals.forEach((s) => list.appendChild(makeEl("li", "", s)));
     els.found.appendChild(list);
-    const back = makeEl("button", "copy-btn copy-btn--inline", "Treat it as a normal upgrade instead");
-    back.type = "button";
-    back.addEventListener("click", onUpgradeInstead);
-    els.found.appendChild(back);
+    const back2 = makeEl("button", "copy-btn copy-btn--inline", "Treat it as a normal upgrade instead");
+    back2.type = "button";
+    back2.addEventListener("click", () => { stop(); onUpgradeInstead(); });
+    els.found.appendChild(back2);
   }
 
-  // ---- 3. the page's own components ---------------------------------------------------------------------
+  // ---- 2. the page's own components -----------------------------------------------------------------------
   function renderComponents() {
     const r = state.result;
     const custom = r.groups.filter((g) => g.kind === "custom");
-    els.tweaks.hidden = false;
-    els.tweaks.replaceChildren(makeEl("h3", "step-title", `3. Your page's own components (${plural(custom.length, "group", "groups")})`));
+    els.tweaks.replaceChildren(makeEl("h3", "step-title", `Your page's own components (${plural(custom.length, "group", "groups")})`));
     els.tweaks.appendChild(makeEl("p", "upgrade-hint", "These style classes your HTML uses that the template has no equivalent of, so there is nothing to replace them with. They are kept unless you untick them (unticking removes their styling), and go in a labelled block at the end of the new CSS. Old colour tokens have been renamed to the current ones."));
     const list = makeEl("ul", "upgrade-tweaks upgrade-custom");
     custom.forEach((g) => {
@@ -83,198 +115,173 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       ["standard", "Replaced by the new template's CSS", "Parts of rules for classes the current template styles itself, which match what it does."],
       ["unused", "Not used on this page", "Rules for classes that are not in your HTML, left over from other pages. They are dropped."],
     ];
-    leftovers.forEach(([key, title, hint]) => {
+    leftovers.forEach(([key, title, hint2]) => {
       const items = r.dropped[key];
       if (!items.length) return;
       const details = document.createElement("details");
       details.appendChild(makeEl("summary", "", `${title} (${items.length})`));
-      details.appendChild(makeEl("p", "upgrade-hint", hint));
+      details.appendChild(makeEl("p", "upgrade-hint", hint2));
       details.appendChild(codeBlock(items.map((d) => `${d.media ? `${d.media} ` : ""}${d.selector} { ${d.css} }`).join("\n")));
       els.tweaks.appendChild(details);
     });
   }
 
-  // ---- 4. the review --------------------------------------------------------------------------------------
-  // Two frames of the page for one step: the template's way, and yours (as you wrote it) with the affected elements outlined.
-  // `focus` is one row: then only that rule is shown, and only its elements are outlined.
-  function stepFrames(step, focus) {
-    const others = keptKeys(state.steps.filter((s) => s !== step));
-    const base = [...state.keep, ...others];
-    const mine = focus ? focus.keys : step.keys, outline = focus ? focus.selectors : step.selectors;
-    const variants = [["The template", migrate(base, false)], [focus ? `Yours: just ${focus.label}` : "Yours, as you wrote it", migrate([...base, ...mine], false)]];
-    const phone = step.width === "phone";
-    const wrap = makeEl("div", `upgrade-compare${phone ? " upgrade-compare--phone" : ""}`);
-    variants.forEach(([label, r]) => {
+  // ---- 3. the review: one rule per slide ------------------------------------------------------------------
+  // The whole page, template and yours, for one group: still there on request, as a fold on a rule's slide.
+  function wholePage(step) {
+    const others = keptKeys().filter((k) => !step.keys.includes(k));
+    const wrap = makeEl("div", "upgrade-compare");
+    [["The template", migrate([...state.keep, ...others], false)], ["Yours, as you wrote it", migrate([...state.keep, ...others, ...step.keys], false)]].forEach(([label, r]) => {
       const cell = makeEl("div", "upgrade-compare-cell");
       cell.appendChild(makeEl("strong", "upgrade-compare-label", label));
       const frame = document.createElement("iframe");
-      frame.className = `upgrade-frame upgrade-frame--small${phone ? " upgrade-frame--phone" : ""}`;
+      frame.className = "upgrade-frame upgrade-frame--small";
       frame.title = `${label}: ${step.title}`;
       frame.setAttribute("sandbox", "allow-scripts");
-      frame.style.width = phone ? "390px" : "100%";
-      frame.srcdoc = pageDoc({ html: r.html, css: r.css, js: r.js }, { highlight: outline, scroll: step.scroll });
+      frame.srcdoc = pageDoc({ html: r.html, css: r.css, js: r.js }, { highlight: step.selectors, scroll: step.scroll });
       cell.appendChild(frame);
       wrap.appendChild(cell);
     });
     return wrap;
   }
 
-  function reviewStep(step) {
-    const n = state.steps.length, i = state.index;
-    const card = makeEl("div", "upgrade-review-card");
-    const progress = makeEl("p", "upgrade-review-progress", `Group ${i + 1} of ${n}`);
+  function reviewRule(i) {
+    const { row, step, k, m } = state.rules[i], n = state.rules.length;
+    const card = makeEl("div", "upgrade-review-card upgrade-slide");
+    const progress = makeEl("p", "upgrade-review-progress", `${step.title} · rule ${k} of ${m} · ${i + 1} of ${n} in all`);
     progress.setAttribute("aria-live", "polite");
-    card.append(progress, makeEl("h4", "upgrade-review-title", step.title));
-    card.appendChild(makeEl("p", "upgrade-review-headline", `${plural(step.rows.length, "rule", "rules")} to decide. ${step.elements === null ? "" : step.elements === 0 ? "No element on this page matches, so this has no effect here." : `Together they affect ${plural(step.elements, "element", "elements")} on this page.`}`));
-    card.appendChild(makeEl("p", "upgrade-hint", step.why));
+    card.append(progress, makeEl("h4", "upgrade-review-title", row.label));
 
-    card.appendChild(makeEl("p", "upgrade-guide", "How to read this: each rule below has a close-up of one element it changes. The template's version is first, then yours, so you are comparing the same thing both ways. The orange outline marks the element on show (solid) and the others the rule touches (dashed). Use Previous and Next to step through the elements that look different."));
+    const grid = makeEl("div", "upgrade-slide-grid");
+    const main = makeEl("div", "upgrade-slide-main");
+    let tpl = null;
+    if (row.selectors.length) {
+      // Each preview compares ONE rule with the template, so it does not depend on the choices made for the other rules.
+      const pages = () => {
+        tpl ||= (() => { const r = migrate([...state.keep], false); return { html: r.html, css: r.css, js: r.js }; })();
+        const y = migrate([...state.keep, ...row.keys], false);
+        return { template: tpl, yours: { html: y.html, css: y.css, js: y.js } };
+      };
+      main.appendChild(createCloseup(row, pages, { phone: step.width === "phone" && row.lines.every((l) => l.media), prefs: state.prefs }).el);
+    } else {
+      main.appendChild(makeEl("p", "upgrade-closeup-summary", "This is a design variable the page defines, not a rule for one element, so there is nothing to preview. It changes whatever uses it."));
+    }
+    const side = makeEl("div", "upgrade-slide-side");
+    side.appendChild(makeEl("p", "upgrade-review-hint", row.hint));
+    side.appendChild(makeEl("h5", "upgrade-side-title", "What your rule sets"));
+    const lines = makeEl("ul", "upgrade-review-lines");
+    row.lines.forEach((l) => {
+      const item = makeEl("li");
+      item.append(`${l.media ? "On small screens: " : ""}${l.where} — ${l.label}: yours `, makeEl("code", "", l.mine), ", template ", makeEl("code", "", l.template ?? "not set"));
+      lines.appendChild(item);
+    });
+    side.appendChild(lines);
+    const about = document.createElement("details");
+    about.className = "upgrade-whole";
+    about.appendChild(makeEl("summary", "", `About this group: ${step.title}`));
+    about.appendChild(makeEl("p", "upgrade-hint", step.why));
+    if (row.linked.length) about.appendChild(makeEl("p", "upgrade-hint upgrade-review-linked", `These rules work together, so they are decided together: ${row.linked.join("; ")}.`));
     const whole = document.createElement("details");
     whole.className = "upgrade-whole";
-    whole.appendChild(makeEl("summary", "", "See the whole page instead, template and yours"));
+    whole.appendChild(makeEl("summary", "", "See the whole page for this group, template and yours"));
     let wholeBuilt = false;
-    whole.addEventListener("toggle", () => { if (whole.open && !wholeBuilt) { wholeBuilt = true; whole.appendChild(stepFrames(step, null)); } });
-    card.appendChild(whole);
+    whole.addEventListener("toggle", () => { if (whole.open && !wholeBuilt) { wholeBuilt = true; whole.appendChild(wholePage(step)); } });
+    side.append(about, whole);
 
-    // Each close-up compares ONE rule with the template, so it does not depend on what is decided for the other rules.
-    let templatePage = null;
-    const pagesFor = (row) => () => {
-      templatePage ||= (() => { const r = migrate([...state.keep], false); return { html: r.html, css: r.css, js: r.js }; })();
-      const y = migrate([...state.keep, ...row.keys], false);
-      return { template: templatePage, yours: { html: y.html, css: y.css, js: y.js } };
-    };
-
-    const next = makeEl("button", "primary-btn", i === n - 1 ? "Finish the review" : "Next group");
-    const controls = []; // one per row: { row, sync() }
-    const sync = () => {
-      controls.forEach((c) => c.sync());
-      const missing = step.rows.filter((r) => decisionOf(r).choice === "keep" && !decisionOf(r).reason).length;
-      next.disabled = missing > 0;
-      next.title = missing ? `Say why you're keeping ${missing === 1 ? "the rule" : "each rule"} you kept first` : "";
-    };
-    const set = (row, patch) => state.decisions.set(row.id, { ...decisionOf(row), ...patch });
-    const changed = () => { recompute(); sync(); renderChecksAndCopy(); };
-
-    // Shortcuts for the whole group. The template is still the default; "keep all" is a deliberate act.
-    if (step.rows.length > 1) {
-      const bar = makeEl("div", "upgrade-review-shortcuts");
-      const all = (choice, label, cls) => {
-        const b = makeEl("button", cls, label);
-        b.type = "button";
-        b.addEventListener("click", () => { step.rows.forEach((r) => set(r, { choice })); changed(); });
-        return b;
-      };
-      const reasonAll = document.createElement("select");
-      reasonAll.className = "upgrade-reason";
-      reasonAll.setAttribute("aria-label", "Give every kept rule in this group the same reason");
-      reasonAll.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Same reason for every rule I keep…" }));
-      REASONS.forEach(([id, label]) => reasonAll.appendChild(Object.assign(document.createElement("option"), { value: id, textContent: label })));
-      reasonAll.addEventListener("change", () => {
-        if (!reasonAll.value) return;
-        step.rows.filter((r) => decisionOf(r).choice === "keep").forEach((r) => set(r, { reason: reasonAll.value }));
-        reasonAll.value = "";
-        changed();
-      });
-      bar.append(all("template", "Use the template for all of these", "copy-btn copy-btn--inline"), all("keep", "Keep all of mine", "copy-btn copy-btn--inline"), reasonAll);
-      card.appendChild(bar);
-    }
-
-    const list = makeEl("ol", "upgrade-review-rows");
-    step.rows.forEach((row, idx) => {
-      const li = makeEl("li", "upgrade-review-row");
-      const head = makeEl("div", "upgrade-review-row-head");
-      head.appendChild(makeEl("strong", "upgrade-review-row-label", row.label));
-      head.appendChild(makeEl("span", "upgrade-muted", row.elements === null ? "" : row.elements === 0 ? " — matches nothing on this page" : ` — ${plural(row.elements, "element", "elements")}`));
-      li.appendChild(head);
-      li.appendChild(makeEl("p", "upgrade-hint upgrade-review-hint", row.hint));
-      const lines = makeEl("ul", "upgrade-review-lines");
-      row.lines.forEach((l) => {
-        const item = makeEl("li");
-        item.append(`${l.media ? "On small screens: " : ""}${l.where} — ${l.label}: yours `, makeEl("code", "", l.mine), ", template ", makeEl("code", "", l.template ?? "not set"));
-        lines.appendChild(item);
-      });
-      li.appendChild(lines);
-      if (row.selectors.length) li.appendChild(createCloseup(row, pagesFor(row), { phone: step.width === "phone" }).el);
-
-      const choice = makeEl("div", "upgrade-review-choice");
-      const radios = {};
-      [["template", "Use the template"], ["keep", "Keep mine"]].forEach(([value, label]) => {
-        const lab = makeEl("label", "upgrade-review-option");
-        const radio = document.createElement("input");
-        radio.type = "radio";
-        radio.name = `review-choice-${step.id}-${idx}`;
-        radio.value = value;
-        radio.addEventListener("change", () => { set(row, { choice: value }); changed(); });
-        radios[value] = radio;
-        lab.append(radio, " ", makeEl("strong", "", label), value === "template" ? makeEl("span", "upgrade-muted", " (the default)") : "");
-        choice.appendChild(lab);
-      });
-      const extras = makeEl("div", "upgrade-review-reason");
-      const select = document.createElement("select");
-      select.className = "upgrade-reason";
-      select.setAttribute("aria-label", `Why are you keeping ${row.label}?`);
-      select.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Why are you keeping it?" }));
-      REASONS.forEach(([id, label]) => select.appendChild(Object.assign(document.createElement("option"), { value: id, textContent: label })));
-      const note = document.createElement("input");
-      note.type = "text";
-      note.className = "upgrade-note";
-      note.placeholder = "Optional: say a little more. This is saved in your CSS.";
-      note.setAttribute("aria-label", `A note about ${row.label}`);
-      select.addEventListener("change", () => { set(row, { reason: select.value }); changed(); });
-      note.addEventListener("input", () => { set(row, { note: note.value }); changed(); });
-      extras.append(select, note);
-      choice.appendChild(extras);
-      li.appendChild(choice);
-      list.appendChild(li);
-      controls.push({ row, sync() {
-        const d = decisionOf(row);
-        radios.template.checked = d.choice !== "keep";
-        radios.keep.checked = d.choice === "keep";
-        extras.hidden = d.choice !== "keep";
-        if (select.value !== d.reason) select.value = d.reason;
-        if (document.activeElement !== note && note.value !== d.note) note.value = d.note;
-      } });
+    // The decision.
+    const choice = makeEl("div", "upgrade-review-choice");
+    choice.appendChild(makeEl("strong", "upgrade-side-title", "Your decision"));
+    const radios = {};
+    [["template", "Use the template"], ["keep", "Keep mine"]].forEach(([value, label]) => {
+      const lab = makeEl("label", "upgrade-review-option");
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "review-choice";
+      radio.value = value;
+      radio.addEventListener("change", () => { setDecision(row, { choice: value }); changed(); });
+      radios[value] = radio;
+      lab.append(radio, " ", makeEl("strong", "", label), value === "template" ? makeEl("span", "upgrade-muted", " (the default)") : "");
+      choice.appendChild(lab);
     });
-    card.appendChild(list);
-
-    const nav = makeEl("div", "upgrade-review-nav");
-    const back = makeEl("button", "copy-btn copy-btn--inline", "Back");
-    back.type = "button";
-    back.disabled = i === 0;
-    back.addEventListener("click", () => go(i - 1));
-    next.type = "button";
-    next.addEventListener("click", () => { state.reviewed.add(step.id); renderChecksAndCopy(); go(i + 1); });
-    nav.append(back, next);
-    if (i < n - 1) {
-      const rest = makeEl("button", "upgrade-link", "Use the template for everything in the remaining groups");
-      rest.type = "button";
-      rest.addEventListener("click", () => {
-        state.steps.slice(i).forEach((s) => { s.rows.forEach((r) => set(r, { choice: "template", reason: "", note: "" })); state.reviewed.add(s.id); });
-        recompute();
-        renderChecksAndCopy();
-        go(n);
-      });
-      nav.appendChild(rest);
+    const extras = makeEl("div", "upgrade-review-reason");
+    const select = document.createElement("select");
+    select.className = "upgrade-reason";
+    select.setAttribute("aria-label", "Why are you keeping it?");
+    select.appendChild(Object.assign(document.createElement("option"), { value: "", textContent: "Why are you keeping it?" }));
+    REASONS.forEach(([id, label]) => select.appendChild(Object.assign(document.createElement("option"), { value: id, textContent: label })));
+    const note = document.createElement("input");
+    note.type = "text";
+    note.className = "upgrade-note";
+    note.placeholder = "Optional: say a little more. This is saved in your CSS.";
+    note.setAttribute("aria-label", "A note about why");
+    select.addEventListener("change", () => { setDecision(row, { reason: select.value }); changed(); });
+    note.addEventListener("input", () => { setDecision(row, { note: note.value }); changed(); });
+    extras.append(select, note);
+    // A shortcut for the common case: the same reason as the last rule they kept.
+    const earlier = state.rules.slice(0, i).map((r) => r.row).reverse().find((r) => decisionOf(r).choice === "keep" && decisionOf(r).reason);
+    if (earlier) {
+      const same = makeEl("button", "upgrade-link", `Same reason as ${earlier.label}`);
+      same.type = "button";
+      same.addEventListener("click", () => { setDecision(row, { reason: decisionOf(earlier).reason }); changed(); });
+      extras.appendChild(same);
     }
-    card.appendChild(nav);
+    choice.appendChild(extras);
+    side.appendChild(choice);
+
+    // Shortcuts for the rest of the review. The template is the default, so these only ever choose the template.
+    const rest = makeEl("div", "upgrade-review-shortcuts");
+    const decideTemplate = (list, to) => {
+      state.reviewed.add(row.id); // this rule's own choice stands; the others take the template
+      list.forEach((r) => { setDecision(r.row, { choice: "template", reason: "", note: "" }); state.reviewed.add(r.row.id); });
+      recompute();
+      renderChecksAndCopy();
+      go(firstOf("review") + to);
+    };
+    const nextGroup = state.rules.findIndex((r, idx) => idx > i && r.step !== step);
+    if (k < m) {
+      const link = makeEl("button", "upgrade-link", "Use the template for the rest of this group");
+      link.type = "button";
+      link.addEventListener("click", () => decideTemplate(state.rules.filter((r, idx) => idx > i && r.step === step), nextGroup === -1 ? n : nextGroup));
+      rest.appendChild(link);
+    }
+    if (i < n - 1) {
+      const link = makeEl("button", "upgrade-link", "Use the template for everything left");
+      link.type = "button";
+      link.addEventListener("click", () => decideTemplate(state.rules.slice(i + 1), n));
+      rest.appendChild(link);
+    }
+    side.appendChild(rest);
+    grid.append(main, side);
+    card.appendChild(grid);
+
+    const sync = () => {
+      const d = decisionOf(row);
+      radios.template.checked = d.choice !== "keep";
+      radios.keep.checked = d.choice === "keep";
+      extras.hidden = d.choice !== "keep";
+      if (select.value !== d.reason) select.value = d.reason;
+      if (document.activeElement !== note && note.value !== d.note) note.value = d.note;
+      rest.querySelectorAll("button").forEach((b) => { b.disabled = d.choice === "keep" && !d.reason; }); // a kept rule needs its reason first
+    };
+    function changed() { recompute(); sync(); renderChecksAndCopy(); renderNav(); }
     sync();
     return card;
   }
 
   function reviewSummary() {
-    const rows = rowsOf(), kept = keptRows();
-    const box = makeEl("div", "upgrade-review-card upgrade-review-summary");
+    const kept = keptRows();
+    const box = makeEl("div", "upgrade-review-card upgrade-review-summary upgrade-slide");
     box.appendChild(makeEl("h4", "upgrade-review-title", kept.length
-      ? `You're keeping ${plural(kept.length, "rule", "rules")} of your own; the template covers the other ${rows.length - kept.length}`
+      ? `You're keeping ${plural(kept.length, "rule", "rules")} of your own; the template covers the other ${state.rules.length - kept.length}`
       : "Your page will follow the template"));
     box.appendChild(makeEl("p", "upgrade-hint", kept.length ? "The ones you kept are written into the CSS with your reasons, so they can be revisited at the next upgrade." : "Everything your page overrode now comes from the template, so it matches every other page."));
     const list = makeEl("ul", "upgrade-review-lines");
-    state.steps.forEach((s, idx) => {
+    state.steps.forEach((s) => {
       const k = s.rows.filter((r) => decisionOf(r).choice === "keep"), li = makeEl("li");
       li.append(makeEl("strong", "", s.title), ` — ${k.length ? `keeping ${k.length} of ${s.rows.length}` : `using the template for all ${s.rows.length}`} `);
       const change = makeEl("button", "upgrade-link", "Change");
       change.type = "button";
-      change.addEventListener("click", () => go(idx));
+      change.addEventListener("click", () => go(firstOf("review") + state.rules.findIndex((r) => r.step === s)));
       li.appendChild(change);
       if (k.length) {
         const inner = makeEl("ul");
@@ -287,32 +294,15 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     return box;
   }
 
-  // After moving between decisions, put the new card's top (its number, title and headline) where it can be read, instead of
-  // leaving the page wherever the old card's buttons were. Focus goes to the title too, for screen readers, without scrolling.
-  function showCard() {
-    const card = els.review.querySelector(".upgrade-review-card");
-    if (!card) return;
-    card.scrollIntoView({ block: "start", behavior: "auto" });
-    const title = card.querySelector(".upgrade-review-title");
-    title.tabIndex = -1;
-    title.focus({ preventScroll: true });
-  }
-  const go = (index) => { state.index = index; renderReview(); showCard(); };
-
   function renderReview() {
-    els.review.hidden = state.steps.length === 0;
-    if (!state.steps.length) return;
-    const total = state.result.groups.filter((g) => g.kind === "deviation").length;
-    els.review.replaceChildren(makeEl("h3", "step-title", "4. Where your page differs from the template"));
-    els.review.appendChild(makeEl("p", "upgrade-hint", `Your page overrides the template in ${plural(total, "place", "places")}, grouped by purpose into ${plural(state.steps.length, "group", "groups")}. Every rule has its own choice. The template is where this is heading, so "Use the template" is already chosen. To keep one of yours, choose it and say why. Each group shows the page both ways, with what it affects outlined.`));
-    els.review.appendChild(state.index >= state.steps.length ? reviewSummary() : reviewStep(state.steps[state.index]));
+    const i = here().slide === "review" ? here().index : 0;
+    els.review.replaceChildren(i >= state.rules.length ? reviewSummary() : reviewRule(i));
   }
 
-  // ---- 5. theme and HTML ----------------------------------------------------------
+  // ---- 4. theme and HTML ----------------------------------------------------------------------------------
   function renderHtml() {
     const r = state.result;
-    els.changes.hidden = false;
-    els.changes.replaceChildren(makeEl("h3", "step-title", "5. Your HTML"));
+    els.changes.replaceChildren(makeEl("h3", "step-title", "Your theme and your HTML"));
 
     const fieldset = document.createElement("fieldset");
     fieldset.className = "upgrade-theme";
@@ -330,6 +320,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
         renderComponents();
         renderHtmlList();
         renderChecksAndCopy();
+        renderNav();
       });
       label.append(radio, ` ${theme.label}`);
       if (r.themeDetected === id) label.appendChild(makeEl("span", "upgrade-found", "detected"));
@@ -361,36 +352,35 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     });
   }
 
-  // ---- 6 and 7 ------------------------------------------------------------------------
+  // ---- 5, 6 and 7: check, copy, report ---------------------------------------------------------------------
   function renderChecksAndCopy() {
     const r = state.result;
     const wasOpen = els.check.querySelector(".upgrade-preview")?.open;
-    els.check.hidden = false;
-    renderCheck(els.check, { before: code(), after: { html: r.html, css: r.css, js: r.js }, lint: r.lint, number: 6 });
+    renderCheck(els.check, { before: code(), after: { html: r.html, css: r.css, js: r.js }, lint: r.lint, number: null });
     if (wasOpen) els.check.querySelector(".upgrade-preview").open = true;
 
-    els.copy.hidden = false;
-    els.copy.replaceChildren(makeEl("h3", "step-title", "7. Copy your migrated page"));
+    els.copy.replaceChildren(makeEl("h3", "step-title", "Copy your migrated page"));
     els.copy.appendChild(makeEl("p", "upgrade-hint", "Replace the old HTML, CSS and JS on the page with these. After that it is an ordinary template page, and future upgrades carry your styles and your reasons forward."));
-    const left = state.steps.filter((s) => !state.reviewed.has(s.id)).length;
-    const blocked = !r.ready ? "Choose the page's theme in step 5 first." : left ? `Finish the review in step 4 first (${plural(left, "group", "groups")} left).` : null;
+    const left = reviewLeft();
+    const blocked = !r.ready ? "Choose the page's theme first." : left ? `Finish the review first (${plural(left, "rule", "rules")} left).` : null;
     const keptOwn = r.groups.filter((g) => g.kept).length;
     const blocksText = r.blocks.length ? plural(r.blocks.length, "block", "blocks") : "no blocks";
-    els.copy.appendChild(outputCard("HTML", `Your HTML, with ${plural(r.htmlChanges.length, "change", "changes")} (see step 5).`, r.html, { blocked }));
+    els.copy.appendChild(outputCard("HTML", `Your HTML, with ${plural(r.htmlChanges.length, "change", "changes")}.`, r.html, { blocked }));
     els.copy.appendChild(outputCard("CSS", `The current CSS for ${blocksText}, plus ${plural(keptOwn, "style group", "style groups")} of yours.`, r.css, { blocked }));
     els.copy.appendChild(outputCard("JS", "The current JS. It replaces your old JS, which only did what the current JS does.", r.js));
     r.notes.forEach((n) => els.copy.appendChild(makeEl("p", "upgrade-warning", n)));
     renderReport();
   }
 
-  // ---- 8. the report ------------------------------------------------------------------------
   function renderReport() {
     const r = state.result;
-    els.report.hidden = !reviewDone();
-    if (els.report.hidden) { els.report.replaceChildren(); return; }
+    els.report.replaceChildren(makeEl("h3", "step-title", "Your migration report"));
+    if (!reviewDone()) {
+      els.report.appendChild(makeEl("p", "upgrade-hint", `The report appears when the review is finished (${plural(reviewLeft(), "rule", "rules")} left).`));
+      return;
+    }
     const rep = buildReport(r, state.steps, state.decisions, { date: new Date().toISOString().slice(0, 10) });
     const t = rep.totals;
-    els.report.replaceChildren(makeEl("h3", "step-title", "8. Your migration report"));
     els.report.appendChild(makeEl("p", "upgrade-hint", "What was decided about every place your page differed from the template, and why. Keep it with the page, or give it to whoever looks after the template."));
     const summary = makeEl("ul", "upgrade-report-summary");
     [`${plural(t.differences, "difference", "differences")} from the template, decided as ${plural(t.decisions, "rule", "rules")}.`,
@@ -435,7 +425,89 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     els.report.appendChild(actions);
   }
 
+  // ---- the wizard chrome: the steps along the top, Back and Next along the bottom ----------------------------
+  const sectionOf = { found: els.found, components: els.tweaks, review: els.review, html: els.changes, check: els.check, copy: els.copy, report: els.report };
+
+  function renderBar() {
+    const slides = sequence().map((s) => s.slide), cur = here().slide;
+    bar.replaceChildren();
+    const list = makeEl("ol", "wizard-steps");
+    STEPS.filter(([id]) => slides.includes(id)).forEach(([id, label], n) => {
+      const li = makeEl("li", "wizard-step-item");
+      const b = makeEl("button", "wizard-step", id === "review" ? `${label} (${state.rules.length - reviewLeft()}/${state.rules.length})` : label);
+      b.type = "button";
+      b.dataset.step = id;
+      if (id === cur) b.setAttribute("aria-current", "step");
+      b.classList.toggle("wizard-step--done", id !== cur && (id === "review" ? reviewDone() : state.visited.has(id)));
+      b.addEventListener("click", () => go(firstOf(id)));
+      li.append(makeEl("span", "wizard-step-number", String(n + 1)), b);
+      list.appendChild(li);
+    });
+    const edit = makeEl("button", "upgrade-link", "Edit the pasted code");
+    edit.type = "button";
+    edit.addEventListener("click", stop);
+    bar.append(list, edit);
+  }
+
+  // What stops Next, if anything.
+  function blockedBecause() {
+    const h = here();
+    if (h.slide === "review" && h.index < state.rules.length) {
+      const d = decisionOf(state.rules[h.index].row);
+      if (d.choice === "keep" && !d.reason) return "Say why you're keeping it first";
+    }
+    if (h.slide === "html" && !state.result.ready) return "Choose the page's theme first";
+    return null;
+  }
+  function renderNav() {
+    const seq = sequence(), h = here();
+    back.disabled = state.pos === 0;
+    next.hidden = state.pos >= seq.length - 1;
+    const why = blockedBecause();
+    next.disabled = !!why;
+    next.title = why || "";
+    hint.textContent = why || "";
+    next.textContent = h.slide === "review" && h.index < state.rules.length ? (h.index === state.rules.length - 1 ? "Finish the review" : "Next rule") : "Next";
+  }
+
+  function layout() {
+    const cur = here().slide;
+    Object.entries(sectionOf).forEach(([id, el]) => { el.hidden = id !== cur; });
+    state.visited.add(cur);
+    renderBar();
+    renderNav();
+  }
+
+  // Show the slide at `pos`. The new slide's title takes focus (for screen readers) and the wizard is brought to the top, so a slide
+  // always starts where it can be read; the builder's own page is the only thing that scrolls.
+  function go(pos) {
+    const seq = sequence();
+    state.pos = Math.max(0, Math.min(seq.length - 1, pos));
+    const h = seq[state.pos];
+    if (h.slide === "review") renderReview();
+    if (h.slide === "report") renderReport();
+    layout();
+    bar.scrollIntoView({ block: "start", behavior: "auto" });
+    const title = sectionOf[h.slide].querySelector(".upgrade-review-title, .step-title");
+    if (title) { title.tabIndex = -1; title.focus({ preventScroll: true }); }
+  }
+
+  back.addEventListener("click", () => go(state.pos - 1));
+  next.addEventListener("click", () => {
+    const h = here();
+    if (h.slide === "review" && h.index < state.rules.length) { state.reviewed.add(state.rules[h.index].row.id); renderChecksAndCopy(); }
+    go(state.pos + 1);
+  });
+
+  function stop() {
+    state.active = false;
+    bar.hidden = foot.hidden = true;
+    els.paste.hidden = false;
+    Object.values(sectionOf).forEach((el) => { el.hidden = true; });
+  }
+
   return {
+    stop,
     async start() {
       state.theme = undefined;
       // What the template said when it was first stored: a rule that matches that is the OLD template, not the author's choice.
@@ -444,14 +516,19 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       state.keep = new Set(first.groups.filter((g) => g.kind === "custom").map((g) => g.key));
       state.decisions = new Map();
       state.reviewed = new Set();
-      state.index = 0;
+      state.visited = new Set();
       state.steps = buildReview(first, code().html);
+      state.rules = state.steps.flatMap((step) => step.rows.map((row, idx) => ({ row, step, k: idx + 1, m: step.rows.length })));
       recompute();
+      state.active = true;
+      els.paste.hidden = true;
+      bar.hidden = foot.hidden = false;
       renderFound();
       renderComponents();
-      renderReview();
       renderHtml();
       renderChecksAndCopy();
+      state.pos = 0;
+      go(0);
     },
   };
 }

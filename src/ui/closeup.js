@@ -1,17 +1,16 @@
-// The close-up of one rule in the migration review: the element the rule touches, shown at a readable size with the template's
-// version above and yours below, cropped to the element so nothing needs scrolling. It measures the real rendered styles in
-// both versions, so it can say which elements actually look different and what the difference is, and says plainly when a rule
-// changes nothing you can see on this page.
+// The preview of one rule in the migration review: the element the rule touches, shown large, the template's version and
+// yours. It measures the real rendered styles in both versions, so it can say which elements actually look different and what the
+// difference is, and says plainly when a rule changes nothing you can see on this page.
 //
-// Each version is a sandboxed iframe holding the whole page, with a small script (see probeMarkup in upgrade-parts.js) that finds
-// the rule's elements, reports their computed styles to the builder with postMessage, and scrolls itself to the element it is
-// asked to show. The builder sizes the frame to the element. The frame scrolls ITSELF (window.scrollTo); nothing here ever calls
-// scrollIntoView, which would scroll the builder's own page.
+// Each version is a sandboxed iframe holding the whole page, with a probe script (probeScript in upgrade-parts.js) that finds the
+// rule's elements, reports their computed styles to the builder with postMessage, opens whatever hides the element (a closed
+// accordion, an icon card's panel) and scrolls ITSELF to it. The builder sizes the frames to the room the slide has. Nothing here
+// ever calls scrollIntoView, which would scroll the builder's own page.
 import { makeEl } from "../lib/dom.js";
 import { pageDoc, plural } from "./upgrade-parts.js";
 import { cleanSelector } from "../changelog/review.js";
 
-const PAD = 24, MIN_H = 90, MAX_H = 380;
+const PAD = 40;
 const PSEUDO = /::?(?:before|after|marker|placeholder|first-line|first-letter|selection)\s*$/;
 const STATE = /:(?:hover|focus|focus-visible|focus-within|active|visited|checked)\b/;
 
@@ -49,7 +48,7 @@ export function compareReports(template, yours, labels) {
 
 const show = (v) => (v === "" || v == null ? "not set" : v);
 
-// The sentence above a close-up for the element on show.
+// The sentence above a preview for the element on show.
 export function lookAt(desc, diffs) {
   if (!diffs || !diffs.length) return `Looking at the ${desc}. It looks the same either way.`;
   return `Looking at the ${desc}. ${diffs.map((d) => `${d.label}: the template gives ${show(d.template)}, yours gives ${show(d.yours)}.`).join(" ")}`;
@@ -59,35 +58,82 @@ export function lookAt(desc, diffs) {
 export function summaryLine(cmp) {
   if (cmp.n === 0) return "This rule matches nothing on this page, so it has no effect here.";
   if (!cmp.measured) {
-    return cmp.unmeasurable ? "This rule only applies on hover or focus, which can't be shown here, so read the values above to decide."
+    return cmp.unmeasurable ? "This rule only applies on hover or focus, which can't be shown here, so read the values to decide."
       : "This rule applies only on a different screen size from this view.";
   }
   if (!cmp.differing.length) return `No visible difference on this page: the ${plural(cmp.n, "element", "elements")} look${cmp.n === 1 ? "s" : ""} the same with or without your rule.${cmp.unmeasurable ? " (Part of it only applies on hover or focus, which can't be shown here.)" : ""}`;
   return `${cmp.differing.length} of the ${plural(cmp.n, "element", "elements")} ${cmp.n === 1 ? "looks" : "look"} different. ${cmp.differing.length === cmp.n ? "" : "The others already match the template, so they are skipped here."}`.trim();
 }
 
-// row: a review row. pages(): { template, yours } as { html, css, js }, built when the close-up scrolls into view.
-// phone: show at phone width, side by side. Returns { el, load }.
-export function createCloseup(row, pages, { phone = false } = {}) {
+// The note when the element was inside something closed, e.g. ['the accordion "Culture"'].
+export const openedNote = (notes) => (notes && notes.length ? `It was inside ${notes.join(" and ")}, so that has been opened for you.` : "");
+
+// How tall the frames may be: the room the slide has, less its header, text and buttons.
+export const roomFor = (innerHeight) => Math.max(300, innerHeight - 510);
+
+// The height of one frame: all the room there is (the element is centred in it, with the page around it). Pure.
+export const frameHeight = ({ room, stacked }) => (stacked ? Math.floor(room / 2) : room);
+
+// row: a review row. pages(): { template, yours } as { html, css, js }, built when the preview comes into view.
+// phone: show at phone width. prefs: { mode: "stacked" | "flip", show: "template" | "yours" }, shared by every preview in the
+// wizard so a choice sticks. Returns { el, load }.
+export function createCloseup(row, pages, { phone = false, prefs = { mode: "stacked", show: "template" } } = {}) {
   const probe = probeFor(row);
   const labels = probe.lines.map((l) => l.label);
   const root = makeEl("div", `upgrade-closeup${phone ? " upgrade-closeup--phone" : ""}`);
-  const summary = makeEl("p", "upgrade-closeup-summary", "Loading the close-up…");
+  const summary = makeEl("p", "upgrade-closeup-summary", "Loading the preview…");
   const look = makeEl("p", "upgrade-closeup-look");
   look.setAttribute("aria-live", "polite");
+  const opened = makeEl("p", "upgrade-closeup-opened");
   const stage = makeEl("div", "upgrade-closeup-frames");
   const nav = makeEl("div", "upgrade-closeup-nav");
-  const prev = makeEl("button", "copy-btn copy-btn--inline", "Previous");
-  const next = makeEl("button", "copy-btn copy-btn--inline", "Next");
+  const prev = makeEl("button", "copy-btn copy-btn--inline", "Previous element");
+  const next = makeEl("button", "copy-btn copy-btn--inline", "Next element");
   const where = makeEl("span", "upgrade-muted");
   prev.type = next.type = "button";
   nav.append(prev, where, next);
   nav.hidden = true;
-  root.append(summary, look, stage, nav);
 
-  const side = {}; // "template" | "yours" -> { frame, report }
+  // The view controls: stacked or flip, and (flip only) which version is showing.
+  const bar = makeEl("div", "upgrade-closeup-bar");
+  const group = (label, items, get, set) => {
+    const seg = makeEl("div", "upgrade-seg");
+    seg.setAttribute("role", "group");
+    seg.setAttribute("aria-label", label);
+    const buttons = items.map(([value, text]) => {
+      const b = makeEl("button", "upgrade-seg-btn", text);
+      b.type = "button";
+      b.dataset.value = value;
+      b.addEventListener("click", () => { set(value); layout(); });
+      seg.appendChild(b);
+      return b;
+    });
+    return { seg, sync: () => buttons.forEach((b) => b.setAttribute("aria-pressed", String(get() === b.dataset.value))) };
+  };
+  const views = [
+    group("How to compare", [["stacked", "Template above yours"], ["flip", "Flip between them"]], () => prefs.mode, (v) => { prefs.mode = v; }),
+    group("Which version", [["template", "The template"], ["yours", "Yours"]], () => prefs.show, (v) => { prefs.show = v; }),
+  ];
+  views[1].seg.classList.add("upgrade-closeup-which");
+  bar.append(...views.map((v) => v.seg), nav); // the element stepper sits with the view controls, so it is never below the fold
+  root.append(bar, summary, look, opened, stage);
+
+  const side = {}; // "template" | "yours" -> { frame, cell, report, h }
   let loaded = false, order = [], pos = 0, cmp = null;
 
+  // Everything that depends on the view: which frames show, and how tall they are.
+  function layout() {
+    views.forEach((v) => v.sync());
+    const flip = prefs.mode === "flip";
+    views[1].seg.hidden = !flip;
+    root.classList.toggle("upgrade-closeup--flip", flip);
+    const room = roomFor(window.innerHeight);
+    Object.entries(side).forEach(([name, s]) => {
+      s.cell.hidden = flip && prefs.show !== name;
+      s.frame.style.height = `${frameHeight({ room, stacked: !flip && !phone })}px`;
+    });
+    if (cmp && order.length) post(order[pos]); // the element is placed again for the new frame size
+  }
   const post = (index) => Object.values(side).forEach((s) => s.frame.contentWindow?.postMessage({ __closeup: "go", i: index }, "*"));
   const go = (p) => {
     pos = Math.max(0, Math.min(order.length - 1, p));
@@ -106,7 +152,7 @@ export function createCloseup(row, pages, { phone = false } = {}) {
     summary.textContent = summaryLine(cmp);
     summary.classList.toggle("upgrade-closeup-summary--same", cmp.n > 0 && cmp.measured > 0 && !cmp.differing.length);
     order = cmp.differing.length ? cmp.differing : [...Array(cmp.n).keys()];
-    if (!cmp.n) { stage.hidden = true; return; }
+    if (!cmp.n) { stage.hidden = true; bar.hidden = true; return; }
     nav.hidden = order.length < 2;
     go(0);
   }
@@ -117,8 +163,12 @@ export function createCloseup(row, pages, { phone = false } = {}) {
     if (!data || !data.__closeup) return;
     const name = Object.keys(side).find((k) => side[k].frame.contentWindow === event.source);
     if (!name) return;
-    if (data.type === "size") side[name].frame.style.height = `${Math.max(MIN_H, Math.min(MAX_H, Math.ceil(data.h) + 2 * PAD))}px`;
-    else if (data.type === "report") { side[name].report = data; if (side.template.report && side.yours.report) analyse(); }
+    if (data.type === "size") {
+      if (name === "template") opened.textContent = openedNote(data.notes);
+    } else if (data.type === "report") {
+      side[name].report = data;
+      if (side.template.report && side.yours.report) analyse();
+    }
   };
 
   function load() {
@@ -137,14 +187,14 @@ export function createCloseup(row, pages, { phone = false } = {}) {
       frame.srcdoc = pageDoc(page, { probe });
       cell.appendChild(frame);
       stage.appendChild(cell);
-      side[name] = { frame, report: null };
+      side[name] = { frame, cell, report: null };
     });
+    layout();
   }
+  views.forEach((v) => v.sync());
+  views[1].seg.hidden = prefs.mode !== "flip";
 
-  // Built only when it comes into view: a group can have a dozen rules, and each close-up is two copies of the page.
-  if (typeof IntersectionObserver === "function") {
-    const watcher = new IntersectionObserver((entries) => { if (entries.some((e) => e.isIntersecting)) { watcher.disconnect(); load(); } }, { rootMargin: "600px" });
-    watcher.observe(root);
-  } else load();
+  // A wizard slide shows one preview, so it loads at once; a long page would load previews as they scroll into view.
+  load();
   return { el: root, load };
 }
