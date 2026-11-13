@@ -2,7 +2,7 @@
 import "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareReports, lookAt, summaryLine, probeFor } from "../src/ui/closeup.js";
+import { compareReports, lookAt, summaryLine, probeFor, openedNote, frameHeight, roomFor } from "../src/ui/closeup.js";
 
 const line = (vals, extra = {}) => ({ applies: true, measurable: true, vals, ...extra });
 const report = (lines, n = lines[0].vals.length) => ({ n, desc: Array.from({ length: n }, (_, i) => `<p> “item ${i}”`), lines });
@@ -52,4 +52,17 @@ test("closeup: the frame is told what to measure, with pseudo-elements kept and 
     { where: ".x", prop: "gap", label: "gap", media: "@media (max-width: 600px)" },
   ] });
   assert.deepEqual(p.lines.map((l) => [l.sel, l.pseudo, l.measurable, l.media]), [["ol li", "::marker", true, null], ["a", null, false, null], [".x", null, true, "@media (max-width: 600px)"]]);
+});
+
+test("closeup: it says when it opened something to show the element", () => {
+  assert.equal(openedNote([]), "");
+  assert.equal(openedNote(['the accordion "Culture"']), 'It was inside the accordion "Culture", so that has been opened for you.');
+  assert.match(openedNote(['the icon card "Info"', "a closed section"]), /the icon card "Info" and a closed section, so that has been opened/);
+});
+
+test("closeup: the frames take the room the slide has, stacked halves of it or all of it when flipped", () => {
+  assert.equal(roomFor(900), 390);
+  assert.equal(roomFor(500), 300, "never smaller than a readable minimum");
+  assert.equal(frameHeight({ room: 390, stacked: true }), 195);
+  assert.equal(frameHeight({ room: 390, stacked: false }), 390);
 });

@@ -98,6 +98,7 @@ export function buildUpgradePanel() {
     checkBtn.disabled = true;
     try {
       // A new page starts from nothing: no section, and no open preview, carries over from the previous check.
+      migration.stop(); // the wizard, if a migration was open, gives the page back to the ordinary upgrade
       [foundEl, tweaksEl, reviewEl, changesEl, checkEl, copyEl, reportEl].forEach((el) => { el.hidden = true; el.replaceChildren(); });
       if (assessFit(code()).legacy && !forceUpgrade) {
         results.hidden = false;
@@ -118,7 +119,7 @@ export function buildUpgradePanel() {
     }
   }
   const migration = createMigrationView(
-    { found: foundEl, tweaks: tweaksEl, review: reviewEl, changes: changesEl, check: checkEl, copy: copyEl, report: reportEl },
+    { found: foundEl, tweaks: tweaksEl, review: reviewEl, changes: changesEl, check: checkEl, copy: copyEl, report: reportEl, paste: step1 },
     { code, onUpgradeInstead: () => { forceUpgrade = true; check(); } },
   );
   checkBtn.addEventListener("click", () => { forceUpgrade = false; check(); });
