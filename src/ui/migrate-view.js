@@ -17,6 +17,7 @@ import { buildReport, reportMarkdown } from "../changelog/report.js";
 import { loadBaseline } from "../lib/baseline.js";
 import { outputCard, renderCheck, pageDoc, plural } from "./upgrade-parts.js";
 import { createCloseup } from "./closeup.js";
+import { scanRules, quietRules } from "./scan.js";
 
 const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
 const STEPS = [["found", "What we found"], ["components", "Your components"], ["review", "Review"], ["html", "Theme and HTML"], ["check", "Check"], ["copy", "Copy"], ["report", "Report"]];
@@ -30,6 +31,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     steps: [], rules: [],     // the review: groups, and the flat list of rules (one slide each)
     decisions: new Map(), reviewed: new Set(), // by rule id
     measured: new Map(),      // by rule id: what its preview measured (kept for the report)
+    auto: new Set(), quiet: { same: [], none: [] }, autoOn: true, // the rules that make no visible difference, decided for the author
     pos: 0, visited: new Set(), active: false,
     prefs: { mode: "stacked", show: "template" }, // how previews are shown, shared by every slide
   };
@@ -57,11 +59,24 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [] });
   const recompute = () => { state.result = migrate([...state.keep, ...keptKeys()], true); };
 
+  // The rules that need the author's attention, in order: all of them, less the ones that make no visible difference on this page
+  // (those use the template without a question) unless the author asks to see them. k and m number a rule within its group.
+  function buildRules() {
+    const all = state.steps.flatMap((step) => step.rows.map((row) => ({ row, step })));
+    const asked = all.filter((r) => !(state.autoOn && state.auto.has(r.row.id)));
+    const total = new Map(), seen = new Map();
+    asked.forEach((r) => total.set(r.step, (total.get(r.step) || 0) + 1));
+    state.rules = asked.map((r) => { const k = (seen.get(r.step) || 0) + 1; seen.set(r.step, k); return { ...r, k, m: total.get(r.step) }; });
+  }
+  const allRuleCount = () => state.steps.reduce((n, st) => n + st.rows.length, 0);
+  const reviewBase = () => firstOf("review") + (state.auto.size ? 1 : 0); // the position of the first rule slide
+
   // ---- the order of the slides ----------------------------------------------------------------------------
   const customCount = () => state.result.groups.filter((g) => g.kind === "custom").length;
   function sequence() {
     const seq = [{ slide: "found" }];
     if (customCount()) seq.push({ slide: "components" });
+    if (state.auto.size) seq.push({ slide: "review", quick: true }); // the rules that make no visible difference, together
     state.rules.forEach((_, index) => seq.push({ slide: "review", index }));
     if (state.rules.length) seq.push({ slide: "review", index: state.rules.length }); // the summary
     seq.push({ slide: "html" }, { slide: "check" }, { slide: "copy" }, { slide: "report" });
@@ -252,7 +267,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       list.forEach((r) => { setDecision(r.row, { choice: "template", reason: "", note: "" }); state.reviewed.add(r.row.id); });
       recompute();
       renderChecksAndCopy();
-      go(firstOf("review") + to);
+      go(reviewBase() + to);
     };
     const nextGroup = state.rules.findIndex((r, idx) => idx > i && r.step !== step);
     if (k < m) {
@@ -289,7 +304,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     const kept = keptRows();
     const box = makeEl("div", "upgrade-review-card upgrade-review-summary upgrade-slide");
     box.appendChild(makeEl("h4", "upgrade-review-title", kept.length
-      ? `You're keeping ${plural(kept.length, "rule", "rules")} of your own; the template covers the other ${state.rules.length - kept.length}`
+      ? `You're keeping ${plural(kept.length, "rule", "rules")} of your own; the template covers the other ${allRuleCount() - kept.length}`
       : "Your page will follow the template"));
     box.appendChild(makeEl("p", "upgrade-hint", kept.length ? "The ones you kept are written into the CSS with your reasons, so they can be revisited at the next upgrade." : "Everything your page overrode now comes from the template, so it matches every other page."));
     const list = makeEl("ul", "upgrade-review-lines");
@@ -298,7 +313,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       li.append(makeEl("strong", "", s.title), ` — ${k.length ? `keeping ${k.length} of ${s.rows.length}` : `using the template for all ${s.rows.length}`} `);
       const change = makeEl("button", "upgrade-link", "Change");
       change.type = "button";
-      change.addEventListener("click", () => go(firstOf("review") + state.rules.findIndex((r) => r.step === s)));
+      change.addEventListener("click", () => go(reviewBase() + Math.max(0, state.rules.findIndex((r) => r.step === s))));
       li.appendChild(change);
       if (k.length) {
         const inner = makeEl("ul");
@@ -311,8 +326,51 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     return box;
   }
 
+  // The rules that make no visible difference on this page. Nothing to decide: the template is used. One click confirms, and a
+  // switch asks about them one by one for an author who wants to.
+  function quickSlide() {
+    const { same, none } = state.quiet, total = allRuleCount();
+    const box = makeEl("div", "upgrade-review-card upgrade-slide upgrade-quick");
+    box.appendChild(makeEl("p", "upgrade-review-progress", "Before the rule-by-rule review"));
+    box.appendChild(makeEl("h4", "upgrade-review-title", `${state.auto.size} of your ${total} rules make no visible difference on this page`));
+    const callout = makeEl("div", "upgrade-callout");
+    callout.append(makeEl("strong", "", "Nothing to decide here. "), "With the template's version these rules look exactly the same on this page. Keeping them would only make this page differ from the others, for no visible benefit. ", makeEl("strong", "", state.autoOn ? "They already use the template." : "You have chosen to review them one by one, so they are asked about next."));
+    box.appendChild(callout);
+    const list = (title, rows, say) => {
+      if (!rows.length) return;
+      const details = document.createElement("details");
+      details.open = true;
+      details.appendChild(makeEl("summary", "", `${title} (${rows.length})`));
+      const ul = makeEl("ul", "upgrade-review-lines");
+      rows.forEach((r) => ul.appendChild(makeEl("li", "", `${r.path}${say(r)}`)));
+      details.appendChild(ul);
+      box.appendChild(details);
+    };
+    const measuredBoth = (r) => { const m = state.measured.get(r.id); const l = m && m.lines.filter((x) => x.measurable).map((x) => `${x.label} ${x.yours === "" ? "not set" : x.yours}`); return l && l.length ? ` — ${l.join(", ")} either way` : ""; };
+    list("Look the same either way", same, measuredBoth);
+    list("Nothing on this page uses them", none, () => " — the page has no element it applies to (it would only matter if you add one later)");
+    const choice = makeEl("label", "upgrade-review-option upgrade-quick-switch");
+    const box2 = document.createElement("input");
+    box2.type = "checkbox";
+    box2.checked = !state.autoOn;
+    box2.addEventListener("change", () => {
+      state.autoOn = !box2.checked;
+      if (state.autoOn) state.auto.forEach((id) => { state.decisions.delete(id); }); // back to the template for all of them
+      buildRules();
+      recompute();
+      renderChecksAndCopy();
+      go(state.pos);
+    });
+    choice.append(box2, " ", makeEl("strong", "", "Ask me about these one by one instead"));
+    box.appendChild(choice);
+    box.appendChild(makeEl("p", "upgrade-hint", "Measured with the page's current content, at desktop and at phone width. Rules that only apply on hover or focus can't be measured, so those are always asked about."));
+    return box;
+  }
+
   function renderReview() {
-    const i = here().slide === "review" ? here().index : 0;
+    const h = here();
+    if (h.quick) { els.review.replaceChildren(quickSlide()); return; }
+    const i = h.slide === "review" ? h.index : 0;
     els.review.replaceChildren(i >= state.rules.length ? reviewSummary() : reviewRule(i));
   }
 
@@ -454,7 +512,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     const list = makeEl("ol", "wizard-steps");
     STEPS.filter(([id]) => slides.includes(id)).forEach(([id, label], n) => {
       const li = makeEl("li", "wizard-step-item");
-      const b = makeEl("button", "wizard-step", id === "review" ? `${label} (${state.rules.length - reviewLeft()}/${state.rules.length})` : label);
+      const b = makeEl("button", "wizard-step", id === "review" && state.rules.length ? `${label} (${state.rules.length - reviewLeft()}/${state.rules.length})` : label);
       b.type = "button";
       b.dataset.step = id;
       if (id === cur) b.setAttribute("aria-current", "step");
@@ -539,7 +597,26 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       state.measured = new Map();
       state.visited = new Set();
       state.steps = buildReview(first, code().html);
-      state.rules = state.steps.flatMap((step) => step.rows.map((row, idx) => ({ row, step, k: idx + 1, m: step.rows.length })));
+      // Measure every rule at once: the ones that make no visible difference are decided for the author (the template), so the
+      // review is only about what changes something. If it can't be measured, every rule is asked about, as before.
+      state.auto = new Set();
+      state.quiet = { same: [], none: [] };
+      state.autoOn = true;
+      const everyRow = state.steps.flatMap((st) => st.rows);
+      const asPage = (r) => ({ html: r.html, css: r.css, js: r.js });
+      const scan = await scanRules(everyRow, { template: asPage(migrate([...state.keep], false)), yours: asPage(migrate([...state.keep, ...everyRow.flatMap((r) => r.keys)], false)) });
+      if (scan) {
+        scan.forEach((m, id) => state.measured.set(id, m));
+        const quiet = quietRules(everyRow, scan), candidates = [...quiet.same, ...quiet.none];
+        // Rules can hide each other (a weight set on a parent hides the same weight on its child when both are on), so each quiet
+        // rule is measured again with every OTHER rule kept: only the ones that still make no difference are decided for the author.
+        const others = everyRow.filter((r) => !candidates.includes(r)).flatMap((r) => r.keys);
+        const verify = candidates.length ? await scanRules(candidates, { template: asPage(migrate([...state.keep, ...others], false)), yours: asPage(migrate([...state.keep, ...others, ...candidates.flatMap((r) => r.keys)], false)) }) : new Map();
+        const confirmed = candidates.filter((r) => verify && ["same", "none"].includes(verify.get(r.id)?.status));
+        confirmed.forEach((r) => state.auto.add(r.id));
+        state.quiet = { same: quiet.same.filter((r) => state.auto.has(r.id)), none: quiet.none.filter((r) => state.auto.has(r.id)) };
+      }
+      buildRules();
       recompute();
       state.active = true;
       els.paste.hidden = true;

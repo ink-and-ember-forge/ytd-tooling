@@ -233,15 +233,19 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.waitForSelector("#view-upgrade .upgrade-signals", { state: "visible" });
   ok("9b says why it is a migration", (await page.$$("#view-upgrade .upgrade-signals li")).length === 4);
   const stepNames = await page.$$eval("#view-upgrade .wizard-step", (l) => l.map((x) => x.textContent.replace(/ \u2713$/, "")));
-  ok("9b the migration is a wizard: the steps are along the top, and only the first slide shows", stepNames.join(" | ") === "What we found | Your components | Review (0/17) | Theme and HTML | Check | Copy | Report" && await page.isVisible("#view-upgrade .upgrade-signals") && !(await page.isVisible("#view-upgrade .upgrade-theme")) && !(await page.isVisible("#view-upgrade .upgrade-checks")) && !(await page.isVisible("#view-upgrade .upgrade-input >> nth=0")), stepNames.join(" | "));
+  ok("9b the migration is a wizard: the steps are along the top, and only the first slide shows", stepNames.join(" | ") === "What we found | Your components | Review (0/14) | Theme and HTML | Check | Copy | Report" && await page.isVisible("#view-upgrade .upgrade-signals") && !(await page.isVisible("#view-upgrade .upgrade-theme")) && !(await page.isVisible("#view-upgrade .upgrade-checks")) && !(await page.isVisible("#view-upgrade .upgrade-input >> nth=0")), stepNames.join(" | "));
   ok("9b Back is off on the first slide, and Next goes on", await page.isDisabled("#view-upgrade .wizard-foot button:has-text('Back')") && !(await page.isDisabled(WNEXT)));
   const groups = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
   ok("9b the page's own styles are 12 groups, all kept by default", groups.length === 12 && groups.every((g) => g.kept), groups.map((g) => g.name).join(","));
   await gotoStep("review");
+  const quick1 = await page.textContent("#view-upgrade .upgrade-review-title");
+  ok("9b the review opens on ONE slide for the rules that make no visible difference on this page: 3 of the 17, decided for you", /^3 of your 17 rules make no visible difference on this page$/.test(quick1) && (await page.textContent("#view-upgrade .upgrade-callout")).includes("Nothing to decide here") && (await page.textContent("#view-upgrade .upgrade-callout")).includes("They already use the template"), quick1);
+  await page.click(WNEXT);
+  await page.waitForTimeout(250);
   const progress1 = await page.textContent("#view-upgrade .upgrade-review-progress");
-  ok("9b the 18 differences from the template are 17 rules, one slide each, in 5 groups", /rule 1 of 9 \u00b7 1 of 17 in all/.test(progress1), progress1);
+  ok("9b the other 14 are one slide each, in groups", /rule 1 of \d+ \u00b7 1 of 14 in all/.test(progress1), progress1);
   ok("9b the template is already chosen, and the slide gives the rule's hint and what it affects", await page.isChecked('#view-upgrade input[name="review-choice"][value="template"]') && (await page.textContent("#view-upgrade .upgrade-review-hint")).length > 20 && /look/.test(await page.textContent("#view-upgrade .upgrade-closeup-summary")));
-  ok("9b copying is locked until the review is finished, and says why", await page.isDisabled('#view-upgrade button:has-text("Copy CSS")') && (await page.textContent("#view-upgrade .upgrade-results")).includes("Finish the review first (17 rules left)"));
+  ok("9b copying is locked until the review is finished, and says why", await page.isDisabled('#view-upgrade button:has-text("Copy CSS")') && (await page.textContent("#view-upgrade .upgrade-results")).includes("Finish the review first (14 rules left)"));
   ok("9b the theme is detected from the old colour", await page.isChecked('#view-upgrade .upgrade-theme input[value="gwella"]') && (await page.textContent("#view-upgrade .upgrade-theme")).includes("detected"));
   ok("9b two HTML changes are shown with before and after", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 2);
   const region = (await code("CSS")).slice((await code("CSS")).indexOf("PAGE-SPECIFIC OVERRIDES"));
@@ -320,14 +324,19 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9c the page does not move by itself when the preview frames load", y0 === y1 && y1 < 1200, `${y0} -> ${y1}`);
   const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
   ok("9c the page's own components are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
-  ok("9c the 21 differences are 20 rules, counted along the top", (await page.textContent("#view-upgrade .wizard-step[data-step=review]")).includes("Review (0/20)"));
+  ok("9c the 21 differences are 20 rules, 7 of them quiet, so 13 are asked about, counted along the top", (await page.textContent("#view-upgrade .wizard-step[data-step=review]")).includes("Review (0/13)"));
   ok("9c nothing is kept yet, and copying is locked", !(await code("CSS")).includes("kept:") && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
 
   // the first rule, before choosing: a large preview, the template above and yours below
   const title = () => page.textContent("#view-upgrade .upgrade-review-title");
   const gotoRule = async (label) => { await gotoStep("review"); for (let i = 0; i < 40 && (await title()) !== label; i++) { await page.click(WNEXT); await page.waitForTimeout(150); } };
   const frames = async () => { await page.waitForFunction(() => { const c = document.querySelector("#view-upgrade .upgrade-closeup"); return c && c.querySelectorAll("iframe").length === 2 && !/Loading/.test(c.querySelector(".upgrade-closeup-summary").textContent); }); await page.waitForTimeout(600); return page.$$("#view-upgrade .upgrade-closeup iframe"); };
+  const toFirstRule = async () => { await gotoStep("review"); await page.click(WNEXT); await page.waitForTimeout(250); };
   await gotoStep("review");
+  const quickText = await page.textContent("#view-upgrade .upgrade-quick");
+  ok("9c the rules that make no visible difference are listed together, with how they look the same, and the rest are asked about", /^7 of your 20 rules make no visible difference on this page$/.test(await title()) && quickText.includes("ol li::marker") && quickText.includes("either way") && quickText.includes("Look the same either way (7)") && quickText.includes("Ask me about these one by one instead"), (await title()) + " | " + quickText.slice(0, 160));
+  await page.click(WNEXT);
+  await page.waitForTimeout(250);
   const firstTitle = await title();
   const firstProgress = await page.textContent("#view-upgrade .upgrade-review-progress");
   const weights = [];
@@ -335,7 +344,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
     const f = await el.contentFrame();
     weights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".__cur")).fontWeight, crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, outlined: document.querySelectorAll(".__hl").length, shown: document.querySelectorAll(".__cur").length })));
   }
-  ok("9c the first slide is one rule (strong, in Text and headings), with the template and yours and what it touches outlined", firstTitle === "strong" && firstProgress.includes("Text and headings \u00b7 rule 1 of 5 \u00b7 1 of 20 in all") && weights[0].strong !== weights[1].strong && weights[0].outlined > 1 && weights[1].shown === 1, JSON.stringify(weights) + firstProgress);
+  ok("9c the first slide is one rule (strong, in Text and headings), with the template and yours and what it touches outlined", firstTitle === "strong" && firstProgress.includes("Text and headings \u00b7 rule 1 of 4 \u00b7 1 of 13 in all") && weights[0].strong !== weights[1].strong && weights[0].outlined > 1 && weights[1].shown === 1, JSON.stringify(weights) + firstProgress);
   ok("9c and it never numbers the breadcrumb: the list rule that does is decided with its fix, not here", weights.every((w) => w.crumb === "none"), JSON.stringify(weights.map((w) => w.crumb)));
   const geo = await page.evaluate(() => { const f = [...document.querySelectorAll("#view-upgrade .upgrade-closeup iframe")]; const foot = document.querySelector("#view-upgrade .wizard-foot").getBoundingClientRect(); const r = f.map((x) => x.getBoundingClientRect()); return { w: r[0].width, h: r.map((x) => Math.round(x.height)), fits: r[1].bottom <= foot.top + 2, stacked: r[1].top >= r[0].bottom - 1 }; });
   ok("9c the previews are large: as wide as the slide's main column, tall, stacked, and the whole slide fits the screen with no scrolling", geo.w > 600 && geo.h.every((h) => h >= 150) && geo.stacked && geo.fits, JSON.stringify(geo));
@@ -385,17 +394,23 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.waitForTimeout(1200);
   const afterNext = await barTop();
   await page.waitForTimeout(800);
-  ok("9c Next brings the next rule to the top, just below the header, and it stays put", afterNext >= 40 && afterNext <= 120 && afterNext === (await barTop()) && (await title()) === "ol li::marker", `top at ${afterNext}px, ${await title()}`);
+  ok("9c Next brings the next rule to the top, just below the header, and it stays put", afterNext >= 40 && afterNext <= 120 && afterNext === (await barTop()) && (await title()) === "h5", `top at ${afterNext}px, ${await title()}`);
   ok("9c and moves focus to its title for screen readers", await page.evaluate(() => document.activeElement?.classList.contains("upgrade-review-title")));
-  ok("9c a rule that changes nothing you can see says so", /^No visible difference on this page/.test(await page.textContent("#view-upgrade .upgrade-closeup-summary")));
   await page.click("#view-upgrade .wizard-foot button:has-text('Back')");
   await page.waitForTimeout(800);
   ok("9c Back returns to the rule before, with its choice kept", (await title()) === "strong" && await page.isChecked('#view-upgrade input[name="review-choice"][value="template"]'));
 
+  // ask about the quiet rules too: the switch on the first slide of the review
+  await gotoStep("review");
+  await page.check("#view-upgrade .upgrade-quick-switch input");
+  await page.waitForTimeout(300);
+  ok("9c 'ask me one by one instead' brings all 20 rules back into the review", /Review \(\d+\/20\)/.test(await page.textContent("#view-upgrade .wizard-step[data-step=review]")) && (await page.textContent("#view-upgrade .upgrade-callout")).includes("asked about next"), (await page.textContent("#view-upgrade .wizard-step[data-step=review]")) + " | " + (await page.textContent("#view-upgrade .upgrade-callout")).slice(-90));
+
   // decide every rule: the template (the default) or keep with a reason; collects the group titles on the way
   const decideAll = async (choice, collect = null) => {
     await gotoStep("review");
-    for (let i = 0; i < 60 && !(await page.isVisible("#view-upgrade .upgrade-review-summary")); i++) {
+    for (let i = 0; i < 70 && !(await page.isVisible("#view-upgrade .upgrade-review-summary")); i++) {
+      if (await page.isVisible("#view-upgrade .upgrade-quick")) { await page.click(WNEXT); await page.waitForTimeout(80); continue; }
       if (collect) collect.push((await page.textContent("#view-upgrade .upgrade-review-progress")).split(" \u00b7 ")[0]);
       await page.check(`#view-upgrade input[name="review-choice"][value="${choice}"]`);
       if (choice === "keep") await page.selectOption("#view-upgrade .upgrade-reason", "design");
@@ -463,8 +478,19 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9c the report says what the previews measured: what you will see for a kept rule, and the real values", reportText.includes("**On this page:** 2 of the 10 elements look different") && /\*\*Measured:\*\* text weight: the template gives `\d+`, yours gives `\d+`/.test(reportText), reportText.slice(reportText.indexOf("### Text and headings"), reportText.indexOf("### Text and headings") + 400));
   ok("9c and says that a rule kept without a note is worth a second look", /"Text and headings \u203a ol li::marker" was kept without a note/.test(reportText));
 
-  // change the first rule and the rest of its group afterwards: back to the template
+  // the quiet rules really are quiet: keep every rule EXCEPT the 7 that make no visible difference (the default again), and the page
+  // still looks exactly as the author built it
   await gotoStep("review");
+  await page.uncheck("#view-upgrade .upgrade-quick-switch input");
+  await page.waitForTimeout(300);
+  await gotoStep("check");
+  await page.waitForTimeout(900);
+  const keptLoud = await probe(await frame2());
+  ok("9c with the 7 quiet rules using the template and the other 13 kept, the page looks exactly as the author built it", keptLoud.strong === was.strong && keptLoud.h4 === was.h4 && keptLoud.h1Margin === was.h1Margin && keptLoud.h5 === was.h5 && keptLoud.glanceHeading === was.glanceHeading, JSON.stringify({ was: [was.strong, was.h4, was.h1Margin, was.h5, was.glanceHeading], now: [keptLoud.strong, keptLoud.h4, keptLoud.h1Margin, keptLoud.h5, keptLoud.glanceHeading] }));
+  ok("9c and the CSS has no reason lines for them", !(await code("CSS")).includes("ol li::marker") && (await code("CSS")).includes("kept: Text and headings \u203a strong"));
+
+  // change the first rule and the rest of its group afterwards: back to the template
+  await toFirstRule();
   await page.check('#view-upgrade input[name="review-choice"][value="template"]');
   await page.click('#view-upgrade button:has-text("Use the template for the rest of this group")');
   await page.waitForTimeout(300);

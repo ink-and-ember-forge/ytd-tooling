@@ -172,3 +172,8 @@
 .upgrade-closeup-opened { margin: 0 0 0.5rem; padding: 0.3rem 0.6rem; background: #eef6ff; border-left: 4px solid var(--navy); border-radius: 4px; font-size: 0.88rem; }
 .upgrade-closeup-opened:empty { display: none; }
 .upgrade-closeup-summary { font-size: 1.05rem; }
+
+.upgrade-callout { margin: 0.8rem 0; padding: 0.9rem 1.1rem; background: #eef8f1; border-left: 6px solid var(--green); border-radius: 6px; font-size: 1.05rem; }
+.upgrade-quick details { margin: 0.8rem 0; }
+.upgrade-quick summary { font-weight: 700; cursor: pointer; }
+.upgrade-quick-switch { display: block; margin: 1rem 0 0.4rem; }

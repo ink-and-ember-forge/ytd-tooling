@@ -2,6 +2,7 @@
 import "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { scanProbe, summariseScan, quietRules } from "../src/ui/scan.js";
 import { compareReports, lookAt, summaryLine, probeFor, openedNote, frameHeight, roomFor, measuredSummary } from "../src/ui/closeup.js";
 
 const line = (vals, extra = {}) => ({ applies: true, measurable: true, vals, ...extra });
@@ -80,4 +81,53 @@ test("closeup: what was measured is kept as real values from the first element t
   assert.equal(s.status, "same");
   assert.deepEqual(s.lines[0], { label: "text weight", measurable: true, template: "700", yours: "700", differs: false });
   assert.equal(measuredSummary(compareReports(report([line([])], 0), report([line([])], 0), labels), report([line([])], 0), report([line([])], 0), labels).status, "none");
+});
+
+// ---- the scan of every rule before the review ---------------------------------------------------
+
+const row = (id, label, selectors, lines) => ({ id, label, path: id, selectors, lines });
+const ln = (where, label, media = null) => ({ where, label, prop: "x", media });
+const rep = (lines) => ({ n: 3, desc: [], lines });
+const frameSet = (t, y) => ({ template: rep(t), yours: rep(y) });
+
+test("scan: every rule's lines go in one flat list, and each rule remembers where its lines are", () => {
+  const rows = [row("a", "a", ["p"], [ln("p", "colour"), ln("p", "size")]), row("b", "b", ["h2", "h3"], [ln("h2", "gap")])];
+  const p = scanProbe(rows);
+  assert.deepEqual(p.selectors, ["p", "h2", "h3"]);
+  assert.equal(p.lines.length, 3);
+  assert.deepEqual(p.spans, [[0, 2], [2, 3]]);
+});
+
+test("scan: a rule is quiet when nothing it sets looks different, and loud when anything does", () => {
+  const rows = [row("quiet", "quiet", ["p"], [ln("p", "colour")]), row("loud", "loud", ["h2"], [ln("h2", "size")]), row("dead", "dead", ["x"], [ln("x", "gap")])];
+  const spans = [[0, 1], [1, 2], [2, 3]];
+  const desktop = frameSet(
+    [line(["black", null, null]), line([null, "16px", "16px"]), line([null, null, null])],
+    [line(["black", null, null]), line([null, "24px", "16px"]), line([null, null, null])]);
+  const phone = frameSet([line(["black"], { applies: true }), line(["1"], { applies: true }), line([null])], [line(["black"]), line(["1"]), line([null])]);
+  const m = summariseScan(rows, spans, { desktop, phone });
+  assert.equal(m.get("quiet").status, "same");
+  assert.equal(m.get("loud").status, "differs");
+  assert.equal(m.get("loud").differing, 1);
+  assert.equal(m.get("dead").status, "none", "it matches nothing on this page");
+  const q = quietRules(rows, m);
+  assert.deepEqual(q.same.map((r) => r.id), ["quiet"]);
+  assert.deepEqual(q.none.map((r) => r.id), ["dead"]);
+});
+
+test("scan: a rule written for phones is read from the phone frame, not the desktop one", () => {
+  const rows = [row("p", "p", ["p"], [ln("p", "order", "@media (max-width: 768px)")])];
+  const desktop = frameSet([line(["x"], { applies: false })], [line(["x"], { applies: false })]);
+  const phone = frameSet([line(["1"], { applies: true })], [line(["3"], { applies: true })]);
+  const m = summariseScan(rows, [[0, 1]], { desktop, phone });
+  assert.equal(m.get("p").status, "differs");
+  assert.deepEqual(m.get("p").lines[0], { label: "order", measurable: true, template: "1", yours: "3", differs: true });
+});
+
+test("scan: a rule that only applies on hover is never called quiet", () => {
+  const rows = [row("h", "h", ["a"], [ln("a:hover", "colour")])];
+  const f = frameSet([line(["a"], { measurable: false })], [line(["b"], { measurable: false })]);
+  const m = summariseScan(rows, [[0, 1]], { desktop: f, phone: f });
+  assert.equal(m.get("h").status, "state");
+  assert.deepEqual(quietRules(rows, m), { same: [], none: [] });
 });
