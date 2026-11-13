@@ -330,6 +330,39 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.check('#view-upgrade .upgrade-deviations .upgrade-tweak:has(strong:text-is("strong")) input');
   await page.waitForTimeout(500);
   ok("9c and ticking it puts it back", (await probe(await frame2())).strong === was.strong);
+
+  // 9d. a third real page with an OLDER icon toggle (<div id="data-icons-grid">, onclick="openAccordion(...)" tiles, none of the
+  // current block's classes). It must still WORK, not only look right: recognised by class alone it was missed, the standard JS
+  // left out openAccordion, and every tile threw "openAccordion is not defined".
+  const L3 = (f) => fs.readFileSync(path.join(ROOT, "test", "fixtures", "legacy3", f), "utf8");
+  await page.fill("#view-upgrade .upgrade-input >> nth=0", L3("page.html"));
+  await page.fill("#view-upgrade .upgrade-input >> nth=1", L3("page.css"));
+  await page.fill("#view-upgrade .upgrade-input >> nth=2", L3("page.js"));
+  await page.click("#view-upgrade .primary-btn");
+  await page.waitForSelector("#view-upgrade .upgrade-checks", { state: "visible" });
+  const checks3 = await page.textContent("#view-upgrade .upgrade-checks");
+  ok("9d checks: every function the HTML calls is defined", checks3.includes("Every function your HTML calls is defined"));
+  ok("9d checks: the unclosed quote in the page's own HTML is reported", checks3.includes("unclosed quote") && checks3.includes('alt=" class='));
+  ok("9d the author is told the older block now gets the current version's styling", (await page.textContent("#view-upgrade .upgrade-results")).includes("older version of the"));
+  ok("9d the new JS defines the tile handlers", (await code("JS")).includes("function openAccordion(") && (await code("JS")).includes("function openAccordionKey("));
+
+  await page.click("#view-upgrade .upgrade-preview summary");
+  const tileWorks = async (which) => {
+    await page.click(`#view-upgrade .upgrade-seg-btn:has-text("${which}")`);
+    await page.waitForTimeout(400);
+    const frame = await frame2();
+    return frame.evaluate(() => {
+      const errors = [];
+      window.addEventListener("error", (e) => errors.push(e.message));
+      document.querySelectorAll(".data-icon-card")[0].closest("[onclick]").click();
+      const first = { open: document.querySelectorAll(".content-display.active").length, shown: getComputedStyle(document.querySelector("#info-gov-content")).display };
+      document.querySelectorAll(".data-icon-card")[1].closest("[onclick]").click();
+      return { first, second: { open: document.querySelectorAll(".content-display.active").length, firstNow: getComputedStyle(document.querySelector("#info-gov-content")).display, shown: getComputedStyle(document.querySelector("#clinical-quality-content")).display }, errors };
+    });
+  };
+  const tilesBefore = await tileWorks("Before"), tilesAfter = await tileWorks("After");
+  ok("9d the icon tiles work in the original page", tilesBefore.first.open === 1 && tilesBefore.second.shown === "block");
+  ok("9d and they still work after migrating: the first panel opens, then only the second", JSON.stringify(tilesAfter) === JSON.stringify(tilesBefore) && tilesAfter.first.shown === "block" && tilesAfter.second.firstNow === "none" && tilesAfter.errors.length === 0, JSON.stringify(tilesAfter));
   await page.click('.mode-btn[data-view="changelog"]');
   ok("9 changelog view: visible, and no data warning when the changelog is valid", (await page.isVisible("#view-changelog")) && (await page.$$(".changelog-check")).length === 0);
   await page.click('.mode-btn[data-view="build"]');

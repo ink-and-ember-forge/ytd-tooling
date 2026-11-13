@@ -16,8 +16,9 @@ import { BLOCK_LIST } from "../blocks/index.js";
 import { BUILDER_VERSION } from "./index.js";
 import { getPageCSS, getPageJS, forToc } from "../base/index.js";
 import { assembleCSS } from "../lib/assemble.js";
-import { detectBlocks } from "./upgrade.js";
+import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
+const stripScriptTags = (t) => t.replace(/^\s*<script[^>]*>/i, "").replace(/<\/script>\s*$/i, "");
 import { OVERRIDES_START, OVERRIDES_END } from "./local-edits.js";
 
 // ---- the old vocabulary -----------------------------------------------------
@@ -310,6 +311,7 @@ export function tagProblems(html) {
     .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, (m) => m.replace(/[^\n]/g, " "));
   for (const m of cleaned.matchAll(/<(\/?)([a-zA-Z][\w-]*)\b[^>]*?(\/?)>/g)) {
     const [whole, closing, name, selfClosed] = m, tag = name.toLowerCase();
+    if ((whole.match(/"/g) || []).length % 2) problems.push(`The <${tag}> on line ${line(m.index)} has an unclosed quote, so an attribute swallows the ones after it: ${whole.replace(/\s+/g, " ").slice(0, 70)}…`);
     if (!closing) { if (!VOID.has(tag) && !selfClosed) stack.push({ tag, at: m.index, text: whole.slice(0, 50) }); continue; }
     if (VOID.has(tag)) { problems.push(`Stray </${tag}> on line ${line(m.index)}: <${tag}> never has a closing tag.`); continue; }
     const idx = stack.map((s) => s.tag).lastIndexOf(tag);
@@ -355,10 +357,19 @@ export function migrateHtml(html, { theme = null, version = BUILDER_VERSION } = 
 const IGNORED_CLASSES = /^(fa|fa-[\w-]+|collapse|collapsed|collapsing|show|active|accordion(-[\w-]+)?|btn(-[\w-]+)?|row|col(-[\w-]+)?|container(-[\w-]+)?|d-[\w-]+|visually-hidden|stretched-link|tooltip|popover|modal(-[\w-]+)?|dropdown(-[\w-]+)?|nav(-[\w-]+)?|navbar(-[\w-]+)?|badge|alert(-[\w-]+)?|card(-[\w-]+)?|list-group(-[\w-]+)?|form-[\w-]+|table(-[\w-]+)?|img-fluid|text-(start|end|center|muted|[a-z]+)|bg-[\w-]+|border(-[\w-]+)?|rounded(-[\w-]+)?|shadow(-[\w-]+)?|[mp][tbxyse]?-\d|w-\d+|h-\d+|flex(-[\w-]+)?|justify-content-[\w-]+|align-items-[\w-]+|position-[\w-]+|float-[\w-]+)$/;
 const SET_BY_JS = /^--(thinqi-navbar-height|anchor-section-offset|bs-[\w-]+)$/;
 
+// Functions called from onclick="..." and the like that the page's JS does not define: clicking would do nothing (or throw).
+const HANDLER = /\son[a-z]+\s*=\s*(["'])\s*(?:return\s+)?([A-Za-z_$][\w$]*)\s*\(/g;
+const BROWSER_GLOBALS = /^(alert|confirm|prompt|window|document|history|location|console|setTimeout|setInterval|event|this|bootstrap|fetch|open|print|close|parseInt|parseFloat|String|Number|Boolean|gtag|dataLayer)$/;
+export function missingFunctions(html, js) {
+  const defined = new Set([...js.matchAll(/function\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]));
+  for (const m of js.matchAll(/(?:const|let|var|window\.)\s*([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function|\()/g)) defined.add(m[1]);
+  return [...new Set([...html.matchAll(HANDLER)].map((m) => m[2]))].filter((n) => !defined.has(n) && !BROWSER_GLOBALS.test(n));
+}
+
 // Problems the author should see before copying: classes with no styling, undefined variables, broken tags.
 // `before` is the page's old CSS: a class that had no styling there either is reported separately (neverStyled), because
 // it is not something the migration lost.
-export function lintPage({ html, css, before = null }) {
+export function lintPage({ html, css, js = null, before = null }) {
   const finalCss = stripStyleTags(css);
   const styled = namesStyledBy(finalCss);
   const styledBefore = before === null ? null : namesStyledBy(before);
@@ -369,7 +380,7 @@ export function lintPage({ html, css, before = null }) {
   const neverStyled = styledBefore ? unstyled.filter((c) => !styledBefore.has(`.${c}`)) : [];
   const defined = new Set([...finalCss.matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
   const undefinedVars = [...new Set([...finalCss.matchAll(/var\(\s*(--[\w-]+)\s*\)/g)].map((m) => m[1]))].filter((v) => !defined.has(v) && !SET_BY_JS.test(v));
-  return { unstyledClasses, neverStyled, undefinedVars, tagProblems: tagProblems(html) };
+  return { unstyledClasses, neverStyled, undefinedVars, missingFunctions: js === null ? [] : missingFunctions(html, stripScriptTags(js)), tagProblems: tagProblems(html) };
 }
 
 // The standard JS for this page (base plus its blocks) names every selector it looks for; any other selector in the
@@ -396,7 +407,7 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
   const { html = "", css = "", js = "" } = page;
   const detected = detectTheme(css);
   const chosen = theme === undefined ? detected : theme;
-  const used = detectBlocks(html);
+  const used = detectBlocks(html, BLOCK_LIST, js);
   const toc = /\sid="table-of-contents"/.test(html);
   const standardCss = getPageCSS(toc, used);
 
@@ -419,6 +430,11 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
   const notes = [];
   const skipped = (css.match(/@(keyframes|font-face|supports|import)\b/g) || []).length;
   if (skipped) notes.push(`The old CSS has ${skipped} at-rule(s) (@keyframes, @font-face...) that are not carried automatically. Check the page.`);
+  // A block recognised only from an older version's handlers or JS: the page gets the CURRENT version's styling and JS, with
+  // its own differences on top, so its look can shift a little.
+  for (const b of used.filter((b) => !hasCurrentMarkup(html, b))) {
+    notes.push(`Your page uses an older version of the ${b.label} block. The new code applies the current version's styling and JS, with your own overrides on top, so check how it looks.`);
+  }
   const standardJs = getPageJS(used);
   const own = js.trim() ? customJs(js, standardJs) : [];
   if (own.length) notes.push(`Your JS also looks for ${own.join(", ")}, which the standard JS doesn't. Re-add whatever code uses it after pasting.`);
@@ -435,7 +451,7 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
     css: outCss,
     js: standardJs,
     customJs: own,
-    lint: lintPage({ html: migrated.html, css: outCss, before: css }),
+    lint: lintPage({ html: migrated.html, css: outCss, js: standardJs, before: css }),
     ready: !!chosen,
     notes,
   };

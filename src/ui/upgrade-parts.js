@@ -51,6 +51,9 @@ export function renderCheck(container, { before, after, lint }) {
     if (listing) li.appendChild(makeEl("pre", "upgrade-diff", listing));
     list.appendChild(li);
   };
+  const broken = lint.missingFunctions || [];
+  line(!broken.length, broken.length ? `Your HTML calls ${broken.map((f) => `${f}()`).join(", ")}, which the new JS doesn't define` : "Every function your HTML calls is defined",
+    broken.length ? "Clicking these will do nothing. Re-add the functions to the JS after pasting, or tick the block they belong to above." : "");
   line(!lint.unstyledClasses.length, lint.unstyledClasses.length ? `${plural(lint.unstyledClasses.length, "class", "classes")} in your HTML ${lint.unstyledClasses.length === 1 ? "has" : "have"} no styling` : "Every class in your HTML has styling",
     [lint.unstyledClasses.length ? lint.unstyledClasses.map((c) => `.${c}`).join(", ") + ". If you meant to keep their styles, tick them above." : "",
       lint.neverStyled?.length ? `${lint.neverStyled.map((c) => `.${c}`).join(", ")} had no styling in your old CSS either, so nothing was lost.` : ""].filter(Boolean).join(" "));

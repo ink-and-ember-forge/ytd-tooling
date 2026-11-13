@@ -12,13 +12,17 @@ import { parseCss } from "../src/changelog/css-tree.js";
 import { upgradePage } from "../src/changelog/upgrade.js";
 import { loadBaseline, baselinePage } from "../src/lib/baseline.js";
 import {
-  assessFit, detectTheme, translateValue, flattenRules, specificity, splitList, tagProblems, migrateHtml, lintPage, customJs, buildMigration,
+  assessFit, detectTheme, translateValue, flattenRules, specificity, splitList, tagProblems, migrateHtml, lintPage, customJs, buildMigration, missingFunctions,
 } from "../src/changelog/migrate.js";
+import { detectBlocks } from "../src/changelog/upgrade.js";
+import { BLOCK_LIST } from "../src/blocks/index.js";
 
 const fixture = (name) => readFileSync(new URL(`./fixtures/legacy/${name}`, import.meta.url), "utf8");
 const legacy = () => ({ html: fixture("page.html"), css: fixture("page.css"), js: fixture("page.js") });
 const fixture2 = (name) => readFileSync(new URL(`./fixtures/legacy2/${name}`, import.meta.url), "utf8");
 const legacy2 = () => ({ html: fixture2("page.html"), css: fixture2("page.css"), js: fixture2("page.js") });
+const fixture3 = (name) => readFileSync(new URL(`./fixtures/legacy3/${name}`, import.meta.url), "utf8");
+const legacy3 = () => ({ html: fixture3("page.html"), css: fixture3("page.css"), js: fixture3("page.js") });
 const reference = await loadBaseline("3.1.1"); // what the template said when it was first stored
 
 // ---- is it a migration? ----------------------------------------------------
@@ -305,4 +309,49 @@ test("deviations: the old navbar-offset for anchors is replaced by the template'
   assert.ok(section, "the page's own section padding is still a deviation");
   assert.equal(section.against.some((l) => /scroll-margin-top/.test(l)), false);
   assert.doesNotMatch(buildMigration(legacy(), { reference }).css.slice(buildMigration(legacy(), { reference }).css.indexOf("PAGE-SPECIFIC")), /scroll-margin-top: calc\(var\(--thinqi-navbar-height\)/);
+});
+
+
+// ---- a page that must still WORK ------------------------------------------------------
+// The third real page has an OLDER icon toggle: <div id="data-icons-grid"> and onclick="openAccordion(...)" tiles, none of
+// the current block's classes. Recognised by class alone it was missed, so the standard JS left out openAccordion and every
+// tile threw "openAccordion is not defined" -- and nothing in the checks said so.
+
+test("older markup: a block is recognised from its handlers, or from the JS the page already defines", () => {
+  const html = legacy3().html;
+  assert.ok(detectBlocks(html).some((b) => b.id === "icon-toggle"), "from the onclick handlers alone");
+  assert.ok(detectBlocks("<p>no markup at all</p>", BLOCK_LIST, "function openAccordion(a, b) {}").some((b) => b.id === "icon-toggle"), "from the JS alone");
+  assert.equal(detectBlocks('<p onclick="alert(1)"></p>', BLOCK_LIST, "function somethingElse() {}").length, 0, "an unrelated handler or function is not a block");
+});
+
+test("older markup: the migrated page keeps its icon tiles working, and says it is using the current version of the block", () => {
+  const m = buildMigration(legacy3(), { reference });
+  assert.deepEqual(m.blocks, ["at-a-glance", "accordion", "icon-toggle"]);
+  for (const fn of ["openAccordion", "openAccordionKey"]) assert.match(m.js, new RegExp(`function ${fn}\\(`), `${fn} is in the new JS`);
+  assert.deepEqual(m.lint.missingFunctions, []);
+  assert.deepEqual(m.customJs, [], "the icon toggle's own selectors are not the author's");
+  assert.ok(m.notes.some((n) => n.includes(`older version of the ${BLOCKS["icon-toggle"].label} block`)), m.notes.join(" | "));
+  assert.equal(m.notes.some((n) => /Accordion/.test(n)), false, "a block with its current markup gets no such note");
+  assert.ok(m.groups.some((g) => g.key === "data-icons-grid" && g.kind === "custom"), "its #data-icons-grid styles are carried");
+  assert.ok(m.groups.some((g) => g.key === "differs:.data-icon-card"), "and where its tiles differ from the current block");
+});
+
+test("lint: a function the HTML calls that the JS does not define is reported, built-ins and defined ones are not", () => {
+  const html = legacy3().html;
+  assert.deepEqual(lintPage({ html, css: "", js: getPageJS([]) }).missingFunctions, ["openAccordion", "openAccordionKey"]);
+  assert.deepEqual(lintPage({ html, css: "", js: getPageJS([BLOCKS["icon-toggle"]]) }).missingFunctions, []);
+  assert.deepEqual(missingFunctions('<a onclick="alert(1)"></a><b onclick="return confirm(\'x\')"></b><i onclick="gtag(\'x\')"></i><u onclick="this.remove()"></u>', ""), []);
+  assert.deepEqual(missingFunctions('<a onclick="go()"></a>', "const go = () => {};"), []);
+  assert.deepEqual(missingFunctions('<a onclick="go()"></a>', "window.go = function () {};"), []);
+  assert.deepEqual(missingFunctions('<a onclick="go()"></a>', ""), ["go"]);
+  assert.equal(lintPage({ html, css: "" }).missingFunctions.length, 0, "no JS given: nothing to judge");
+});
+
+test("html: an attribute with an unclosed quote is reported with its line, and well-formed attributes are not", () => {
+  const problems = tagProblems(legacy3().html);
+  const quote = problems.find((p) => /unclosed quote/.test(p));
+  assert.ok(quote, problems.join("\n"));
+  assert.match(quote, /<img> on line \d+/);
+  assert.match(quote, /alt=" class=/);
+  assert.deepEqual(tagProblems('<img src="a.png" alt="" class="x" /><p title="it\'s fine">a</p>'), []);
 });

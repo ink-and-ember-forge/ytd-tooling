@@ -302,7 +302,7 @@ export function buildUpgradePanel() {
     checkEl.hidden = r.upToDate;
     if (r.upToDate) return;
     const wasOpen = checkEl.querySelector(".upgrade-preview")?.open;
-    renderCheck(checkEl, { before: code(), after: { html: r.html, css: r.css, js: r.js }, lint: lintPage({ html: r.html, css: r.css }) });
+    renderCheck(checkEl, { before: code(), after: { html: r.html, css: r.css, js: r.js }, lint: lintPage({ html: r.html, css: r.css, js: r.js }) });
     if (wasOpen) checkEl.querySelector(".upgrade-preview").open = true;
   }
 
