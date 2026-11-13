@@ -62,5 +62,21 @@
     "blocks/nav-cards.css",
     "blocks/resource-cards.css",
     "blocks/two-column.css"
+  ],
+  "3.5.0": [
+    "base.css",
+    "base.html",
+    "base.js",
+    "blocks/accordion.css",
+    "blocks/at-a-glance.css",
+    "blocks/buttons.css",
+    "blocks/flex-section.css",
+    "blocks/hero-text.css",
+    "blocks/icon-toggle.css",
+    "blocks/icon-toggle.js",
+    "blocks/image-text-section.css",
+    "blocks/nav-cards.css",
+    "blocks/resource-cards.css",
+    "blocks/two-column.css"
   ]
 }

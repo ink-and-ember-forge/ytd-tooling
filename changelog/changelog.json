@@ -1,6 +1,166 @@
 {
   "releases": [
     {
+      "version": "3.5.0",
+      "date": "2026-11-13",
+      "summary": "Neutral colours are tokens named for what they are used for (--page-background, --text-on-primary, --subheading-colour, --card-text-colour, --focus-ring-colour, --panel-background, --shadow-colour, --floating-button-background), instead of hard-coded values. No visual change, except that nav-card headings are black instead of #1a1a1a.",
+      "changes": [
+        {
+          "id": "CHG-3.5.0-01",
+          "type": "behaviour",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "The base CSS defines the usage-named neutral colour tokens, and uses them for the page background, the contents heading text, the content-column sub-headings and the back-to-top button. The colours are unchanged.",
+          "detect": {
+            "patterns": [
+              "--heading-3"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "--page-background:"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.5.0-02",
+          "type": "behaviour",
+          "scope": "block:accordion",
+          "blocks": [
+            "accordion"
+          ],
+          "summary": "The accordion focus ring uses var(--focus-ring-colour).",
+          "detect": {
+            "patterns": [
+              "accordion-button"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--focus-ring-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.5.0-03",
+          "type": "behaviour",
+          "scope": "block:at-a-glance",
+          "blocks": [
+            "at-a-glance"
+          ],
+          "summary": "The At a glance panel background uses var(--panel-background).",
+          "detect": {
+            "patterns": [
+              "at-a-glance"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--panel-background\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.5.0-04",
+          "type": "behaviour",
+          "scope": "block:buttons",
+          "blocks": [
+            "buttons"
+          ],
+          "summary": "Button text uses var(--text-on-primary).",
+          "detect": {
+            "patterns": [
+              "\\.buttons"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--text-on-primary\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.5.0-05",
+          "type": "behaviour",
+          "scope": "block:icon-toggle",
+          "blocks": [
+            "icon-toggle"
+          ],
+          "summary": "Icon toggle tile shadows use var(--shadow-colour). The shadows look the same.",
+          "detect": {
+            "patterns": [
+              "data-icon-card"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--shadow-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.5.0-06",
+          "type": "visual",
+          "scope": "block:nav-cards",
+          "blocks": [
+            "nav-cards"
+          ],
+          "summary": "Nav card text, button text and shadow use var(--card-text-colour), var(--text-on-primary) and var(--shadow-colour). The headings of numbered cards were #1a1a1a and are now black, like the card text.",
+          "detect": {
+            "patterns": [
+              "nav-card"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--card-text-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.5.0-07",
+          "type": "behaviour",
+          "scope": "block:resource-cards",
+          "blocks": [
+            "resource-cards"
+          ],
+          "summary": "Resource card shadows use var(--shadow-colour). The hover shadow was a different near-black (26, 26, 26) and is now the same shadow colour as the others: a difference nobody can see.",
+          "detect": {
+            "patterns": [
+              "\\.cards-grid"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--shadow-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.4.0",
       "date": "2026-11-13",
       "summary": "Icon toggle tiles show the pointer cursor on the tile itself.",
@@ -113,7 +273,7 @@
           },
           "outdated": {
             "missing": [
-              "h3\\s*\\{[^}]*color:\\s*#000"
+              "h3\\s*\\{[^}]*color:\\s*(#000|var\\(--subheading-colour\\))"
             ]
           },
           "action": "copy",

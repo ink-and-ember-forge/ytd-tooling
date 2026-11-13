@@ -366,3 +366,19 @@ test("deviations: the template's value is shown as the template writes it, a tok
     assert.deepEqual(shown.filter((l) => /\(template: [^)]*#a3195b/i.test(l)), [], `${dir}: no template value is the brand colour written out`);
   }
 });
+
+test("tokens named by usage: a page's own white, black and shadow are the same as the template's token for them", () => {
+  const html = '<div id="page-container"><main class="main-grid"><nav id="table-of-contents"><h3 id="table-of-contents-heading">T</h3></nav><div class="content-column"><h3>H</h3><div class="resource-cards-here"></div></div></main></div>';
+  // each of these is written differently from the template but means the same thing
+  const css = [
+    "#table-of-contents-heading { color: white; }",                // --text-on-primary
+    "#page-container .content-column h3 { color: #000000; }",      // --subheading-colour
+    "#page-container { background-color: #ffffff !important; }",   // --page-background
+    ".back-to-top { background-color: rgba(255,255,255,.8); }",    // --floating-button-background
+  ].join("\n");
+  const groups = buildMigration({ html, css, js: "" }, { reference }).groups.filter((g) => g.kind === "deviation").map((g) => g.key);
+  assert.deepEqual(groups, [], groups.join(", "));
+  // and a different colour is still a difference, shown as the template writes it
+  const other = buildMigration({ html, css: "#table-of-contents-heading { color: yellow; }", js: "" }, { reference }).groups.filter((g) => g.kind === "deviation");
+  assert.deepEqual(other.flatMap((g) => g.against), ["#table-of-contents-heading: color: yellow  (template: var(--text-on-primary))"]);
+});

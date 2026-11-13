@@ -60,3 +60,45 @@ test("Section: the tight-heading option is off by default and only adds the clas
   assert.ok(!s.generateHTML({ title: "A", tightHeading: false }).includes("tight-heading"));
   assert.match(s.generateHTML({ title: "A", tightHeading: true }), /<h2 class="tight-heading">A<\/h2>/);
 });
+
+// ---- the template's colours are tokens ------------------------------------------------
+// Every colour is a custom property named for what it is used for (--primary-colour, --text-on-primary, --panel-background...).
+// A hard-coded colour in a rule hides what a change would affect, so none is allowed outside the token definitions.
+
+const sources = async () => {
+  const { loadText } = await import("../src/lib/assets.js");
+  const { BLOCK_LIST } = await import("../src/blocks/index.js");
+  const files = [["base.css", await loadText(new URL("../src/base/base.css", import.meta.url))]];
+  for (const b of BLOCK_LIST) if (b.css) files.push([`${b.id}/block.css`, b.css]);
+  return files;
+};
+const withoutComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, "");
+
+test("no hard-coded colour in the template's CSS, outside the token definitions", async () => {
+  const COLOUR = /#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|\b(white|black|red|green|blue|grey|gray)\b/;
+  const found = [];
+  for (const [file, css] of await sources()) {
+    withoutComments(css).split("\n").forEach((text, i) => {
+      if (/^\s*--[\w-]+:/.test(text)) return;                                   // a token definition
+      const line = text
+        .replace(/var\(\s*--[\w-]+\s*\)/g, "") // a plain token reference (its NAME may contain a colour word; a var() with a hard-coded fallback is still checked)
+        .replace(/color-mix\(in srgb, ,? ?black 15%\)/g, "").replace(/color-mix\(in srgb, black 15%\)/g, ""); // darkening a button on hover: a mixing instruction, not a design colour
+      if (COLOUR.test(line)) found.push(`${file}: ${text.trim()}`);
+    });
+  }
+  assert.deepEqual(found, [], "use a token named for what the colour is for, and define it in base.css");
+});
+
+test("every token a block uses is defined by the base CSS", async () => {
+  const files = await sources();
+  const defined = new Set([...withoutComments(files[0][1]).matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
+  const setByJs = /^--(thinqi-navbar-height|anchor-section-offset|bs-[\w-]+)$/;
+  const missing = [];
+  for (const [file, css] of files) {
+    const own = new Set([...withoutComments(css).matchAll(/(--[\w-]+)\s*:/g)].map((m) => m[1]));
+    for (const m of withoutComments(css).matchAll(/var\(\s*(--[\w-]+)/g)) {
+      if (!defined.has(m[1]) && !own.has(m[1]) && !setByJs.test(m[1])) missing.push(`${file}: ${m[1]}`);
+    }
+  }
+  assert.deepEqual([...new Set(missing)], [], "a block that reads a token the base never defines gets no colour when the two versions are mixed");
+});
