@@ -227,8 +227,10 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9b every section is visible", await page.isVisible("#view-upgrade .upgrade-signals") && await page.isVisible("#view-upgrade .upgrade-theme") && await page.isVisible("#view-upgrade .upgrade-checks"));
   const groups = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
   ok("9b the page's own styles are 12 groups, all kept by default", groups.length === 12 && groups.every((g) => g.kept), groups.map((g) => g.name).join(","));
-  const differs = await page.$$eval("#view-upgrade .upgrade-deviations .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked, text: x.querySelector("pre").textContent })));
-  ok("9b where the page differs from the template is listed too, kept by default, with the template's value beside each", differs.length === 18 && differs.every((g) => g.kept) && differs.every((g) => /\(template: /.test(g.text)), differs.length + " groups");
+  const progress1 = await page.textContent("#view-upgrade .upgrade-review-progress");
+  ok("9b the 18 differences from the template are 5 decisions, not 18 checkboxes", /Decision 1 of 5/.test(progress1), progress1);
+  ok("9b the template is already chosen, and each decision says what it affects", await page.isChecked('#view-upgrade .upgrade-review-choice input[value="template"]') && (await page.textContent("#view-upgrade .upgrade-review-headline")).includes("affects"));
+  ok("9b copying is locked until the review is finished, and says why", await page.isDisabled('#view-upgrade button:has-text("Copy CSS")') && (await page.textContent("#view-upgrade .upgrade-results")).includes("Finish the review in step 4 first (5 decisions left)"));
   ok("9b the theme is detected from the old colour", await page.isChecked('#view-upgrade .upgrade-theme input[value="gwella"]') && (await page.textContent("#view-upgrade .upgrade-theme")).includes("detected"));
   ok("9b two HTML changes are shown with before and after", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 2);
   const region = (await code("CSS")).slice((await code("CSS")).indexOf("PAGE-SPECIFIC OVERRIDES"));
@@ -239,7 +241,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
 
   // the page really looks the same before and after: compare computed styles inside the real frames
   await page.click("#view-upgrade .upgrade-preview summary");
-  const frameOf = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-frame"); return el.contentFrame(); };
+  const frameOf = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-stage .upgrade-frame"); return el.contentFrame(); };
   const styles = (frame) => frame.evaluate(() => {
     const pick = (sel, props) => { const e = document.querySelector(sel); if (!e) return null; const c = getComputedStyle(e); return Object.fromEntries(props.map((p) => [p, c[p]])); };
     return {
@@ -284,24 +286,60 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.waitForFunction(() => document.querySelector("#view-upgrade .upgrade-message")?.textContent.includes("version marker"));
   ok("9b the author can choose the normal upgrade flow instead", !(await page.isVisible("#view-upgrade .upgrade-theme")));
 
-  // 9c. a second real page: the template's own blocks plus many deliberate overrides of the standard.
-  // Sorting rules by the names they use dropped those overrides; each declaration is now compared with the template.
+  // 9c. a second real page: the template's own blocks plus many deliberate overrides of the standard. The goal is to conform to the
+  // template, so each difference is a decision (the template chosen) with the page shown both ways; keeping one needs a reason.
   const L2 = (f) => fs.readFileSync(path.join(ROOT, "test", "fixtures", "legacy2", f), "utf8");
   await page.fill("#view-upgrade .upgrade-input >> nth=0", L2("page.html"));
   await page.fill("#view-upgrade .upgrade-input >> nth=1", L2("page.css"));
   await page.fill("#view-upgrade .upgrade-input >> nth=2", L2("page.js"));
   await page.click("#view-upgrade .primary-btn");
-  await page.waitForSelector("#view-upgrade .upgrade-deviations", { state: "visible" });
+  await page.waitForSelector("#view-upgrade .upgrade-review-card", { state: "visible" });
   const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
-  ok("9c the page's own classes are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
-  const dev2 = await page.$$eval("#view-upgrade .upgrade-deviations .upgrade-tweak", (l) => l.map((x) => x.querySelector("strong").textContent));
-  ok("9c the overrides of the template are listed (strong, h4, h5, the header margin, the mobile layout...)", ["strong", ".content-column h4", "h5", "#header-h1", ".main-grid", "#table-of-contents", "ol"].every((k) => dev2.includes(k)), dev2.length + " groups");
-  ok("9c and not the rules that merely match it", !dev2.includes("p") && !dev2.includes(".standard-container") && !dev2.includes("#data-icons-grid"));
-  const checks2 = await page.textContent("#view-upgrade .upgrade-checks");
-  ok("9c checks: nothing lost, and the class that was never styled is said to be exactly that", checks2.includes("Every class in your HTML has styling") && checks2.includes(".number-text") && checks2.includes("nothing was lost") && !checks2.includes("stretched-link"));
+  ok("9c the page's own components are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
+  ok("9c the 21 differences are 4 decisions", /Decision 1 of 4/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
+  ok("9c nothing is kept yet, and copying is locked", !(await code("CSS")).includes("kept:") && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
+
+  // the first decision, before choosing: the template and yours side by side, the affected elements outlined
+  const firstTitle = await page.textContent("#view-upgrade .upgrade-review-title");
+  const weights = [];
+  for (const nth of [0, 1]) {
+    const el = await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth];
+    const f = await el.contentFrame();
+    await page.waitForTimeout(300);
+    weights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".accordion-text strong")).fontWeight, outlined: document.querySelectorAll(".__hl").length })));
+  }
+  ok("9c the first decision (Text and headings) shows the page both ways, with what it affects outlined", firstTitle === "Text and headings" && weights[0].strong !== weights[1].strong && weights[0].outlined > 0 && weights[1].outlined > 0, JSON.stringify(weights));
+  ok("9c and says what it changes in plain words, and what the template does", (await page.textContent("#view-upgrade .upgrade-review-headline")).includes("text weight") && (await page.textContent("#view-upgrade .upgrade-review-lines")).includes("template"));
+
+  // keeping one needs a reason: Next stays disabled until one is given
+  await page.check('#view-upgrade .upgrade-review-choice input[value="keep"]');
+  ok("9c keeping yours asks why, and will not go on without an answer", await page.isVisible("#view-upgrade .upgrade-reason") && await page.isDisabled('#view-upgrade button:has-text("Next decision")'));
+  await page.selectOption("#view-upgrade .upgrade-reason", "design");
+  await page.fill("#view-upgrade .upgrade-note", "bold is our house style");
+  ok("9c once it has a reason it can go on, and the reason is written into the CSS", !(await page.isDisabled('#view-upgrade button:has-text("Next decision")')) && (await code("CSS")).includes("/* kept: Text and headings: A deliberate design choice, bold is our house style */"));
+  await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
+  ok("9c going back to the template takes it out again", !(await code("CSS")).includes("kept:") && !(await page.isVisible("#view-upgrade .upgrade-reason")));
+
+  // decide everything: the template (the default) for every decision, noting the titles on the way
+  const decideAll = async (choice, collect = null) => {
+    if (await page.isVisible("#view-upgrade .upgrade-review-summary")) await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=0');
+    for (;;) {
+      if (collect) collect.push(await page.textContent("#view-upgrade .upgrade-review-title"));
+      await page.check(`#view-upgrade .upgrade-review-choice input[value="${choice}"]`);
+      if (choice === "keep") await page.selectOption("#view-upgrade .upgrade-reason", "design");
+      const last = await page.isVisible('#view-upgrade button:has-text("Finish the review")');
+      await page.click(last ? '#view-upgrade button:has-text("Finish the review")' : '#view-upgrade button:has-text("Next decision")');
+      if (last) break;
+    }
+  };
+  const decisionTitles = [];
+  await decideAll("template", decisionTitles);
+  ok("9c the four decisions, biggest first", decisionTitles.join(" | ") === "Text and headings | Fixes that use !important | Your phone and tablet layout | Page header, contents list and layout", decisionTitles.join(" | "));
+  ok("9c using the template for all of them says so, and unlocks copying", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("Your page will follow the template") && !(await page.isDisabled('#view-upgrade button:has-text("Copy CSS")')));
+  ok("9c checks: nothing lost, and the class that was never styled is said to be exactly that", await (async () => { const c = await page.textContent("#view-upgrade .upgrade-checks"); return c.includes("Every class in your HTML has styling") && c.includes(".number-text") && c.includes("nothing was lost") && !c.includes("stretched-link"); })());
 
   await page.click("#view-upgrade .upgrade-preview summary");
-  const frame2 = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-frame"); return el.contentFrame(); };
+  const frame2 = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-stage .upgrade-frame"); return el.contentFrame(); };
   const probe = (frame) => frame.evaluate(() => {
     const cs = (sel) => { const e = document.querySelector(sel); return e ? getComputedStyle(e) : null; };
     return {
@@ -316,20 +354,29 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const was = await probe(await frame2());
   await page.click('#view-upgrade .upgrade-seg-btn:has-text("After")');
   await page.waitForTimeout(400);
-  const now = await probe(await frame2());
-  ok("9c everything the author overrode looks exactly as it did", now.strong === was.strong && now.h4 === was.h4 && now.h1Margin === was.h1Margin && now.h5 === was.h5 && now.glanceHeading === was.glanceHeading,
-    JSON.stringify({ was: [was.strong, was.h4, was.h1Margin, was.h5, was.glanceHeading], now: [now.strong, now.h4, now.h1Margin, now.h5, now.glanceHeading] }));
-  ok("9c the older resource cards and inline icons are untouched", JSON.stringify(now.card) === JSON.stringify(was.card) && now.icon === was.icon);
-  ok("9c the template's own changes are adopted, and only those (black sub-headings, bordered contents items)", was.h3 === "rgb(163, 25, 91)" && now.h3 === "rgb(0, 0, 0)" && was.tocItemBorder === "0px" && now.tocItemBorder === "1px");
+  const conformed = await probe(await frame2());
+  ok("9c following the template changes what the page overrode (bold weight, heading weights, header margin)", conformed.strong !== was.strong && conformed.h4 !== was.h4 && conformed.h1Margin !== was.h1Margin, JSON.stringify({ was: [was.strong, was.h4, was.h1Margin], now: [conformed.strong, conformed.h4, conformed.h1Margin] }));
+  ok("9c and the older resource cards and inline icons, which are the page's own components, are untouched", JSON.stringify(conformed.card) === JSON.stringify(was.card) && conformed.icon === was.icon);
 
-  // untick one override: the check shows the page really changes
-  await page.uncheck('#view-upgrade .upgrade-deviations .upgrade-tweak:has(strong:text-is("strong")) input');
+  // now keep every override, each with a reason: the page looks exactly as the author built it
+  await decideAll("keep");
   await page.waitForTimeout(500);
-  const without = await probe(await frame2());
-  ok("9c unticking an override takes it out of the result", without.strong !== was.strong && !(await code("CSS")).match(/strong \{\s*font-weight: bold/), `${was.strong} -> ${without.strong}`);
-  await page.check('#view-upgrade .upgrade-deviations .upgrade-tweak:has(strong:text-is("strong")) input');
+  const kept = await probe(await frame2());
+  ok("9c keeping every override brings the author's own look back exactly", kept.strong === was.strong && kept.h4 === was.h4 && kept.h1Margin === was.h1Margin && kept.h5 === was.h5 && kept.glanceHeading === was.glanceHeading,
+    JSON.stringify({ was: [was.strong, was.h4, was.h1Margin, was.h5, was.glanceHeading], now: [kept.strong, kept.h4, kept.h1Margin, kept.h5, kept.glanceHeading] }));
+  ok("9c and the template's own changes are adopted either way (black sub-headings, bordered contents items)", was.h3 === "rgb(163, 25, 91)" && kept.h3 === "rgb(0, 0, 0)" && was.tocItemBorder === "0px" && kept.tocItemBorder === "1px");
+  const css2 = await code("CSS");
+  ok("9c every kept decision has its reason in the CSS", ["Text and headings", "Fixes that use !important", "Your phone and tablet layout", "Page header, contents list and layout"].every((t) => new RegExp(`/\\* kept: ${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: A deliberate design choice(, [^*]*)? \\*/`).test(css2)) && css2.includes("bold is our house style"), css2.split("\n").filter((l) => l.includes("kept:")).join(" ~ "));
+  ok("9c and the summary lists what was kept", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("You're keeping 4 of your own choices"));
+
+  // change one decision afterwards: back to the template for the first
+  await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=0');
+  await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
   await page.waitForTimeout(500);
-  ok("9c and ticking it puts it back", (await probe(await frame2())).strong === was.strong);
+  ok("9c changing one decision takes only that one out", !(await code("CSS")).includes("kept: Text and headings") && (await code("CSS")).includes("kept: Your phone and tablet layout") && (await probe(await frame2())).strong !== was.strong);
+  await page.click('#view-upgrade button:has-text("Next decision")');
+  await decideAll("template"); // finish again, so the page is in a settled state for what follows
+
 
   // 9d. a third real page with an OLDER icon toggle (<div id="data-icons-grid">, onclick="openAccordion(...)" tiles, none of the
   // current block's classes). It must still WORK, not only look right: recognised by class alone it was missed, the standard JS

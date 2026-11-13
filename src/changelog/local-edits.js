@@ -13,10 +13,17 @@ export const OVERRIDES_START = "/* ===== PAGE-SPECIFIC OVERRIDES: kept by the up
 export const OVERRIDES_END = "/* ===== END PAGE-SPECIFIC OVERRIDES ===== */";
 const REGION = /\n*\/\* =+ PAGE-SPECIFIC OVERRIDES:[\s\S]*?=+ \*\/\s*([\s\S]*?)\s*\/\* =+ END PAGE-SPECIFIC OVERRIDES =+ \*\//;
 
-// { css: the stylesheet without its overrides region, overrides: the region's rules (text) or "" }
+// A line in the region saying WHY an override was kept, e.g. "/* kept: Text and headings: deliberate design choice */".
+// The ledger rides along with the rules, so the reasons survive every later upgrade.
+const LEDGER = /\/\*\s*kept:\s*([\s\S]*?)\s*\*\//g;
+export const ledgerComment = (text) => `/* kept: ${text.replace(/\*\//g, "* /").replace(/\s+/g, " ").trim()} */`;
+
+// { css: the stylesheet without its overrides region, overrides: the region's rules (text) or "", ledger: the reasons }
 export function splitOverrides(css) {
   const m = css.match(REGION);
-  return m ? { css: css.replace(REGION, ""), overrides: m[1] } : { css, overrides: "" };
+  return m
+    ? { css: css.replace(REGION, ""), overrides: m[1], ledger: [...m[1].matchAll(LEDGER)].map((x) => x[1].trim()) }
+    : { css, overrides: "", ledger: [] };
 }
 
 const rootsOf = (blockCss) => parseCss(blockCss).children.map((c) => c.selector);
@@ -75,7 +82,7 @@ const KEEPABLE = new Set(["changed-decl", "added-decl", "added-rule"]);
 //   unbalanced true if the pasted CSS has unmatched braces
 // }
 export function findLocalEdits(pageCss, baseline, { includeToc = true, currentBase, currentBlocks = BLOCK_LIST } = {}) {
-  const { css, overrides } = splitOverrides(pageCss);
+  const { css, overrides, ledger } = splitOverrides(pageCss);
   const page = parseCss(css);
   const blockIds = blocksInCss(page, baseline.blocks);
   const used = BLOCK_LIST.filter((b) => blockIds.includes(b.id)).map((b) => baseline.blocks[b.id]);
@@ -99,11 +106,11 @@ export function findLocalEdits(pageCss, baseline, { includeToc = true, currentBa
     const obsolete = !!current && !isRule && !holder; // the rule no longer exists in the new standard
     return { id: `E${n + 1}`, ...e, summary: describe(e), blockId, keepable: KEEPABLE.has(e.kind), standardChanged, obsolete };
   });
-  return { edits, carried: parseCss(overrides), blockIds, unbalanced: page.unbalanced, differences: edits.length, total: countDecls(page) };
+  return { edits, carried: parseCss(overrides), ledger, blockIds, unbalanced: page.unbalanced, differences: edits.length, total: countDecls(page) };
 }
 
 // The text of the overrides region for these edits plus whatever the page already carried. "" if there is nothing to write.
-export function overridesRegion(edits, carried) {
+export function overridesRegion(edits, carried, ledger = []) {
   const tree = { selector: "", decls: new Map(), children: [] };
   for (const e of edits) {
     let node = tree;
@@ -117,5 +124,6 @@ export function overridesRegion(edits, carried) {
   }
   const merged = mergeTrees(carried || { selector: "", decls: new Map(), children: [] }, tree);
   const body = serializeCss(merged).trimEnd();
-  return body ? `${OVERRIDES_START}\n${body}\n${OVERRIDES_END}` : "";
+  const reasons = [...new Set(ledger)].map(ledgerComment).join("\n");
+  return body ? `${OVERRIDES_START}\n${reasons ? `${reasons}\n` : ""}${body}\n${OVERRIDES_END}` : "";
 }

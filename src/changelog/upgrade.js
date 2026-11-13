@@ -87,9 +87,11 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   const usedIds = used.map((b) => b.id);
   let kept = [];
   let carried = parseCss(splitOverrides(css).overrides);
+  let ledger = splitOverrides(css).ledger;
   if (baseline && css.trim()) {
     const found = findLocalEdits(css, baseline, { includeToc: toc, currentBase: BASE_CSS_SOURCE });
     carried = found.carried;
+    ledger = found.ledger;
     edits = found.edits.map((e) => {
       const why = !e.keepable ? "A removed property or rule can't be kept; the new standard applies."
         : e.blockId && !usedIds.includes(e.blockId) ? `The ${e.blockId} block is not used on this page.`
@@ -110,7 +112,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   } else if (css.trim() && baseline === null) { // looked up, and there is none
     notes.push(`There is no stored code for version ${report.pageVersion}, so edits made by hand to the CSS can't be detected. Any existing PAGE-SPECIFIC OVERRIDES region is kept.`);
   }
-  const region = overridesRegion(kept, carried);
+  const region = overridesRegion(kept, carried, ledger);
   if (region) outCss = outCss.replace(/\n<\/style>$/, `\n\n${region}\n</style>`);
   const removed = (edits || []).filter((e) => !e.keepable);
   if (removed.length) notes.push(`${removed.length} thing(s) removed from the standard CSS were not kept: ${removed.map((e) => e.summary).join("; ")}.`);

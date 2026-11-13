@@ -19,7 +19,7 @@ import { assembleCSS } from "../lib/assemble.js";
 import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
 const stripScriptTags = (t) => t.replace(/^\s*<script[^>]*>/i, "").replace(/<\/script>\s*$/i, "");
-import { OVERRIDES_START, OVERRIDES_END } from "./local-edits.js";
+import { OVERRIDES_START, OVERRIDES_END, ledgerComment } from "./local-edits.js";
 
 // ---- the old vocabulary -----------------------------------------------------
 
@@ -93,17 +93,17 @@ export function flattenRules(root) {
 }
 
 // The classes (.x) and ids (#x) a selector names, without the container itself. The sigil is kept: #a and .a are different.
-const namesIn = (selector) => [...selector.replace(/\[[^\]]*\]/g, "").replace(/(["']).*?\1/g, "").matchAll(/(?:^|[^\w-])([.#][a-zA-Z_][\w-]*)/g)]
+export const namesIn = (selector) => [...selector.replace(/\[[^\]]*\]/g, "").replace(/(["']).*?\1/g, "").matchAll(/(?:^|[^\w-])([.#][a-zA-Z_][\w-]*)/g)]
   .map((m) => m[1]).filter((n) => n !== "#page-container");
 
-function namesUsedByHtml(html) {
+export function namesUsedByHtml(html) {
   const names = new Set();
   for (const m of html.matchAll(/\sclass="([^"]+)"/g)) m[1].split(/\s+/).forEach((c) => c && names.add(`.${c}`));
   for (const m of html.matchAll(/\sid="([^"]+)"/g)) names.add(`#${m[1]}`);
   return names;
 }
 
-function namesStyledBy(css) {
+export function namesStyledBy(css) {
   const names = new Set();
   (function walk(n) { for (const c of n.children) { namesIn(c.selector).forEach((x) => names.add(x)); walk(c); } })(parseCss(css));
   return names;
@@ -284,7 +284,7 @@ function prepareGroups(groups, theme, definedVars) {
 
 // The kept rules in their ORIGINAL order, because order is part of the cascade: a media rule hoisted above a later
 // plain rule for the same selector would lose to it. Only neighbouring rules with the same media query share one block.
-function overridesFrom(prepared) {
+function overridesFrom(prepared, ledger = []) {
   const rules = prepared.flatMap((g) => g.rules).sort((a, b) => a.order - b.order);
   const container = { selector: "#page-container", decls: new Map(), children: [] };
   for (const r of rules) {
@@ -296,7 +296,8 @@ function overridesFrom(prepared) {
     else container.children.push({ selector: r.media, decls: new Map(), children: [node] });
   }
   if (!container.children.length && !container.decls.size) return "";
-  return `${OVERRIDES_START}\n${serializeCss({ selector: "", decls: new Map(), children: [container] }).trimEnd()}\n${OVERRIDES_END}`;
+  const reasons = [...new Set(ledger)].map(ledgerComment).join("\n");
+  return `${OVERRIDES_START}\n${reasons ? `${reasons}\n` : ""}${serializeCss({ selector: "", decls: new Map(), children: [container] }).trimEnd()}\n${OVERRIDES_END}`;
 }
 
 // ---- the HTML skeleton ------------------------------------------------------
@@ -396,6 +397,7 @@ export function customJs(oldJs, standardJs) {
 // page: { html, css, js } as pasted. options:
 //   theme      "gwella" | "ytydysgu" (default: detected from the old CSS; null if it can't be told)
 //   keepGroups keys of the groups to carry (custom class names, or "differs:<selector>"); leave out to carry them all
+//   ledger     reasons for kept overrides, written into the overrides block as comments (see review.js)
 //   reference  an older stored baseline (lib/baseline.js): what the template used to say, so a rule that matches the
 //              OLD template is not mistaken for the author's own choice
 // Returns {
@@ -403,7 +405,7 @@ export function customJs(oldJs, standardJs) {
 //   dropped{ base, standard, unused },
 //   html, htmlChanges[], css, js, customJs[], lint, ready (false until a theme is chosen), notes[]
 // }
-export function buildMigration(page, { theme, keepGroups = null, reference = null } = {}) {
+export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [] } = {}) {
   const { html = "", css = "", js = "" } = page;
   const detected = detectTheme(css);
   const chosen = theme === undefined ? detected : theme;
@@ -424,7 +426,7 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
   if (neededVars.length) everyGroup.push({ key: "differs:#page-container", kind: "deviation", entries: [{ media: null, selector: "#page-container", decls: new Map(neededVars), standard: new Map(neededVars.map(([n]) => [n, null])), spec: 0, order: -1 }] });
   neededVars.forEach(([name]) => definedVars.add(name));
   const prepared = prepareGroups(everyGroup, chosen, definedVars).map((g) => ({ ...g, kept: !keepGroups || keepGroups.includes(g.key) }));
-  const region = overridesFrom(prepared.filter((g) => g.kept));
+  const region = overridesFrom(prepared.filter((g) => g.kept), ledger);
   const outCss = region ? standardCss.replace(/\n<\/style>$/, `\n\n${region}\n</style>`) : standardCss;
 
   const notes = [];
