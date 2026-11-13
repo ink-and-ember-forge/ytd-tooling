@@ -81,3 +81,17 @@ test("3.3.0: an At a glance block without its own heading colour is flagged; the
   assert.ok(flagged(BLOCKS["at-a-glance"].css.replace("      color: var(--primary-colour);\n", "")), "old At a glance CSS should be flagged");
   assert.ok(!flagged(BLOCKS["at-a-glance"].css), "current At a glance CSS should not be flagged");
 });
+
+// The version number says what kind of release it is (changelog/SCHEMA.md, "Versioning"): the highest change type decides.
+test("versions follow the rules: fixes and invisible changes are patches, new or noticeable things are minors", () => {
+  const releases = [...CHANGELOG.releases].reverse(), MINOR = new Set(["additive", "visual", "breaking"]);
+  for (let i = 1; i < releases.length; i++) {
+    const [pa, pb, pc] = releases[i - 1].version.split(".").map(Number), [a, b, c] = releases[i].version.split(".").map(Number);
+    const kind = a > pa ? "major" : b > pb ? "minor" : c > pc ? "patch" : "none";
+    const types = releases[i].changes.map((x) => x.type);
+    const rebuild = releases[i].changes.some((x) => x.page_rebuild);
+    const expected = rebuild ? "major" : types.some((t) => MINOR.has(t)) ? "minor" : "patch";
+    assert.equal(kind, expected, `${releases[i].version} is a ${kind} bump, but its changes (${types.join(", ")}) make it a ${expected}`);
+    if (kind === "minor") assert.equal(c, 0, `${releases[i].version}: a minor resets the patch number`);
+  }
+});

@@ -5,7 +5,7 @@ Any change to base or block HTML/CSS/JS that could reach a published page is a r
 ## Steps
 
 1. Make the change in `src/` (base file or block).
-2. Add a release to the **top** of `changelog/changelog.json`. Pick the version by the rules in `changelog/SCHEMA.md` (patch for a fix, minor for additive or visual changes). Each change needs:
+2. Add a release to the **top** of `changelog/changelog.json`. Pick the version by the rules in the **Versioning** section of `changelog/SCHEMA.md` (a fix, or a change nobody would notice, is a patch; something new to use, or a design change a reader would notice, is a minor; major only for a page rebuild). A test checks the number against the change types. Each change needs:
    - `type` and `action` (`none`, `copy`, `hand-edit` or `rebuild`),
    - `scope` (`base-css`, `base-js`, `base-html`, `block:<id>`, or `tool`),
    - `detect.patterns`: regexes that find the feature on a page,

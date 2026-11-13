@@ -68,9 +68,33 @@ Pages that use the feature but are already current are listed as "already curren
 
 ## Versioning
 
-- Version 3 is this design. Versions 1 and 2 are earlier page builds.
-- Patch (3.0.x): fixes and changes a page can absorb with a copy or hand edit. A change whose `type` is `fix` (a missing `cursor: pointer`, a colour that was dropped) is a patch.
-- Minor (3.x.0): additive changes, and visual or behaviour changes that can be copied in.
-- Major (4.0.0): only when a change sets `page_rebuild: true`, meaning an affected page must be rebuilt from scratch.
+Version 3 is this design. Versions 1 and 2 are earlier page builds. The version is `major.minor.patch`.
 
-Breaking changes do not by themselves move the major number. A breaking change that can be handled by copying or editing stays within 3.x.
+### The rule
+
+Look at the `type` of every change in the release. The release number is set by the **highest** of them.
+
+| Number | Use it when | Change types | Examples |
+|--------|-------------|--------------|----------|
+| **Major** `4.0.0` | A page cannot be upgraded piece by piece and must be rebuilt from scratch. Rare: only when a change sets `page_rebuild: true`. A breaking change on its own is NOT a major. | `rebuild` with `page_rebuild: true` | The page structure changes so no old page can take the new CSS. |
+| **Minor** `3.x.0` | Authors can do something new, or a page's design deliberately changes in a way a reader would notice. | `additive`, `visual`, `breaking` | A new block or option (the `tight-heading` class); H3s change colour; the contents column gets wider; a name is renamed (with a deprecation). |
+| **Patch** `3.x.y` | Nothing new to use and no deliberate design change: the template is corrected, or tidied internally. Pages are updated by a copy or a small hand edit. | `fix`, `behaviour`, `tool-only` | `cursor: pointer` that was missing; a focus ring that did not show; a hard-coded colour replaced by a token with the same look; a builder-form-only change. |
+
+### Deciding
+
+Ask in order, and stop at the first yes:
+
+1. Must an affected page be rebuilt from scratch? **Major.**
+2. Can an author now do something they could not before (a new block, option, class or token they are meant to use), or would a reader notice a deliberate design change? **Minor.**
+3. Otherwise (it fixes something broken, or changes the code without changing what a reader sees) **Patch.**
+
+Rules of thumb:
+
+- **A fix is always a patch**, however small or large the code change. A missing pointer cursor, a lost colour and a broken focus ring are all patches.
+- **Internal tokens are a patch** when the page looks the same. A token that authors are expected to use in their own CSS is new for them, so it is a minor.
+- `visual` means a reader would notice. A shade-for-shade tidy-up (a near-black becoming the same black as the text around it) is `behaviour`, not `visual`.
+- Several changes in one release: the highest one wins. One `additive` change among five fixes makes the release a minor.
+- Breaking changes do not move the major number by themselves. One that can be handled by copying or editing stays within 3.x (as a minor, with a deprecation entry).
+- The number is never chosen by how big the diff is, or how many pages it touches.
+
+`test/changelog.test.js` enforces the table: a release whose changes are only `fix`, `behaviour` or `tool-only` must be a patch, and one with any `additive`, `visual` or `breaking` change must be a minor.
