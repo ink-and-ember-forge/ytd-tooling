@@ -11,7 +11,7 @@ Any change to base or block HTML/CSS/JS that could reach a published page is a r
    - `detect.patterns`: regexes that find the feature on a page,
    - `outdated.present` / `outdated.missing`: regexes that tell an old page from a current one.
 
-   Test your patterns against a sample old page in `test/changelog.test.js`.
+   `test/changelog-baselines.test.js` checks every rule against the real frozen code in `baseline/`: the previous release's code must be reported as needing the change, and the code of the release that has it (and later ones) must not be. A rule that fails this does not recognise old code, or wrongly flags current code. Fix the rule; do not skip the test. (Changes with `action: none` or no `detect` patterns cannot be checked this way.)
 3. Regenerate and freeze:
    ```bash
    npm run build

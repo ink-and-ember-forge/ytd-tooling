@@ -17,7 +17,8 @@ export function copyTargetFor(scope) {
 
 // `replacement` is optional: { label, text } adds a button that copies the new code.
 // `checkable` adds a "Done" tick box (the upgrade checklist); `onToggle` hears about it.
-export function changeCard(change, label, replacement, { checkable = false, onToggle } = {}) {
+// `compact` shows just the summary (no scope tags or copy instructions), for changes already done for the author.
+export function changeCard(change, label, replacement, { checkable = false, onToggle, compact = false } = {}) {
   const card = makeEl("div", "change-card");
   const head = makeEl("div", "change-card-head");
   head.appendChild(makeEl("span", "change-id", change.id));
@@ -25,10 +26,12 @@ export function changeCard(change, label, replacement, { checkable = false, onTo
   if (label) head.appendChild(makeEl("span", "change-type change-type--action", label));
   card.appendChild(head);
   card.appendChild(makeEl("p", "change-summary", change.summary));
-  const meta = [change.scope];
-  if (change.blocks && change.blocks.length) meta.push("blocks: " + change.blocks.join(", "));
-  card.appendChild(makeEl("p", "change-meta", meta.join(" · ")));
-  if (change.notes) card.appendChild(makeEl("p", "change-notes", change.notes));
+  if (!compact) {
+    const meta = [change.scope];
+    if (change.blocks && change.blocks.length) meta.push("blocks: " + change.blocks.join(", "));
+    card.appendChild(makeEl("p", "change-meta", meta.join(" · ")));
+    if (change.notes) card.appendChild(makeEl("p", "change-notes", change.notes));
+  }
   if (replacement) {
     const btn = makeEl("button", "copy-btn copy-btn--inline", replacement.label);
     btn.type = "button";

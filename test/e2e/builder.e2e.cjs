@@ -155,20 +155,65 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("5 project file", dl.suggestedFilename() === "gwella-project.json");
   await page.keyboard.press("Escape");
 
-  // 9. upgrade view
+  // 9. upgrade view: paste a real 3.1.1 page, check it, and get the upgraded code back
+  const CURRENT = require("../../changelog/changelog.json").releases[0].version;
+  const base311 = (f) => fs.readFileSync(path.join(ROOT, "baseline", "3.1.1", f), "utf8").replace(/\n$/, "");
+  const baseCss = base311("base.css");
+  const markerStart = baseCss.lastIndexOf("\n  /* ====", baseCss.indexOf("PLACE NEW BLOCK CSS ABOVE THIS LINE"));
+  const css311 = baseCss.slice(0, markerStart) + "\n\n" + base311("blocks/accordion.css") + "\n\n" + base311("blocks/at-a-glance.css") + baseCss.slice(markerStart);
+  const ownCss = css311.replace("color: var(--primary-colour);\n    line-height: 120%", "color: #123456;\n    line-height: 120%");
+  const oldHtml = base311("base.html").replace("__THEME__", "gwella") + '\n<div id="at-a-glance"><h3 id="at-a-glance-heading">At a glance</h3></div>\n<div class="accordion" id="accordion-x"></div>';
+  const oldJs = "<script>\n" + base311("base.js") + '\nconsole.log("mine");\n</script>';
+  const fillOld = async (html = oldHtml) => {
+    await page.fill("#view-upgrade .upgrade-input >> nth=0", html);
+    await page.fill("#view-upgrade .upgrade-input >> nth=1", "<style>\n" + ownCss + "\n</style>");
+    await page.fill("#view-upgrade .upgrade-input >> nth=2", oldJs);
+  };
+  const code = (name) => page.inputValue(`#view-upgrade textarea[aria-label="${name} code"]`);
+
   await page.click('.mode-btn[data-view="upgrade"]');
   ok("9 upgrade view visible", await page.isVisible("#view-upgrade") && !(await page.isVisible("#view-build")));
   ok("9 hash", (await page.evaluate(() => location.hash)) === "#upgrade");
-  await page.fill("#view-upgrade .upgrade-input >> nth=0", '<div id="page-container" data-base-version="3.0.0"></div>');
-  ok("9 detected version", (await page.textContent(".upgrade-detected")).includes("3.0.0"));
-  await page.fill("#view-upgrade .upgrade-input >> nth=1", "#page-container { background-color: transparent !important; }");
+  ok("9 nothing to show before the page is checked", !(await page.isVisible("#view-upgrade .upgrade-results")));
+  await fillOld();
+  ok("9 detected version", (await page.textContent(".upgrade-detected")).includes("3.1.1"));
   await page.click("#view-upgrade .primary-btn");
-  ok("9 progress", (await page.textContent(".upgrade-progress")).trim() === "0 of 2 done");
-  ok("9 finish hidden until done", !(await page.isVisible(".upgrade-finish")));
-  await page.check(".change-done input >> nth=0");
-  ok("9 finish still hidden with 1 of 2 done", !(await page.isVisible(".upgrade-finish")) && (await page.textContent(".upgrade-progress")).trim() === "1 of 2 done");
-  await page.check(".change-done input >> nth=1");
-  ok("9 finish appears when all done", await page.isVisible(".upgrade-finish"));
+  await page.waitForSelector("#view-upgrade .upgrade-results", { state: "visible" });
+  ok("9 says which version it was built on", (await page.textContent("#view-upgrade .upgrade-message")).includes("built on version 3.1.1"));
+  const ticked = await page.$$eval("#view-upgrade .upgrade-block", (l) => l.filter((x) => x.querySelector("input").checked).map((x) => x.textContent.replace(/found/i, "").trim()));
+  ok("9 found exactly the blocks on the page", ticked.sort().join() === "Accordion,At-a-glance", ticked.join());
+  ok("9 one tweak found, and nothing is kept until it is ticked", (await page.textContent("#view-upgrade .upgrade-tweaks")).includes("#123456") && !(await page.isChecked("#view-upgrade .upgrade-tweak input")));
+  ok("9 warns that the unticked tweak would be lost", (await page.textContent(".upgrade-tweak-warning")).includes("1 tweak won't be in the new CSS"));
+  ok("9 the upgraded CSS has no trace of it yet", !(await code("CSS")).includes("#123456") && !(await code("CSS")).includes("PAGE-SPECIFIC"));
+  await page.check("#view-upgrade .upgrade-tweak input");
+  ok("9 ticking keeps the tweak, in a labelled block", (await code("CSS")).includes("PAGE-SPECIFIC OVERRIDES") && (await code("CSS")).includes("#123456"));
+  ok("9 the warning goes away", !(await page.isVisible(".upgrade-tweak-warning")));
+  ok("9 focus stays on the box you ticked", await page.evaluate(() => document.activeElement.closest(".upgrade-tweaks") !== null));
+  ok("9 the CSS holds only the page's blocks", !(await code("CSS")).includes(".nav-cards-grid") && (await code("CSS")).includes(".accordion {"));
+  await page.uncheck('#view-upgrade .upgrade-block:has-text("Accordion") input');
+  ok("9 unticking a block takes its CSS out", !(await code("CSS")).includes(".accordion {"));
+  await page.check('#view-upgrade .upgrade-block:has-text("Accordion") input');
+  ok("9 and ticking it puts it back", (await code("CSS")).includes(".accordion {"));
+  ok("9 HTML: only the version marker changed", (await code("HTML")).includes(`data-base-version="${CURRENT}"`) && !(await code("HTML")).includes('data-base-version="3.1.1"'));
+  ok("9 shows what is changing", (await page.textContent("#view-upgrade")).includes("Looks different") && (await page.$$("#view-upgrade .change-card")).length >= 4);
+  ok("9 shows the author's own JS line, and does not merge it", (await page.textContent("#view-upgrade .upgrade-diff")).includes('console.log("mine");') && !(await code("JS")).includes('console.log("mine")'));
+  ok("9 self-check passes", (await page.textContent(".upgrade-check")).includes("nothing left to copy"));
+
+  // no version marker: the error comes with the closest versions, and one click carries on
+  await fillOld(oldHtml.replace(/ data-base-version="[\d.]+"/, ""));
+  await page.click("#view-upgrade .primary-btn");
+  await page.waitForSelector("#view-upgrade .upgrade-suggest");
+  ok("9 no marker: asks which version", (await page.textContent("#view-upgrade .upgrade-message")).includes("version"));
+  await page.click('#view-upgrade .upgrade-suggest button:has-text("Use 3.1.1")');
+  await page.waitForFunction(() => document.querySelector("#view-upgrade .upgrade-message")?.textContent.includes("built on version 3.1.1"));
+  ok("9 the suggested version carries on", (await code("HTML")).includes(`data-base-version="${CURRENT}"`));
+
+  // a page that is already current needs nothing
+  await fillOld(oldHtml.replace('data-base-version="3.1.1"', `data-base-version="${CURRENT}"`));
+  await page.click("#view-upgrade .upgrade-version-details summary");
+  await page.selectOption("#view-upgrade .upgrade-version", "auto");
+  await page.waitForFunction(() => document.querySelector("#view-upgrade .upgrade-message")?.textContent.includes("already at version"));
+  ok("9 already current: nothing to copy", !(await page.isVisible("#view-upgrade textarea[aria-label='CSS code']")));
   await page.click('.mode-btn[data-view="changelog"]');
   ok("9 changelog view: visible, and no data warning when the changelog is valid", (await page.isVisible("#view-changelog")) && (await page.$$(".changelog-check")).length === 0);
   await page.click('.mode-btn[data-view="build"]');

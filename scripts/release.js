@@ -7,9 +7,11 @@
 //   baseline/<version>/base.css       Base CSS (inner text, no <style> tags)
 //   baseline/<version>/base.js        Base JS (inner text, no <script> tags)
 //   baseline/<version>/blocks/<id>.css|.js
+//   baseline/index.json               { "<version>": [files...] }, so the browser fetches only files that exist
+//                                     (no 404s in the console). Rewritten on every release; `--reindex` rewrites it alone.
 //
 // A released version is frozen: this refuses to overwrite one unless --force.
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadText } from "../src/lib/assets.js";
 import { BLOCK_LIST } from "../src/blocks/index.js";
@@ -34,7 +36,23 @@ export async function releaseFiles() {
 
 export const baselineDir = (v = BUILDER_VERSION) => fileURLToPath(here(`../baseline/${v}/`));
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// { "<version>": ["base.css", "blocks/accordion.css", ...] } for every baseline on disk, versions in order.
+export function buildBaselineIndex() {
+  const root = fileURLToPath(here("../baseline/"));
+  const walk = (dir, prefix = "") => readdirSync(dir).flatMap((name) =>
+    statSync(dir + name).isDirectory() ? walk(`${dir}${name}/`, `${prefix}${name}/`) : [prefix + name]);
+  const versions = readdirSync(root).filter((d) => statSync(root + d).isDirectory())
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  return Object.fromEntries(versions.map((v) => [v, walk(`${root}${v}/`).sort()]));
+}
+
+export const writeBaselineIndex = () =>
+  writeFileSync(fileURLToPath(here("../baseline/index.json")), JSON.stringify(buildBaselineIndex(), null, 2) + "\n");
+
+if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv.includes("--reindex")) {
+  writeBaselineIndex();
+  console.log("Rewrote baseline/index.json");
+} else if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const dir = baselineDir();
   if (existsSync(dir) && !process.argv.includes("--force")) {
     console.error(`baseline/${BUILDER_VERSION} already exists and released versions are frozen.\nBump the version in changelog/changelog.json first (or pass --force if this version was never published).`);
@@ -45,5 +63,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     mkdirSync(p.slice(0, p.lastIndexOf("/")), { recursive: true });
     writeFileSync(p, text + "\n");
   }
+  writeBaselineIndex();
   console.log(`Released ${BUILDER_VERSION} to baseline/${BUILDER_VERSION}/`);
 }

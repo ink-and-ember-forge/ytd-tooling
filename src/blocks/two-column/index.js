@@ -8,6 +8,8 @@ export default {
   // How the block appears in the builder's tab bar (display only).
   group: "Content",
   tabLabel: "Media beside text",
+  // How the upgrade tool recognises this block on a page (class names / ids in its HTML).
+  detect: { classes: ["two-column"] },
   description: "Media in one column and text in the other, both lined up at the top, with the text column a little wider. You choose which side the media sits on. Best for longer text with a smaller picture beside it. For a balanced, centred, equal split use Equal columns instead.",
   fields: [
     { type: "select", id: "flip", label: "Layout", default: "media-left",
