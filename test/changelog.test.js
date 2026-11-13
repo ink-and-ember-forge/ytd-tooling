@@ -72,3 +72,11 @@ test("upgrade checker: a page built on the current base CSS and accordion is not
   assert.deepEqual(Object.values(needAction).flat(), [], "nothing should need action");
   assert.deepEqual(current.map((c) => c.id).sort(), ["CHG-3.2.0-01", "CHG-3.2.0-02", "CHG-3.2.0-04", "CHG-3.2.0-05", "CHG-3.2.0-06"]);
 });
+
+test("3.3.0: an At a glance block without its own heading colour is flagged; the current one is not", () => {
+  const head = '<div id="page-container" data-base-version="3.2.0"></div>\n';
+  const flagged = (css) => Object.entries(checkPage(head + css, "auto", CHANGELOG).groups)
+    .some(([group, list]) => group !== "current" && list.some((c) => c.id === "CHG-3.3.0-02"));
+  assert.ok(flagged(BLOCKS["at-a-glance"].css.replace("      color: var(--primary-colour);\n", "")), "old At a glance CSS should be flagged");
+  assert.ok(!flagged(BLOCKS["at-a-glance"].css), "current At a glance CSS should not be flagged");
+});

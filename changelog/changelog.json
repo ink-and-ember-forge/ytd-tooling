@@ -1,6 +1,51 @@
 {
   "releases": [
     {
+      "version": "3.3.0",
+      "date": "2026-11-13",
+      "summary": "Section block gets a \"directly below the page title\" option (the tight-heading class), and the At a glance heading keeps its theme colour.",
+      "changes": [
+        {
+          "id": "CHG-3.3.0-01",
+          "type": "additive",
+          "scope": "block:section",
+          "blocks": [
+            "section"
+          ],
+          "summary": "New Section option: \"This section comes directly below the page title\". When ticked the heading gets class=\"tight-heading\", which closes the gap under the H1.",
+          "detect": {
+            "patterns": []
+          },
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Off by default, so existing sections are unchanged. The class needs base CSS 3.2.0 or later. To use it on an existing page, replace the base CSS, then add class=\"tight-heading\" to the H2 by hand or rebuild the section."
+        },
+        {
+          "id": "CHG-3.3.0-02",
+          "type": "fix",
+          "scope": "block:at-a-glance",
+          "blocks": [
+            "at-a-glance"
+          ],
+          "summary": "The At a glance heading sets its own theme colour. In 3.2.0 the content-column H3 became black, which also turned this heading black.",
+          "detect": {
+            "patterns": [
+              "at-a-glance-heading"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "#at-a-glance-heading\\s*\\{[^}]*color:\\s*var\\(--primary-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the At a glance block's CSS (inside #page-container) together with the base CSS. Pages still on a base before 3.2.0 are themed already; this keeps them themed once they take the new base."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.2.0",
       "date": "2026-11-13",
       "summary": "Base CSS refinements (numbered lists, sub-heading colour, wider contents column, bordered contents items, a tight-heading class) and a visible keyboard focus ring on the Accordion.",

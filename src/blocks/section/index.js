@@ -9,13 +9,16 @@ export default {
   tabLabel: "Section",
   description: "Start here for every new bit of content — wraps it in a properly-idd <section> with its heading, and generates the matching table-of-contents entry at the same time, so those two ids can never drift apart.",
   fields: [
-    { type: "text", id: "title", label: "Section title", placeholder: "e.g. Putting into practice" }
+    { type: "text", id: "title", label: "Section title", placeholder: "e.g. Putting into practice" },
+    { type: "checkbox", id: "tightHeading", label: "This section comes directly below the page title",
+      help: "Tick this for the first section on a page that has no At a glance box. It closes the large gap between the page title and this heading." }
   ],
   htmlOutputLabel: "HTML for this section — paste into .content-body, then paste other blocks' content where marked",
   generateHTML: (values) => {
     const title = values.title.trim();
+    const headingClass = values.tightHeading ? ' class="tight-heading"' : "";
     return `<section id="${slugify(title)}">
-  <h2>${escapeHTML(title)}</h2>
+  <h2${headingClass}>${escapeHTML(title)}</h2>
 
   <!-- Content goes here -->
 

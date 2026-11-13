@@ -12,6 +12,7 @@
       margin-block: 0 10px;
       font-size: 18px;
       font-weight: bold;
+      color: var(--primary-colour);
     }
 
     ul {

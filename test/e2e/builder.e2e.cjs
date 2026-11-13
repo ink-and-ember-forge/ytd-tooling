@@ -77,6 +77,19 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.click('#panel-section .output-tab:has-text("Contents entry")');
   ok("7 secondary tab", (await page.inputValue("#out-section-secondary textarea")).includes('href="#putting-into-practice"'));
 
+  // the Section checkbox: ticking it adds the class live, un-ticking removes it, and it survives a reload
+  await page.click('#panel-section .output-tab:has-text("HTML")');
+  ok("section: tight-heading is off by default", !(await page.inputValue("#out-section-html textarea")).includes("tight-heading"));
+  await page.check("#panel-section .checkbox-field-input");
+  ok("section: ticking the box adds class=\"tight-heading\" to the H2", (await page.inputValue("#out-section-html textarea")).includes('<h2 class="tight-heading">'));
+  ok("section: the secondary (contents entry) output is unaffected", !(await page.inputValue("#out-section-secondary textarea")).includes("tight-heading"));
+  await page.waitForTimeout(600); // autosave is debounced (400ms)
+  await page.reload({ waitUntil: "networkidle" });
+  await page.click('#tabbar .tab-btn:has-text("Section")');
+  ok("section: the ticked box is remembered after a reload (autosave)", await page.isChecked("#panel-section .checkbox-field-input"));
+  await page.uncheck("#panel-section .checkbox-field-input");
+  ok("section: un-ticking removes the class", !(await page.inputValue("#out-section-html textarea")).includes("tight-heading"));
+
   // 3. preview device toggle
   const frame = '#panel-section .live-preview';
   const w1 = await page.$eval(frame, f => f.style.width);
@@ -485,6 +498,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const gap = () => tp.evaluate(() => document.querySelector(".content-body h2").getBoundingClientRect().top - document.querySelector("#header-h1").getBoundingClientRect().bottom);
   const aagGap = await tp.evaluate(() => document.querySelector("#at-a-glance").getBoundingClientRect().top - document.querySelector("#header-h1").getBoundingClientRect().bottom);
   ok("template: At a glance sits one normal H1 margin (24px) below the title; the base H1 margin is unchanged", Math.round(aagGap) === 24, "gap=" + aagGap);
+  ok("template: the At a glance heading is the theme colour, not black", await tp.$eval("#at-a-glance-heading", (e) => getComputedStyle(e).color === "rgb(163, 25, 91)"));
   await tp.evaluate(() => document.querySelector("#at-a-glance").remove());
   const before = await gap();
   await tp.evaluate(() => document.querySelector(".content-body h2").classList.add("tight-heading"));

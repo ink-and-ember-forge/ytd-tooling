@@ -12,7 +12,8 @@ export function buildField(field) {
   wrap.className = "field";
   wrap.dataset.fieldId = field.id;
 
-  if (field.label) {
+  // A checkbox carries its own text (below), so it has no separate heading label.
+  if (field.label && field.type !== "checkbox") {
     const label = document.createElement("label");
     label.textContent = field.label;
     label.id = uniqueId("lbl");
@@ -64,6 +65,25 @@ export function buildField(field) {
     addBtn.textContent = field.addLabel || "+ Add bullet";
     addBtn.onclick = () => addRow("");
     wrap.appendChild(addBtn);
+  }
+
+  else if (field.type === "checkbox") {
+    const label = document.createElement("label");
+    label.className = "checkbox-field";
+    label.style.cssText = "display:flex; align-items:center; gap:0.5rem; font-weight:500; cursor:pointer;";
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.className = "checkbox-field-input";
+    input.style.width = "auto";
+    input.checked = !!field.default;
+    label.append(input, document.createTextNode(field.label));
+    wrap.appendChild(label);
+    if (field.help) {
+      const help = document.createElement("p");
+      help.className = "field-help";
+      help.textContent = field.help;
+      wrap.appendChild(help);
+    }
   }
 
   else if (field.type === "select") {
@@ -428,6 +448,9 @@ export function collectValue(wrap, field) {
   }
   if (field.type === "bullet-list") {
     return Array.from(wrap.querySelectorAll(".bullet-row input")).map(i => i.value);
+  }
+  if (field.type === "checkbox") {
+    return wrap.querySelector(".checkbox-field-input").checked;
   }
   if (field.type === "select") {
     return wrap.querySelector("select").value;

@@ -49,3 +49,5 @@ The Explain tab shows the block's real generated code. Hover a line and it light
 ## New field types
 
 If no existing field type fits, add one to **both** `buildField` and `collectValue` in `src/ui/fields.js`, and add its value shape to a fixture.
+
+Existing simple types: `text`, `select`, and `checkbox` (`{ type: "checkbox", id, label, help?, default? }`; the label is the checkbox's own text, the value is `true`/`false`, and a project saved before the field existed reads as `undefined`, so treat missing as off).

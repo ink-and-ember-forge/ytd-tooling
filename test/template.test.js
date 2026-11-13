@@ -51,3 +51,12 @@ test(".tight-heading beats the content-column H2 margin without !important", asy
   assert.ok(tight > BASE_CSS.indexOf(".content-column {"), "must come after .content-column so equal specificity resolves in its favour");
   assert.doesNotMatch(BASE_CSS.slice(tight, tight + 60), /!important/);
 });
+
+test("Section: the tight-heading option is off by default and only adds the class when ticked", async () => {
+  const { BLOCKS } = await import("../src/blocks/index.js");
+  const s = BLOCKS.section;
+  assert.equal(s.fields.find((f) => f.id === "tightHeading").type, "checkbox");
+  assert.ok(!s.generateHTML({ title: "A" }).includes("tight-heading"), "undefined (older saved projects) means off");
+  assert.ok(!s.generateHTML({ title: "A", tightHeading: false }).includes("tight-heading"));
+  assert.match(s.generateHTML({ title: "A", tightHeading: true }), /<h2 class="tight-heading">A<\/h2>/);
+});
