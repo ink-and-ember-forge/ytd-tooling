@@ -296,7 +296,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.waitForSelector("#view-upgrade .upgrade-review-card", { state: "visible" });
   const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
   ok("9c the page's own components are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
-  ok("9c the 21 differences are 4 decisions", /Decision 1 of 4/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
+  ok("9c the 21 differences are 5 decisions", /Decision 1 of 5/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
   ok("9c nothing is kept yet, and copying is locked", !(await code("CSS")).includes("kept:") && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
 
   // the first decision, before choosing: the template and yours side by side, the affected elements outlined
@@ -306,9 +306,10 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
     const el = await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth];
     const f = await el.contentFrame();
     await page.waitForTimeout(300);
-    weights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".accordion-text strong")).fontWeight, outlined: document.querySelectorAll(".__hl").length })));
+    weights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".accordion-text strong")).fontWeight, crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, outlined: document.querySelectorAll(".__hl").length })));
   }
   ok("9c the first decision (Text and headings) shows the page both ways, with what it affects outlined", firstTitle === "Text and headings" && weights[0].strong !== weights[1].strong && weights[0].outlined > 0 && weights[1].outlined > 0, JSON.stringify(weights));
+  ok("9c and it never numbers the breadcrumb: the list rule that does is decided with its fix, not here", weights.every((w) => w.crumb === "none"), JSON.stringify(weights.map((w) => w.crumb)));
   ok("9c and says what it changes in plain words, and what the template does", (await page.textContent("#view-upgrade .upgrade-review-headline")).includes("text weight") && (await page.textContent("#view-upgrade .upgrade-review-lines")).includes("template"));
 
   // keeping one needs a reason: Next stays disabled until one is given
@@ -334,8 +335,22 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   };
   const decisionTitles = [];
   await decideAll("template", decisionTitles);
-  ok("9c the four decisions, biggest first", decisionTitles.join(" | ") === "Text and headings | Fixes that use !important | Your phone and tablet layout | Page header, contents list and layout", decisionTitles.join(" | "));
+  ok("9c the five decisions, biggest first", decisionTitles.join(" | ") === "Text and headings | Fixes that use !important | Your phone and tablet layout | Rules that work together: list markers and spacing inside (left) | Page header, contents list and layout", decisionTitles.join(" | "));
   ok("9c using the template for all of them says so, and unlocks copying", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("Your page will follow the template") && !(await page.isDisabled('#view-upgrade button:has-text("Copy CSS")')));
+  await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=3');
+  const linkedTitle = await page.textContent("#view-upgrade .upgrade-review-title");
+  const linkedWhy = await page.textContent("#view-upgrade .upgrade-review-card");
+  const crumbs = [];
+  for (const nth of [0, 1]) {
+    const f = await (await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth]).contentFrame();
+    await page.waitForTimeout(300);
+    crumbs.push(await f.evaluate(() => ({ crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, numbered: getComputedStyle(document.querySelector("section#understand-vision ol, section#culture ol")).listStyleType })));
+  }
+  ok("9c rules that depend on each other are one decision, and it says why", linkedTitle.startsWith("Rules that work together") && linkedWhy.includes("both set list markers") && linkedWhy.includes("decided together"), linkedTitle);
+  ok("9c kept together, the breadcrumb stays un-numbered and the page's own numbered list stays numbered", crumbs[1].crumb === "none" && crumbs[1].numbered === "decimal", JSON.stringify(crumbs));
+  await page.check('#view-upgrade .upgrade-review-choice input[value="template"]');
+  await page.click('#view-upgrade button:has-text("Next decision")');
+  await page.click('#view-upgrade button:has-text("Finish the review")');
   ok("9c checks: nothing lost, and the class that was never styled is said to be exactly that", await (async () => { const c = await page.textContent("#view-upgrade .upgrade-checks"); return c.includes("Every class in your HTML has styling") && c.includes(".number-text") && c.includes("nothing was lost") && !c.includes("stretched-link"); })());
 
   await page.click("#view-upgrade .upgrade-preview summary");
@@ -366,8 +381,16 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
     JSON.stringify({ was: [was.strong, was.h4, was.h1Margin, was.h5, was.glanceHeading], now: [kept.strong, kept.h4, kept.h1Margin, kept.h5, kept.glanceHeading] }));
   ok("9c and the template's own changes are adopted either way (black sub-headings, bordered contents items)", was.h3 === "rgb(163, 25, 91)" && kept.h3 === "rgb(0, 0, 0)" && was.tocItemBorder === "0px" && kept.tocItemBorder === "1px");
   const css2 = await code("CSS");
-  ok("9c every kept decision has its reason in the CSS", ["Text and headings", "Fixes that use !important", "Your phone and tablet layout", "Page header, contents list and layout"].every((t) => new RegExp(`/\\* kept: ${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: A deliberate design choice(, [^*]*)? \\*/`).test(css2)) && css2.includes("bold is our house style"), css2.split("\n").filter((l) => l.includes("kept:")).join(" ~ "));
-  ok("9c and the summary lists what was kept", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("You're keeping 4 of your own choices"));
+  ok("9c every kept decision has its reason in the CSS", ["Text and headings", "Fixes that use !important", "Your phone and tablet layout", "Rules that work together: list markers and spacing inside (left)", "Page header, contents list and layout"].every((t) => new RegExp(`/\\* kept: ${t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}: A deliberate design choice(, [^*]*)? \\*/`).test(css2)) && css2.includes("bold is our house style"), css2.split("\n").filter((l) => l.includes("kept:")).join(" ~ "));
+  ok("9c and the summary lists what was kept", (await page.textContent("#view-upgrade .upgrade-review-summary")).includes("You're keeping 5 of your own choices"));
+
+  // the final report: what was decided and why, to keep
+  ok("9c the report appears once the review is finished, and says what was kept", await page.isVisible("#view-upgrade .upgrade-report-summary") && (await page.textContent("#view-upgrade .upgrade-report-summary")).includes("Kept as your own: 5. Following the template: 0."));
+  const reportCards = await page.$$eval("#view-upgrade .upgrade-report-kept", (l) => l.map((x) => x.textContent));
+  ok("9c every kept decision is in the report with its reason and note", reportCards.length === 5 && reportCards.every((t) => t.includes("Why: A deliberate design choice")) && reportCards.some((t) => t.includes("bold is our house style")), reportCards.length + " cards");
+  const [download] = await Promise.all([page.waitForEvent("download"), page.click('#view-upgrade button:has-text("Download report")')]);
+  const reportText = fs.readFileSync(await download.path(), "utf8");
+  ok("9c the downloaded report is a Markdown file a person can keep", download.suggestedFilename() === "migration-report.md" && reportText.startsWith("# Migration report") && reportText.includes("## Kept as your own (5)") && reportText.includes("- **Why:** A deliberate design choice. bold is our house style") && reportText.includes("strong — text weight: yours `bold`, template `not set`") && reportText.includes("## Still worth a look"), reportText.slice(0, 80));
 
   // change one decision afterwards: back to the template for the first
   await page.click('#view-upgrade .upgrade-review-summary button:has-text("Change") >> nth=0');

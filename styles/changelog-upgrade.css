@@ -108,3 +108,11 @@
 .upgrade-review-summary .upgrade-review-lines li { margin: 0.45rem 0; }
 @media (max-width: 700px) { .upgrade-review-reason { grid-template-columns: 1fr; } }
 .upgrade-frame--phone { height: 420px; }
+
+/* ---- the final report ---------------------------------------------------------------- */
+.upgrade-report-summary { margin: 0.5rem 0 1rem; padding-left: 1.2rem; }
+.upgrade-report-summary li { margin: 0.25rem 0; }
+.upgrade-report-kept { border-left: 4px solid var(--navy); }
+.upgrade-report-kept p { margin: 0.3rem 0; }
+.upgrade-report-check { margin: 0.4rem 0; padding-left: 1.2rem; }
+.upgrade-report-check li { margin: 0.35rem 0; color: #7a4a00; }

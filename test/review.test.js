@@ -5,7 +5,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { BUILDER_VERSION } from "../src/changelog/index.js";
 import { buildMigration } from "../src/changelog/migrate.js";
-import { buildReview, affectedElements, cleanSelector, ledgerLine, REASONS } from "../src/changelog/review.js";
+import { buildReview, affectedElements, cleanSelector, ledgerLine, REASONS, crossDecisionLinks } from "../src/changelog/review.js";
+import { buildReport, reportMarkdown } from "../src/changelog/report.js";
 import { splitOverrides, ledgerComment } from "../src/changelog/local-edits.js";
 import { upgradePage } from "../src/changelog/upgrade.js";
 import { loadBaseline } from "../src/lib/baseline.js";
@@ -16,7 +17,7 @@ const review = (dir, options = {}) => { const p = page(dir); const m = buildMigr
 const keysOf = (m) => m.groups.filter((g) => g.kind === "deviation").map((g) => g.key);
 
 test("review: every difference is in exactly one decision, and there are far fewer decisions than differences", () => {
-  for (const [dir, decisions, differences] of [["legacy", 5, 18], ["legacy2", 4, 21], ["legacy3", 5, 21]]) {
+  for (const [dir, decisions, differences] of [["legacy", 5, 18], ["legacy2", 5, 21], ["legacy3", 6, 21]]) {
     const { m, steps } = review(dir);
     assert.equal(keysOf(m).length, differences, `${dir}: differences`);
     assert.equal(steps.length, decisions, `${dir}: ${steps.map((s) => s.title).join(" | ")}`);
@@ -29,11 +30,11 @@ test("review: differences are grouped by what they are for, not by selector", ()
   const { steps } = review("legacy2");
   const by = (title) => steps.find((s) => s.title === title);
   const keys = (title) => by(title).keys.map((k) => k.replace("differs:", ""));
-  assert.deepEqual(keys("Text and headings").sort(), ["#page-container", ".content-column h4", "h5", "ol", "ol li::marker", "strong"].sort(),
-    "text rules, and the --heading-4 variable the h4 rule uses");
+  assert.deepEqual(keys("Text and headings").sort(), ["#page-container", ".content-column h4", "h5", "ol li::marker", "strong"].sort(),
+    "text rules, and the --heading-4 variable the h4 rule uses (ol is decided with the breadcrumb fix, below)");
   assert.ok(keys("Your phone and tablet layout").includes(".main-grid") && keys("Your phone and tablet layout").includes("#table-of-contents") && keys("Your phone and tablet layout").length === 9,
     "the page's phone layout is one decision, not nine");
-  assert.ok(keys("Fixes that use !important").includes("a") && keys("Fixes that use !important").includes("#breadcrumb-nav #breadcrumb-nav__list"));
+  assert.ok(keys("Fixes that use !important").includes("a") && !keys("Fixes that use !important").includes("#breadcrumb-nav #breadcrumb-nav__list"), "the breadcrumb fix has moved with the rule it undoes");
   assert.deepEqual(keys("Page header, contents list and layout"), ["#header-h1"]);
   assert.equal(by("Your phone and tablet layout").width, "phone", "a phone-layout decision is shown at phone width");
   assert.equal(by("Text and headings").width, "desktop");
@@ -115,4 +116,103 @@ test("review: the preview leads with the most-affected selector, and a phone lay
   assert.equal(phone.scroll, "top", "order differences show at the top of the page");
   const labels = phone.lines.filter((l) => l.where === ".back-to-top").map((l) => l.label);
   assert.deepEqual(labels.sort(), ["distance from the bottom edge", "distance from the right edge"], "two different properties are not both called 'position'");
+});
+
+// ---- decisions that depend on each other are decided together -------------------------------
+// The page's `ol { list-style-type: decimal !important }` numbers the breadcrumb list too, and a separate !important rule on the
+// breadcrumb undoes it. Decided apart, "keep the ol rule, use the template for the fix" numbers the breadcrumb: a state nobody chose.
+
+test("linking: rules that set the same property on the same element are one decision, whatever their purpose", () => {
+  const { steps } = review("legacy2");
+  const linked = steps.find((s) => s.title === "Rules that work together: list markers and spacing inside (left)");
+  assert.ok(linked, steps.map((s) => s.title).join(" | "));
+  assert.deepEqual(linked.keys.sort(), ["differs:#breadcrumb-nav #breadcrumb-nav__list", "differs:ol"]);
+  assert.match(linked.why, /ol and #breadcrumb-nav #breadcrumb-nav__list both set list markers and spacing inside \(left\) on the same element/);
+  assert.match(linked.why, /decided together/);
+  assert.equal(linked.elements, 2, "the breadcrumb list and the numbered list of the page");
+  assert.equal(linked.linked.length, 1, "one sentence per pair of rules, naming every property they share");
+});
+
+test("linking: rules that are linked but already in one decision stay there, with a note", () => {
+  const { steps } = review("legacy");
+  assert.equal(steps.some((s) => s.title.startsWith("Rules that work together")), false);
+  const buttons = steps.find((s) => s.title === "Buttons component");
+  assert.ok(buttons.keys.includes("differs:.buttons a") && buttons.keys.includes("differs:.buttons a:hover"), "the normal and hover rules are in the same decision");
+  assert.match(buttons.linked.join(" "), /\.buttons a and \.buttons a:hover both set background colour/, "a button's colour and its hover colour belong together");
+});
+
+test("linking: no two decisions touch the same property of the same element, on any real page", () => {
+  for (const dir of ["legacy", "legacy2", "legacy3"]) {
+    const { p, steps } = review(dir);
+    assert.deepEqual(crossDecisionLinks(steps, p.html), [], `${dir}: decisions are independent`);
+  }
+  // the check itself can fail: the same property on the same element in two different decisions is reported
+  const fake = [
+    { title: "A", lines: [{ where: "p", media: null, prop: "color" }] },
+    { title: "B", lines: [{ where: ".x", media: null, prop: "color" }, { where: "p", media: "@media (max-width: 600px)", prop: "color" }] },
+  ];
+  assert.deepEqual(crossDecisionLinks(fake, '<p class="x">t</p>'), [{ a: "A", b: "B", key: "|color" }], "a different media query is not a clash");
+});
+
+// ---- the final report --------------------------------------------------------------------
+
+const report = (dir, decide, options = {}) => {
+  const { p, m, steps } = review(dir, options);
+  const decisions = new Map(steps.map((s) => [s.id, decide(s)]));
+  const keys = steps.filter((s) => decisions.get(s.id).choice === "keep").flatMap((s) => s.keys);
+  const final = buildMigration(p, { reference, keepGroups: [...m.groups.filter((g) => g.kind === "custom").map((g) => g.key), ...keys] });
+  return { steps, r: buildReport(final, steps, decisions, { date: "2026-11-20" }), final };
+};
+const keep = (reason, note = "") => ({ choice: "keep", reason, note });
+const tpl = { choice: "template", reason: "", note: "" };
+
+test("report: totals, the reasons for what was kept, and what the page takes from the template", () => {
+  const { steps, r } = report("legacy2", (s) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Your phone and tablet layout" ? keep("problem", "the contents list must come first on phones") : tpl));
+  assert.deepEqual(r.totals, { differences: 21, decisions: 5, kept: 2, template: 3, components: 4, componentsKept: 4, htmlChanges: 2 });
+  assert.deepEqual(r.kept.map((k) => [k.title, k.reason, k.note]), [
+    ["Text and headings", "A deliberate design choice", "bold is our house style"],
+    ["Your phone and tablet layout", "It fixes a problem (say which)", "the contents list must come first on phones"],
+  ]);
+  assert.deepEqual(r.template.map((t) => t.title), steps.filter((s) => !["Text and headings", "Your phone and tablet layout"].includes(s.title)).map((s) => s.title));
+  assert.equal(r.theme, "Gwella");
+  assert.equal(r.date, "2026-11-20");
+});
+
+test("report: Markdown a person can keep, with the reasons, the changes and what is still worth a look", () => {
+  const { r } = report("legacy2", (s) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Fixes that use !important" ? keep("unsure") : tpl));
+  const md = reportMarkdown(r);
+  assert.match(md, /^# Migration report\n\nMigrated to template version [\d.]+ · theme Gwella · 2026-11-20/);
+  assert.match(md, /- \*\*Kept as your own: 2\.\*\* Following the template: 3\./);
+  const kept = md.slice(md.indexOf("## Kept as your own"), md.indexOf("## Following the template"));
+  assert.match(kept, /### Text and headings\n\n- \*\*Why:\*\* A deliberate design choice\. bold is our house style/);
+  assert.match(kept, /- \*\*Affects:\*\* \d+ elements on this page/);
+  assert.match(kept, /strong — text weight: yours `bold`, template `not set`/, "what it overrides, against the template");
+  assert.match(kept, /### Fixes that use !important\n\n- \*\*Why:\*\* Not sure yet/);
+  const following = md.slice(md.indexOf("## Following the template"), md.indexOf("## Your own components"));
+  assert.match(following, /### Your phone and tablet layout/);
+  assert.match(following, /On small screens: \.main-grid — gap between items: yours `1rem`, template `0`/);
+  assert.match(md, /## Your own components \(4\)\n\n- inline-icon: carried over/);
+  assert.match(md, /## Changes to your HTML\n\n- Added the Gwella theme class/);
+  assert.match(md, /## Still worth a look\n\n- Revisit "Fixes that use !important": you kept it but weren't sure why\./);
+});
+
+test("report: everything that needs a second look is listed, and a clean migration says so", () => {
+  const { r } = report("legacy3", (s) => (s.title === "Text and headings" ? keep("problem") : tpl));
+  assert.ok(r.toCheck.some((c) => /"Text and headings" was kept to fix a problem, but no note says which/.test(c)));
+  assert.ok(r.toCheck.some((c) => /problems? in the page's own HTML tags/.test(c)), "the page's own HTML faults");
+  assert.ok(r.toCheck.some((c) => /older version of the Icon-toggle block/.test(c)), "the migration's own notes");
+  const none = report("legacy2", () => tpl).r;
+  assert.ok(none.toCheck.every((c) => !/Revisit|no note says which/.test(c)));
+  assert.match(reportMarkdown({ ...none, toCheck: [] }), /## Still worth a look\n\nNothing flagged\./);
+  assert.match(reportMarkdown(none), /## Kept as your own \(0\)\n\nNothing: the page follows the template everywhere\./);
+  assert.match(reportMarkdown(report("legacy2", () => keep("design")).r), /## Following the template \(0\)\n\nThe page now takes these[\s\S]*Nothing: every difference was kept\./);
+});
+
+test("report: a component that was not carried is called out", () => {
+  const { p, steps } = review("legacy2");
+  const final = buildMigration(p, { reference, keepGroups: ["inline-icon"] });
+  const r = buildReport(final, steps, new Map(), { date: "2026-11-20" });
+  assert.equal(r.totals.componentsKept, 1);
+  assert.match(reportMarkdown(r), /- resource-card: \*\*not carried\*\*/);
+  assert.ok(r.toCheck.some((c) => /Not carried: resource-card\. Anything using it has lost its styling/.test(c)));
 });

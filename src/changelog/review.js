@@ -63,8 +63,48 @@ const whyComponent = (label) => `The current ${label} block already defines this
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const importantOnly = (g) => g.rules.every((r) => [...r.decls.values()].every((vs) => vs.every((v) => /!important\s*$/.test(v))));
 
+// Which elements of the page each property of a group is set on, per media query: "|list-style-type" -> Set(elements).
+function elementsByProperty(doc, group) {
+  const byKey = new Map();
+  for (const rule of group.rules) {
+    let found;
+    try { found = doc.querySelectorAll(cleanSelector(rule.selector)); } catch { continue; }
+    for (const prop of rule.decls.keys()) {
+      const key = `${rule.media || ""}|${prop}`, set = byKey.get(key) || new Set();
+      found.forEach((e) => set.add(e));
+      byKey.set(key, set);
+    }
+  }
+  return byKey;
+}
+
+// Rules that set the same property on the same element in the same media query depend on each other: one is often there to
+// undo what the other does (a list rule that numbers the breadcrumb, and the fix that un-numbers it). Decided separately they
+// could leave the page in a state nobody chose, so they are decided together. Returns the linked sets and the links found.
+function linkGroups(doc, groups) {
+  const parent = new Map(groups.map((g) => [g, g]));
+  const find = (g) => (parent.get(g) === g ? g : (parent.set(g, find(parent.get(g))), parent.get(g)));
+  const links = [];
+  if (doc) {
+    const sets = new Map(groups.map((g) => [g, elementsByProperty(doc, g)]));
+    for (let a = 0; a < groups.length; a++) for (let b = a + 1; b < groups.length; b++) {
+      for (const [key, mine] of sets.get(groups[a])) {
+        const other = sets.get(groups[b]).get(key);
+        const shared = other ? [...mine].filter((e) => other.has(e)).length : 0;
+        if (shared) { links.push({ a: groups[a], b: groups[b], prop: key.split("|")[1], media: key.split("|")[0] || null, shared }); parent.set(find(groups[a]), find(groups[b])); }
+      }
+    }
+  }
+  const sets = new Map();
+  for (const g of groups) sets.set(find(g), [...(sets.get(find(g)) || []), g]);
+  return { sets: [...sets.values()], links };
+}
+
+const nameOf = (group) => group.key.replace(/^differs:/, "");
+
 // migration: the result of buildMigration(). html: the page's HTML. Returns the steps, in the order they are asked.
-// A step: { id, title, why, keys[] (the migration's group keys it covers), lines[], headline, elements, selectors[], width }.
+// A step: { id, title, why, keys[] (the migration's group keys it covers), lines[], headline, elements, selectors[], width,
+//           scroll, linked } where `linked` lists why rules were decided together (empty for an ordinary decision).
 export function buildReview(migration, html) {
   const deviations = migration.groups.filter((g) => g.kind === "deviation");
   const used = BLOCK_LIST.filter((b) => migration.blocks.includes(b.id) && b.css);
@@ -85,10 +125,10 @@ export function buildReview(migration, html) {
     return { category: OTHER, why: WHY[OTHER] };
   };
 
-  const steps = new Map();
-  const put = (g, c) => {
-    const step = steps.get(c.category) || { id: slug(c.category), title: c.category, why: c.why, keys: [], lines: [], selectors: [], category: c.category, phone: true };
+  const steps = new Map(), stepOf = new Map();
+  const add = (step, g) => {
     step.keys.push(g.key);
+    stepOf.set(g, step);
     for (const r of g.rules) {
       for (const [prop, values] of r.decls) {
         step.lines.push({ where: r.selector || "#page-container", media: r.media || null, prop, label: labelOf(prop), mine: values.join(" / "), template: r.standard.get(prop) ?? null });
@@ -96,17 +136,47 @@ export function buildReview(migration, html) {
       if (r.selector) step.selectors.push(r.selector);
       if (!/max-width/.test(r.media || "")) step.phone = false;
     }
-    steps.set(c.category, step);
   };
-  for (const g of deviations) {
-    if (g === containerVars) continue;
-    put(g, categorise(g));
+  const stepFor = (id, title, why, extra = {}) => {
+    if (!steps.has(id)) steps.set(id, { id, title, why, keys: [], lines: [], selectors: [], phone: true, linked: [], ...extra });
+    return steps.get(id);
+  };
+
+  const doc = (() => { try { return new DOMParser().parseFromString(html, "text/html"); } catch { return null; } })();
+  const { sets, links } = linkGroups(doc, deviations.filter((g) => g !== containerVars));
+  for (const set of sets) {
+    if (set.length === 1) { const c = categorise(set[0]); add(stepFor(slug(c.category), c.category, c.why), set[0]); continue; }
+    const mine = links.filter((l) => set.includes(l.a));
+    // One sentence per pair of rules, naming every property they share.
+    const pairs = new Map();
+    for (const l of mine) {
+      const key = `${nameOf(l.a)}|${nameOf(l.b)}`, pair = pairs.get(key) || { a: nameOf(l.a), b: nameOf(l.b), labels: [], shared: 0 };
+      if (!pair.labels.includes(labelOf(l.prop))) pair.labels.push(labelOf(l.prop));
+      pair.shared = Math.max(pair.shared, l.shared);
+      pairs.set(key, pair);
+    }
+    const sentences = [...pairs.values()].map((x) => `${x.a} and ${x.b} both set ${x.labels.join(" and ")} on ${x.shared === 1 ? "the same element" : `${x.shared} of the same elements`}`);
+    const categories = [...new Set(set.map((g) => categorise(g).category))];
+    if (categories.length === 1) {
+      // Already decided together: no need for a decision of its own, only a note that they belong together.
+      const c = categorise(set[0]), step = stepFor(slug(c.category), c.category, c.why);
+      step.linked.push(...sentences);
+      set.forEach((g) => add(step, g));
+      continue;
+    }
+    // Rules that work together but would land in different decisions become one decision, named after what they have in common.
+    const labels = [...new Set(mine.map((l) => labelOf(l.prop)))];
+    const step = stepFor(`linked-${slug(nameOf(set[0]))}`, `Rules that work together: ${labels.join(" and ")}`,
+      `These rules depend on each other: ${sentences.join("; ")}. One is often there to undo what the other does, so keeping one without the other could leave the page in a state you didn't choose. They are decided together.`);
+    step.linked.push(...sentences);
+    set.forEach((g) => add(step, g));
   }
   // A custom property the page defines (--heading-4) belongs with whatever uses it.
   if (containerVars) {
     const mention = (name) => deviations.find((g) => g !== containerVars && g.rules.some((r) => [...r.decls.values()].some((vs) => vs.some((v) => v.includes(`var(${name}`)))));
     const home = containerVars.rules.flatMap((r) => [...r.decls.keys()]).map(mention).find(Boolean);
-    put(containerVars, home ? categorise(home) : { category: OTHER, why: WHY[OTHER] });
+    const step = home ? stepOf.get(home) : stepFor(slug(OTHER), OTHER, WHY[OTHER]);
+    add(step, containerVars);
   }
 
   return [...steps.values()].map((step) => {
@@ -116,7 +186,7 @@ export function buildReview(migration, html) {
     const selectors = [...new Set(step.selectors)].map((sel) => ({ sel, n: affectedElements(html, [sel]).count ?? 0 })).filter((x) => x.n > 0).sort((a, b) => b.n - a.n).map((x) => x.sel);
     const things = [...new Set(step.lines.map((l) => l.label))];
     const headline = `Changes ${things.slice(0, 3).join(", ")}${things.length > 3 ? ` and ${things.length - 3} more` : ""}`;
-    return { id: step.id, title: step.title, why: step.why, keys: step.keys, lines: step.lines, headline, elements: count, selectors, width: step.phone ? "phone" : "desktop", scroll: step.phone ? "top" : "first" };
+    return { id: step.id, title: step.title, why: step.why, keys: step.keys, lines: step.lines, headline, elements: count, selectors, width: step.phone ? "phone" : "desktop", scroll: step.phone ? "top" : "first", linked: step.linked };
   }).sort((a, b) => (b.elements ?? -1) - (a.elements ?? -1) || a.title.localeCompare(b.title));
 }
 
@@ -124,4 +194,31 @@ export function buildReview(migration, html) {
 export function ledgerLine(step, { reason = "unsure", note = "" } = {}) {
   const label = (REASONS.find(([id]) => id === reason) || REASONS[2])[1];
   return `${step.title}: ${label}${note.trim() ? `, ${note.trim()}` : ""}`;
+}
+
+// The guarantee the linking exists to give: no two decisions set the same property on the same element in the same media
+// query. Returns the pairs that do (empty when the decisions are independent). Used by the tests.
+export function crossDecisionLinks(steps, html) {
+  let doc;
+  try { doc = new DOMParser().parseFromString(html, "text/html"); } catch { return []; }
+  const perStep = steps.map((s) => {
+    const byKey = new Map();
+    for (const l of s.lines) {
+      if (!l.where || l.where === "#page-container") continue;
+      let found;
+      try { found = doc.querySelectorAll(cleanSelector(l.where)); } catch { continue; }
+      const key = `${l.media || ""}|${l.prop}`, set = byKey.get(key) || new Set();
+      found.forEach((e) => set.add(e));
+      byKey.set(key, set);
+    }
+    return byKey;
+  });
+  const clashes = [];
+  for (let a = 0; a < steps.length; a++) for (let b = a + 1; b < steps.length; b++) {
+    for (const [key, mine] of perStep[a]) {
+      const other = perStep[b].get(key);
+      if (other && [...mine].some((e) => other.has(e))) clashes.push({ a: steps[a].title, b: steps[b].title, key });
+    }
+  }
+  return clashes;
 }

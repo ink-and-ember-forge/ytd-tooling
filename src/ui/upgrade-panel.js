@@ -74,8 +74,9 @@ export function buildUpgradePanel() {
   const reviewEl = makeEl("section", "step"); // migration only: the guided review of where the page differs from the template
   const checkEl = makeEl("section", "step");
   const copyEl = makeEl("section", "step");
+  const reportEl = makeEl("section", "step"); // migration only: what was decided and why, once the review is finished
   [foundEl, tweaksEl, changesEl, checkEl, copyEl].forEach((el) => el.setAttribute("aria-live", "polite"));
-  results.append(foundEl, tweaksEl, reviewEl, changesEl, checkEl, copyEl);
+  results.append(foundEl, tweaksEl, reviewEl, changesEl, checkEl, copyEl, reportEl);
   panel.appendChild(results);
 
   // ---- state -------------------------------------------------------------------
@@ -97,7 +98,7 @@ export function buildUpgradePanel() {
     checkBtn.disabled = true;
     try {
       // A new page starts from nothing: no section, and no open preview, carries over from the previous check.
-      [foundEl, tweaksEl, reviewEl, changesEl, checkEl, copyEl].forEach((el) => { el.hidden = true; el.replaceChildren(); });
+      [foundEl, tweaksEl, reviewEl, changesEl, checkEl, copyEl, reportEl].forEach((el) => { el.hidden = true; el.replaceChildren(); });
       if (assessFit(code()).legacy && !forceUpgrade) {
         results.hidden = false;
         await migration.start();
@@ -117,7 +118,7 @@ export function buildUpgradePanel() {
     }
   }
   const migration = createMigrationView(
-    { found: foundEl, tweaks: tweaksEl, review: reviewEl, changes: changesEl, check: checkEl, copy: copyEl },
+    { found: foundEl, tweaks: tweaksEl, review: reviewEl, changes: changesEl, check: checkEl, copy: copyEl, report: reportEl },
     { code, onUpgradeInstead: () => { forceUpgrade = true; check(); } },
   );
   checkBtn.addEventListener("click", () => { forceUpgrade = false; check(); });

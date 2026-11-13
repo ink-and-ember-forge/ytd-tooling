@@ -3,16 +3,18 @@
 //   2 why this is a migration   3 the page's own components (kept: the template has nothing to replace them with)
 //   4 THE REVIEW: where the page differs from the template, one decision at a time (the template is the default)
 //   5 theme + HTML changes   6 check (problems, before/after)   7 copy (locked until the review is finished)
+//   8 the report: what was decided and why (once the review is finished), to download
 // All the thinking is in src/changelog/ (migrate.js, review.js); this file only shows it.
-import { makeEl } from "../lib/dom.js";
+import { makeEl, downloadText, copyToClipboard } from "../lib/dom.js";
 import { buildMigration, THEMES } from "../changelog/migrate.js";
 import { buildReview, ledgerLine, REASONS } from "../changelog/review.js";
+import { buildReport, reportMarkdown } from "../changelog/report.js";
 import { loadBaseline } from "../lib/baseline.js";
 import { outputCard, renderCheck, pageDoc, plural } from "./upgrade-parts.js";
 
 const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
 
-// els: { found, tweaks, review, changes, check, copy } (the section elements). code(): the pasted { html, css, js }.
+// els: { found, tweaks, review, changes, check, copy, report } (the section elements). code(): the pasted { html, css, js }.
 // onUpgradeInstead(): the author wants the normal upgrade flow for this page.
 export function createMigrationView(els, { code, onUpgradeInstead }) {
   const state = {
@@ -119,6 +121,9 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     card.append(progress, makeEl("h4", "upgrade-review-title", step.title));
     card.appendChild(makeEl("p", "upgrade-review-headline", `${step.headline}. ${step.elements === null ? "" : step.elements === 0 ? "No element on this page matches, so this has no effect here." : `It affects ${plural(step.elements, "element", "elements")} on this page.`}`));
     card.appendChild(makeEl("p", "upgrade-hint", step.why));
+    if (step.linked.length && !step.id.startsWith("linked-")) {
+      card.appendChild(makeEl("p", "upgrade-hint upgrade-review-linked", `Some of these rules work together, so they are decided together: ${step.linked.join("; ")}.`));
+    }
 
     const list = makeEl("ul", "upgrade-review-lines");
     step.lines.forEach((l) => {
@@ -307,6 +312,59 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     els.copy.appendChild(outputCard("CSS", `The current CSS for ${blocksText}, plus ${plural(keptOwn, "style group", "style groups")} of yours.`, r.css, { blocked }));
     els.copy.appendChild(outputCard("JS", "The current JS. It replaces your old JS, which only did what the current JS does.", r.js));
     r.notes.forEach((n) => els.copy.appendChild(makeEl("p", "upgrade-warning", n)));
+    renderReport();
+  }
+
+  // ---- 8. the report ------------------------------------------------------------------------
+  function renderReport() {
+    const r = state.result;
+    els.report.hidden = !reviewDone();
+    if (els.report.hidden) { els.report.replaceChildren(); return; }
+    const rep = buildReport(r, state.steps, state.decisions, { date: new Date().toISOString().slice(0, 10) });
+    const t = rep.totals;
+    els.report.replaceChildren(makeEl("h3", "step-title", "8. Your migration report"));
+    els.report.appendChild(makeEl("p", "upgrade-hint", "What was decided about every place your page differed from the template, and why. Keep it with the page, or give it to whoever looks after the template."));
+    const summary = makeEl("ul", "upgrade-report-summary");
+    [`${plural(t.differences, "difference", "differences")} from the template, in ${plural(t.decisions, "decision", "decisions")}.`,
+      `Kept as your own: ${t.kept}. Following the template: ${t.template}.`,
+      `Your own components carried over: ${t.componentsKept} of ${t.components}.`,
+      `${plural(t.htmlChanges, "change", "changes")} to your HTML.`].forEach((x) => summary.appendChild(makeEl("li", "", x)));
+    els.report.appendChild(summary);
+
+    els.report.appendChild(makeEl("h4", "upgrade-group", `Kept as your own (${t.kept})`));
+    if (!rep.kept.length) els.report.appendChild(makeEl("p", "upgrade-hint", "Nothing: the page follows the template everywhere."));
+    rep.kept.forEach((k) => {
+      const card = makeEl("div", "upgrade-output upgrade-report-kept");
+      card.appendChild(makeEl("strong", "", k.title));
+      card.appendChild(makeEl("p", "", `Why: ${k.reason}${k.note ? `. ${k.note}` : ""}`));
+      if (k.elements !== null) card.appendChild(makeEl("p", "upgrade-hint", `Affects ${plural(k.elements, "element", "elements")} on this page.`));
+      const details = document.createElement("details");
+      details.appendChild(makeEl("summary", "", "What it overrides"));
+      details.appendChild(codeBlock(k.lines.map((l) => `${l.media ? "On small screens: " : ""}${l.where} — ${l.label}: yours ${l.mine}, template ${l.template ?? "not set"}`).join("\n")));
+      card.appendChild(details);
+      els.report.appendChild(card);
+    });
+
+    const following = document.createElement("details");
+    following.appendChild(makeEl("summary", "", `Following the template (${t.template})`));
+    following.appendChild(makeEl("p", "upgrade-hint", "The page now takes these from the template, so it matches every other page."));
+    following.appendChild(codeBlock(rep.template.map((s) => s.title).join("\n") || "Nothing: every difference was kept."));
+    els.report.appendChild(following);
+
+    els.report.appendChild(makeEl("h4", "upgrade-group", "Still worth a look"));
+    if (!rep.toCheck.length) els.report.appendChild(makeEl("p", "upgrade-hint", "Nothing flagged."));
+    else { const list = makeEl("ul", "upgrade-report-check"); rep.toCheck.forEach((c) => list.appendChild(makeEl("li", "", c))); els.report.appendChild(list); }
+
+    const markdown = reportMarkdown(rep);
+    const actions = makeEl("div", "upgrade-review-nav");
+    const download = makeEl("button", "primary-btn", "Download report");
+    download.type = "button";
+    download.addEventListener("click", () => downloadText("migration-report.md", markdown));
+    const copy = makeEl("button", "copy-btn copy-btn--inline", "Copy report");
+    copy.type = "button";
+    copy.addEventListener("click", () => copyToClipboard(markdown, copy));
+    actions.append(download, copy);
+    els.report.appendChild(actions);
   }
 
   return {
