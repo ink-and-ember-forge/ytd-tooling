@@ -305,17 +305,42 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("9c the 21 differences are 5 groups", /Group 1 of 5/.test(await page.textContent("#view-upgrade .upgrade-review-progress")));
   ok("9c nothing is kept yet, and copying is locked", !(await code("CSS")).includes("kept:") && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
 
-  // the first decision, before choosing: the template and yours side by side, the affected elements outlined
+  // the first group, before choosing: each rule has a close-up of one element, the template above and yours below
   const firstTitle = await page.textContent("#view-upgrade .upgrade-review-title");
+  const closeupOf = (label) => `#view-upgrade .upgrade-review-row:has(.upgrade-review-row-label:text-is("${label}")) .upgrade-closeup`;
+  const framesOf = async (label) => { await page.evaluate((l) => { const row = [...document.querySelectorAll("#view-upgrade .upgrade-review-row")].find((r) => r.querySelector(".upgrade-review-row-label").textContent === l); row.scrollIntoView({ block: "center" }); }, label); await page.waitForFunction((l) => { const row = [...document.querySelectorAll("#view-upgrade .upgrade-review-row")].find((r) => r.querySelector(".upgrade-review-row-label").textContent === l); const c = row && row.querySelector(".upgrade-closeup"); return c && c.querySelectorAll("iframe").length === 2 && !/Loading/.test(c.querySelector(".upgrade-closeup-summary").textContent); }, label); await page.waitForTimeout(400); return page.$$(`${closeupOf(label)} iframe`); };
   const weights = [];
-  for (const nth of [0, 1]) {
-    const el = await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth];
+  for (const el of await framesOf("strong")) {
     const f = await el.contentFrame();
-    await page.waitForTimeout(300);
-    weights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".accordion-text strong")).fontWeight, crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, outlined: document.querySelectorAll(".__hl").length })));
+    weights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".__cur")).fontWeight, crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, outlined: document.querySelectorAll(".__hl").length, shown: document.querySelectorAll(".__cur").length })));
   }
-  ok("9c the first decision (Text and headings) shows the page both ways, with what it affects outlined", firstTitle === "Text and headings" && weights[0].strong !== weights[1].strong && weights[0].outlined > 0 && weights[1].outlined > 0, JSON.stringify(weights));
+  ok("9c the first group (Text and headings) gives each rule a close-up: the template and yours, with what it touches outlined", firstTitle === "Text and headings" && weights[0].strong !== weights[1].strong && weights[0].outlined > 1 && weights[1].shown === 1, JSON.stringify(weights));
   ok("9c and it never numbers the breadcrumb: the list rule that does is decided with its fix, not here", weights.every((w) => w.crumb === "none"), JSON.stringify(weights.map((w) => w.crumb)));
+  const size = await (await framesOf("strong"))[0].evaluate((f) => f.getBoundingClientRect().height);
+  ok("9c the close-up is cropped to the element at a readable size, not a tiny window onto a long page", size >= 90 && size <= 380, `${size}px high`);
+  const box = await (await framesOf("strong"))[0].evaluate((f) => f.getBoundingClientRect().width);
+  ok("9c and is as wide as the card, not half of it", box > 600, `${box}px wide`);
+  const strongSummary = await page.textContent(`${closeupOf("strong")} .upgrade-closeup-summary`);
+  const strongLook = await page.textContent(`${closeupOf("strong")} .upgrade-closeup-look`);
+  ok("9c it measures the real page: how many elements actually look different", /^\d+ of the 10 elements look different/.test(strongSummary), strongSummary);
+  ok("9c and says what to look at, and what the template and yours give", /^Looking at the <strong>/.test(strongLook) && /text weight: the template gives \d+, yours gives \d+/.test(strongLook), strongLook);
+  ok("9c a rule that changes nothing you can see says so", /^No visible difference on this page/.test(await page.textContent(`${closeupOf("ol li::marker")} .upgrade-closeup-summary`)));
+  ok("9c and a guide at the top of the group explains what is being compared", (await page.textContent("#view-upgrade .upgrade-guide")).includes("template's version is first, then yours"));
+  // stepping through the elements that differ: the frame follows, the builder's own page does not move
+  const yBefore = await page.evaluate(() => Math.round(scrollY));
+  const lookBefore = strongLook;
+  await page.click(`${closeupOf("strong")} .upgrade-closeup-nav button:has-text("Next")`);
+  await page.waitForTimeout(700);
+  const lookAfter = await page.textContent(`${closeupOf("strong")} .upgrade-closeup-look`);
+  ok("9c Next shows the next element that differs, in both versions, without moving the page", lookAfter !== lookBefore && (await page.evaluate(() => Math.round(scrollY))) === yBefore, `${lookBefore} -> ${lookAfter}`);
+  const shownText = await Promise.all((await framesOf("strong")).map(async (el) => (await el.contentFrame()).evaluate(() => document.querySelector(".__cur").textContent.trim().slice(0, 20))));
+  ok("9c both versions show the same element", shownText[0] === shownText[1] && lookAfter.includes(shownText[0].slice(0, 10)), shownText.join(" | "));
+  await page.click(`${closeupOf("strong")} .upgrade-closeup-nav button:has-text("Previous")`);
+  // the whole page is still there if wanted
+  await page.click("#view-upgrade .upgrade-whole summary");
+  await page.waitForSelector("#view-upgrade .upgrade-whole .upgrade-compare .upgrade-frame");
+  ok("9c the whole page, template and yours, is still available on request", (await page.$$("#view-upgrade .upgrade-whole .upgrade-frame")).length === 2);
+  await page.click("#view-upgrade .upgrade-whole summary");
   ok("9c and says what it changes in plain words, and what the template does", (await page.textContent("#view-upgrade .upgrade-review-rows")).includes("text weight") && (await page.textContent("#view-upgrade .upgrade-review-rows")).includes("template"));
 
   // keeping one needs a reason, and is decided PER RULE: Next stays disabled until each kept rule has one
@@ -329,14 +354,6 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const css1 = await code("CSS");
   ok("9c once it has a reason it can go on, and the reason is written into the CSS against that rule", !(await page.isDisabled(NEXT)) && css1.includes("/* kept: Text and headings \u203a strong: A deliberate design choice, bold is our house style */"));
   ok("9c the rule next to it still follows the template", await page.isChecked(`${R("h5")} input[value="template"]`) && !css1.includes("Text and headings \u203a h5"));
-  await page.click(`${R("strong")} button:has-text("Show just this one")`);
-  const justWeights = [];
-  for (const nth of [0, 1]) {
-    await page.waitForTimeout(400);
-    const f = await (await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth]).contentFrame();
-    justWeights.push(await f.evaluate(() => ({ strong: getComputedStyle(document.querySelector(".accordion-text strong")).fontWeight, h5: getComputedStyle(document.querySelector("h5")).fontWeight, outlined: document.querySelectorAll(".__hl").length })));
-  }
-  ok("9c 'show just this one' previews that rule alone, outlining only what it touches", justWeights[0].strong !== justWeights[1].strong && justWeights[0].h5 === justWeights[1].h5 && justWeights[1].outlined > 0, JSON.stringify(justWeights));
   await page.check(`${R("strong")} input[value="template"]`);
   ok("9c going back to the template takes it out again", !(await code("CSS")).includes("kept:") && !(await page.isVisible(`${R("strong")} .upgrade-reason`)) && !(await page.isDisabled(NEXT)));
   // the group shortcuts: keep all, one reason for all, template for all
@@ -384,9 +401,10 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const linkedWhy = await page.textContent("#view-upgrade .upgrade-review-card");
   ok("9c the linked rules are a single row, so they cannot be split", (await page.$$("#view-upgrade .upgrade-review-row")).length === 1);
   const crumbs = [];
-  for (const nth of [0, 1]) {
-    const f = await (await (await page.$$("#view-upgrade .upgrade-compare .upgrade-frame"))[nth]).contentFrame();
-    await page.waitForTimeout(300);
+  await page.waitForFunction(() => document.querySelectorAll("#view-upgrade .upgrade-closeup iframe").length === 2);
+  await page.waitForTimeout(800);
+  for (const el of await page.$$("#view-upgrade .upgrade-closeup iframe")) {
+    const f = await el.contentFrame();
     crumbs.push(await f.evaluate(() => ({ crumb: getComputedStyle(document.querySelector("#breadcrumb-nav__list")).listStyleType, numbered: getComputedStyle(document.querySelector("section#understand-vision ol, section#culture ol")).listStyleType })));
   }
   ok("9c rules that depend on each other are one row with one choice, and it says why", linkedTitle.startsWith("Rules that work together") && linkedWhy.includes("both set list markers") && linkedWhy.includes("decided together"), linkedTitle);

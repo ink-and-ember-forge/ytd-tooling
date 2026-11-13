@@ -104,7 +104,19 @@
 .upgrade-review-row { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 1rem; margin: 0 0 0.8rem; }
 .upgrade-review-row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.4rem; }
 .upgrade-review-row-label { color: var(--navy); word-break: break-word; }
-.upgrade-review-row-head .upgrade-link { margin-left: auto; }
+.upgrade-guide { margin: 0.6rem 0; padding: 0.6rem 0.8rem; background: #fdf6ec; border-left: 4px solid #e07b00; border-radius: 4px; font-size: 0.9rem; }
+.upgrade-whole { margin: 0.6rem 0; }
+.upgrade-closeup { margin: 0.6rem 0; padding: 0.6rem 0.8rem; background: #fafafa; border: 1px solid var(--line); border-radius: 8px; }
+.upgrade-closeup-summary { margin: 0 0 0.3rem; font-weight: 600; }
+.upgrade-closeup-summary--same { color: var(--dark-grey); }
+.upgrade-closeup-look { margin: 0 0 0.5rem; font-size: 0.9rem; }
+.upgrade-closeup-look:empty { display: none; }
+.upgrade-closeup-frames { display: grid; gap: 0.6rem; }
+.upgrade-closeup--phone .upgrade-closeup-frames { grid-template-columns: repeat(auto-fit, minmax(390px, max-content)); }
+.upgrade-closeup-cell { min-width: 0; }
+.upgrade-frame--closeup { height: 140px; min-height: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; margin: 0; }
+.upgrade-closeup-nav { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.5rem; }
+.upgrade-closeup-nav[hidden] { display: none; }
 .upgrade-review-hint { margin: 0.3rem 0; }
 .upgrade-review-row .upgrade-review-choice { border: 0; padding: 0; margin: 0.4rem 0 0; }
 .upgrade-review-row .upgrade-review-option { display: inline-block; margin: 0.2rem 1.2rem 0.2rem 0; }
