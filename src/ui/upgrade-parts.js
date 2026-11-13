@@ -1,6 +1,7 @@
 // Pieces shared by the Upgrade and Migrate flows: the copy cards, the problems list, and the
 // before/after view of the page. Pure display; the logic is in src/changelog/.
 import { makeEl, copyToClipboard } from "../lib/dom.js";
+import { BOOTSTRAP_CSS, BOOTSTRAP_JS, FONT_AWESOME_CSS } from "../lib/cdn.js";
 
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
@@ -118,7 +119,11 @@ export const pageDoc = ({ html, css, js }, { highlight = [], scroll = "first", p
   const mark = probe ? probeMarkup(probe) : highlight.length
     ? `<style>.__hl{outline:3px dashed #e07b00!important;outline-offset:2px}</style><script>(function(){var first;${JSON.stringify(highlight).replace(/</g, "\\u003c")}.forEach(function(s){try{document.querySelectorAll(s).forEach(function(e){e.classList.add("__hl");first=first||e})}catch(x){}});${scroll === "first" ? "if(first)setTimeout(function(){window.scrollTo(0,Math.max(0,first.getBoundingClientRect().top+window.pageYOffset-window.innerHeight\/2))},50);" : ""}})()<\/script>`
     : "";
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0">${wrap(css, "style")}${html}${wrap(js, "script")}${mark}</body></html>`;
+  // The real site has Bootstrap and Font Awesome on every page, and the template's CSS is written on top of them (an accordion panel
+  // starts closed because of Bootstrap's .collapse), so the frame loads them too. They are in the head, so the page waits for the
+  // stylesheets before its own scripts run: the probe measures the real styles. If the network is blocked the frame still works,
+  // without them.
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><link href="${BOOTSTRAP_CSS}" rel="stylesheet"><link href="${FONT_AWESOME_CSS}" rel="stylesheet"></head><body style="margin:0">${wrap(css, "style")}${html}<script src="${BOOTSTRAP_JS}"><\/script>${wrap(js, "script")}${mark}</body></html>`;
 };
 
 // "Check before you copy": the problems found, then the page before and after in one frame you can flip between.

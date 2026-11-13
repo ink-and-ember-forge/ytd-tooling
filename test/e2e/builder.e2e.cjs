@@ -29,6 +29,8 @@ const stubCdn = (ctx) => ctx.route(/cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|ex
   if (u.includes("example.org")) return route.fulfill({ body: PIXEL, contentType: "image/png" });
   if (u.includes("quill.js")) return route.fulfill({ path: path.join(QUILL, "quill.js"), contentType: "text/javascript" });
   if (u.includes("quill.snow.css")) return route.fulfill({ path: path.join(QUILL, "quill.snow.css"), contentType: "text/css" });
+  // Bootstrap's own rule for a closed accordion panel, so a test can tell whether a frame really loaded it.
+  if (u.includes("bootstrap.min.css")) return route.fulfill({ body: ".collapse:not(.show){display:none}", contentType: "text/css" });
   return route.fulfill({ body: "", contentType: u.endsWith(".css") ? "text/css" : "text/javascript" });
 });
 
@@ -527,11 +529,12 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
     frame.id = "__reveal";
     frame.setAttribute("sandbox", "allow-scripts");
     frame.style.cssText = "width:400px;height:240px";
-    frame.srcdoc = pageDoc({ html, css: ".collapse:not(.show){display:none}", js: "" }, { probe: { selectors: ["#a", "#b", "#c"], pad: 40, lines: [] } });
+    frame.srcdoc = pageDoc({ html, css: "", js: "" }, { probe: { selectors: ["#a", "#b", "#c"], pad: 40, lines: [] } }); // no CSS of its own: the panel is closed only if the frame loaded Bootstrap
     document.body.appendChild(frame);
   });
   await page.waitForTimeout(800);
   const rf = await (await page.$("#__reveal")).contentFrame();
+  ok("9e the frame loads Bootstrap, as the real site does: an accordion panel starts closed", await rf.evaluate(() => getComputedStyle(document.getElementById("p1")).display === "none"));
   const goTo = async (i) => { await page.evaluate((n) => document.getElementById("__reveal").contentWindow.postMessage({ __closeup: "go", i: n }, "*"), i); await page.waitForTimeout(500); return rf.evaluate(() => { const cur = document.querySelector(".__cur"); return { id: cur.id, shown: cur.getClientRects().length > 0, panelOpen: document.getElementById("p1").classList.contains("show"), buttonCollapsed: document.querySelector(".accordion-button").classList.contains("collapsed"), detailsOpen: document.querySelector("details").open }; }); };
   const inPanel = await goTo(0), inDetails = await goTo(1), plain = await goTo(2), backAgain = await goTo(0);
   ok("9e an element inside a collapsed accordion panel is shown: the panel opens, and so does its button", inPanel.shown && inPanel.panelOpen && !inPanel.buttonCollapsed, JSON.stringify(inPanel));

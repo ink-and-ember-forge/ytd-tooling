@@ -1,4 +1,5 @@
 // Builds the HTML document shown in a block's live-preview iframe.
+import { BOOTSTRAP_CSS, BOOTSTRAP_JS, FONT_AWESOME_CSS } from "./cdn.js";
 
 export function buildPreviewDoc(block, html, css, js, theme, baseCss) {
   const baseRules = baseCss.replace(/<\/?style>/g, "");
@@ -6,8 +7,8 @@ export function buildPreviewDoc(block, html, css, js, theme, baseCss) {
 <html>
 <head>
 <meta charset="UTF-8">
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+<link href="${BOOTSTRAP_CSS}" rel="stylesheet">
+<link rel="stylesheet" href="${FONT_AWESOME_CSS}" />
 <style>
   :root { --thinqi-navbar-height: 0px; --anchor-section-offset: 0px; }
   body { margin: 0; padding: 0.5rem; background: #fff; }
@@ -23,7 +24,7 @@ export function buildPreviewDoc(block, html, css, js, theme, baseCss) {
 <div id="page-container" class="${theme}">
 ${html}
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"><\/script>
+<script src="${BOOTSTRAP_JS}"><\/script>
 ${js ? `<script>\n${js}\n<\/script>` : ""}
 </body>
 </html>`;
