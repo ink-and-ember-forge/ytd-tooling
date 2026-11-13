@@ -215,7 +215,7 @@ test("suggests the stored version a page's CSS is closest to", async () => {
 });
 
 test("versions that differ in no CSS tie, newest first, so the guess is honest about being ambiguous", async () => {
-  // Releases that do not change the base CSS (3.2.0, 3.3.0, 3.4.0...) cannot be told apart by a page that uses none of the blocks they changed.
+  // Releases that do not change the base CSS (3.2.0, 3.3.0, 3.3.1...) cannot be told apart by a page that uses none of the blocks they changed.
   const ranked = await suggestVersions(await pristineOn("3.3.0", []));
   const tied = ranked.filter((r) => r.differences === 0).map((r) => r.version);
   assert.ok(tied.includes("3.3.0") && tied.includes("3.2.0"), tied.join());

@@ -26,7 +26,7 @@
 
       /* The block removes Bootstrap's focus shadow, so keyboard focus needs its own ring. */
       &:focus-visible {
-        outline: 3px solid var(--focus-ring-colour);
+        outline: 3px solid #000;
         outline-offset: 4px;
         position: relative;
         z-index: 2;

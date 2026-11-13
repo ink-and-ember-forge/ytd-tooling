@@ -152,7 +152,7 @@ const GLOBAL_KEY = /^(:root|html|body|\*)/;
 // Greys the template defines once; written as a token in one place and a literal in another they are the same value.
 const KNOWN_TOKENS = {
   "--dark-grey": "#545454", "--light-grey": "#f1f1f1", "--mid-grey": "#d3d3d3",
-  // The neutral colours the template names by usage (3.5.0). The same in every theme.
+  // The neutral colours the template names by usage (3.4.0). The same in every theme.
   "--page-background": "#fff", "--text-on-primary": "#fff", "--floating-button-background": "rgba(255, 255, 255, 0.8)", "--subheading-colour": "#000",
   "--card-text-colour": "#000", "--focus-ring-colour": "#000", "--panel-background": "#e8e8e8", "--shadow-colour": "#000",
 };

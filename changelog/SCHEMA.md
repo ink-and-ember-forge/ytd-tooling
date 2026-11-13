@@ -69,7 +69,7 @@ Pages that use the feature but are already current are listed as "already curren
 ## Versioning
 
 - Version 3 is this design. Versions 1 and 2 are earlier page builds.
-- Patch (3.0.x): fixes and changes a page can absorb with a copy or hand edit.
+- Patch (3.0.x): fixes and changes a page can absorb with a copy or hand edit. A change whose `type` is `fix` (a missing `cursor: pointer`, a colour that was dropped) is a patch.
 - Minor (3.x.0): additive changes, and visual or behaviour changes that can be copied in.
 - Major (4.0.0): only when a change sets `page_rebuild: true`, meaning an affected page must be rebuilt from scratch.
 
