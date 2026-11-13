@@ -83,6 +83,7 @@ Only blocks with an `explain.json` have the tab (currently Accordion and Text ar
 ### The upgrade engine (`src/changelog/`, no UI yet)
 
 - `upgrade.js`: `detectBlocks(html)` finds which blocks a pasted page uses (from each block's `detect`); `buildUpgrade({ html, css, js })` returns the complete upgraded CSS and JS for exactly those blocks, the HTML with only its version marker changed, notes for anything it could not do, and the checker's report.
+- `css-tree.js` + `local-edits.js`: find the changes an author made by hand to a page's CSS. The page's CSS and the pristine CSS of its version (rebuilt from `baseline/`, for the blocks the page has) are both parsed into rule trees and compared by meaning (rule path, property, value), so whitespace, comments and formatting never count. Changed and added properties and the author's own rules are **kept**, in a labelled `PAGE-SPECIFIC OVERRIDES` region at the end of the stylesheet, which is recognised and carried forward on every later upgrade. Removed properties or rules can't be expressed as overrides, so they are reported, not kept. Each edit also says whether the *new* standard changed the same thing (`standardChanged`) or no longer has the rule (`obsolete`). `upgradePage()` loads the baseline for the page's version and calls `buildUpgrade`.
 - `verify.js` + `lib/baseline.js`: check every changelog rule against the frozen code in `baseline/` (see [RELEASING.md](RELEASING.md)).
 
 ## Files and loading

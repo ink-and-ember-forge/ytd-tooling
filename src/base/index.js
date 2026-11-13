@@ -43,7 +43,7 @@ export function removeCssRule(css, selectorStart) {
 }
 
 // The ToC variant is derived from the one source: one column, no ToC rule.
-function forToc(css, includeToc) {
+export function forToc(css, includeToc) {
   if (includeToc) return css;
   // Match the property, not its current value, so changing the column ratio
   // can't silently break this variant. The first match is .main-grid's own
