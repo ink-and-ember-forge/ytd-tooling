@@ -1,6 +1,72 @@
 {
   "releases": [
     {
+      "version": "3.4.0",
+      "date": "2026-11-13",
+      "summary": "The greys are named for what they are used for (--divider-colour, --secondary-text-colour, --hover-background, --tile-border-colour). --dark-grey, --light-grey and --mid-grey still work, as aliases, until 3.6.0. No visual change.",
+      "changes": [
+        {
+          "id": "CHG-3.4.0-01",
+          "type": "additive",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "New tokens --divider-colour, --secondary-text-colour, --hover-background and --tile-border-colour, which the base CSS now uses for the breadcrumb divider, the breadcrumb's current page, the timestamp and the contents hover. --dark-grey, --light-grey and --mid-grey are kept as aliases of them. The colours are unchanged.",
+          "detect": {
+            "patterns": [
+              "--heading-3"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "--secondary-text-colour:"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        },
+        {
+          "id": "CHG-3.4.0-02",
+          "type": "behaviour",
+          "scope": "block:icon-toggle",
+          "blocks": [
+            "icon-toggle"
+          ],
+          "summary": "The Icon toggle tile border uses var(--tile-border-colour).",
+          "detect": {
+            "patterns": [
+              "data-icon-card"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "var\\(--tile-border-colour\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the CSS of every block on the page together: the blocks now read the new tokens, so mixing versions would leave those colours undefined."
+        }
+      ],
+      "deprecations": [
+        {
+          "name": "--dark-grey",
+          "replacement": "--secondary-text-colour",
+          "removed_in": "3.6.0"
+        },
+        {
+          "name": "--light-grey",
+          "replacement": "--hover-background",
+          "removed_in": "3.6.0"
+        },
+        {
+          "name": "--mid-grey",
+          "replacement": "--tile-border-colour",
+          "removed_in": "3.6.0"
+        }
+      ]
+    },
+    {
       "version": "3.3.2",
       "date": "2026-11-13",
       "summary": "Neutral colours are tokens named for what they are used for (--page-background, --text-on-primary, --subheading-colour, --card-text-colour, --focus-ring-colour, --panel-background, --shadow-colour, --floating-button-background), instead of hard-coded values. No visual change, except that nav-card headings are black instead of #1a1a1a.",

@@ -1,0 +1,50 @@
+  .flex-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  .text-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .video-content {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+
+    @media (max-width: 768px) {
+      justify-content: center;
+      order: -1;
+    }
+
+    img {
+      width: 100%;
+      max-width: 320px;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+
+      @media (max-width: 768px) {
+        aspect-ratio: 3 / 2;
+        object-fit: cover;
+        object-position: top;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+    }
+
+    iframe {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      height: auto;
+      border-radius: 16px;
+      border: none;
+    }
+  }
