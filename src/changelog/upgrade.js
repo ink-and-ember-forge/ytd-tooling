@@ -15,11 +15,23 @@ const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // An attribute whose value (a space-separated list for class) contains `token` as a whole word.
 const attrHas = (name, token) => new RegExp(`\\s${name}="(?:[^"]*\\s)?${escapeRegExp(token)}(?:\\s[^"]*)?"`);
 
-// The blocks (in registry order) whose declared `detect` signature appears in the page's HTML.
-export function detectBlocks(html, blocks = BLOCK_LIST) {
+// The functions a block's JS defines. A page that defines them is using the block, whatever its markup looks like.
+const functionsOf = (js) => [...(js || "").matchAll(/function\s+([A-Za-z_$][\w$]*)/g)].map((m) => m[1]);
+
+// Does the page carry the block's CURRENT markup (its classes or ids)? A block can also be recognised from the handlers or
+// JS of an older version of it, which is not the same thing.
+export const hasCurrentMarkup = (html, block) => !!block.detect && (
+  (block.detect.classes || []).some((c) => attrHas("class", c).test(html)) ||
+  (block.detect.ids || []).some((i) => attrHas("id", i).test(html)));
+
+// The blocks (in registry order) whose declared `detect` signature appears in the page's HTML (a class or id, or a
+// `patterns` regex such as the onclick handler an older version of the block used), or whose JS the page already defines.
+export function detectBlocks(html, blocks = BLOCK_LIST, js = "") {
   return blocks.filter((b) => b.detect && (
     (b.detect.classes || []).some((c) => attrHas("class", c).test(html)) ||
-    (b.detect.ids || []).some((i) => attrHas("id", i).test(html))
+    (b.detect.ids || []).some((i) => attrHas("id", i).test(html)) ||
+    (b.detect.patterns || []).some((p) => new RegExp(p).test(html)) ||
+    functionsOf(b.js).some((name) => new RegExp(`function\\s+${name}\\s*\\(`).test(js))
   ));
 }
 
@@ -49,7 +61,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   const report = checkPage([html, css, js].join("\n"), version, changelog);
   if (report.error) return { error: report.error };
 
-  const used = blockIds ? blocks.filter((b) => blockIds.includes(b.id)) : detectBlocks(html, blocks);
+  const used = blockIds ? blocks.filter((b) => blockIds.includes(b.id)) : detectBlocks(html, blocks, js);
   const toc = includeToc ?? /\sid="table-of-contents"/.test(html);
   const notes = [];
 
@@ -75,9 +87,11 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   const usedIds = used.map((b) => b.id);
   let kept = [];
   let carried = parseCss(splitOverrides(css).overrides);
+  let ledger = splitOverrides(css).ledger;
   if (baseline && css.trim()) {
     const found = findLocalEdits(css, baseline, { includeToc: toc, currentBase: BASE_CSS_SOURCE });
     carried = found.carried;
+    ledger = found.ledger;
     edits = found.edits.map((e) => {
       const why = !e.keepable ? "A removed property or rule can't be kept; the new standard applies."
         : e.blockId && !usedIds.includes(e.blockId) ? `The ${e.blockId} block is not used on this page.`
@@ -98,7 +112,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   } else if (css.trim() && baseline === null) { // looked up, and there is none
     notes.push(`There is no stored code for version ${report.pageVersion}, so edits made by hand to the CSS can't be detected. Any existing PAGE-SPECIFIC OVERRIDES region is kept.`);
   }
-  const region = overridesRegion(kept, carried);
+  const region = overridesRegion(kept, carried, ledger);
   if (region) outCss = outCss.replace(/\n<\/style>$/, `\n\n${region}\n</style>`);
   const removed = (edits || []).filter((e) => !e.keepable);
   if (removed.length) notes.push(`${removed.length} thing(s) removed from the standard CSS were not kept: ${removed.map((e) => e.summary).join("; ")}.`);

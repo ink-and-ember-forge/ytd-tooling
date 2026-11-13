@@ -60,3 +60,59 @@
 .upgrade-check { font-weight: 700; margin: 1rem 0; }
 .upgrade-check--ok { color: #2e6b3a; }
 .upgrade-check--warn { color: #9b1c1c; }
+
+/* ---- migration, and the check before you copy ------------------------------ */
+.upgrade-signals { margin: 0.5rem 0 0.8rem; padding-left: 1.2rem; color: var(--dark-grey); }
+.upgrade-signals li { margin: 0.2rem 0; }
+.upgrade-tweak .upgrade-diff { max-height: 14rem; overflow: auto; white-space: pre-wrap; margin: 0.4rem 0 0.4rem 1.6rem; }
+.upgrade-tweak .upgrade-hint, .upgrade-tweak .upgrade-flag { margin-left: 1.6rem; }
+.upgrade-step details, section.step > details { margin: 0.6rem 0; }
+.upgrade-theme { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 1rem; margin: 0.6rem 0; }
+.upgrade-theme legend { font-weight: 700; color: var(--navy); padding: 0 0.4rem; }
+.upgrade-theme-option { display: flex; align-items: center; gap: 0.4rem; margin: 0.3rem 0; cursor: pointer; }
+.upgrade-theme-option input { width: auto; accent-color: var(--green); }
+.upgrade-html-changes .upgrade-diff { white-space: pre-wrap; word-break: break-all; margin: 0.2rem 0 0.5rem; }
+.upgrade-checks { list-style: none; margin: 0.5rem 0; padding: 0; }
+.upgrade-check-line { margin: 0.5rem 0; font-weight: 600; }
+.upgrade-check-line--ok { color: #2e6b3a; }
+.upgrade-check-line--warn { color: #7a4a00; }
+.upgrade-check-line .upgrade-hint { font-weight: 400; }
+.upgrade-seg { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0; }
+.upgrade-seg-btn { border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 999px; padding: 0.3rem 0.9rem; font: inherit; font-weight: 600; cursor: pointer; }
+.upgrade-seg-btn[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.upgrade-stage { overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.upgrade-frame { display: block; height: 70vh; min-height: 420px; border: 0; margin: 0 auto; }
+
+/* ---- the guided review (one decision at a time) ---------------------------------- */
+.upgrade-review-card { border: 2px solid var(--navy); border-radius: 10px; padding: 1rem 1.25rem; margin: 0.8rem 0; background: #fff; }
+.upgrade-review-progress { margin: 0; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dark-grey); }
+.upgrade-review-title { margin: 0.2rem 0 0.4rem; font-size: 1.15rem; color: var(--navy); }
+.upgrade-review-headline { margin: 0.2rem 0; font-weight: 600; }
+.upgrade-review-lines { margin: 0.6rem 0; padding-left: 1.2rem; }
+.upgrade-review-lines li { margin: 0.3rem 0; font-size: 0.9rem; }
+.upgrade-review-lines code { background: #f5f5f5; padding: 0.05rem 0.35rem; border-radius: 4px; font-size: 0.82rem; }
+.upgrade-compare { display: grid; grid-template-columns: 1fr; gap: 0.8rem; margin: 0.8rem 0; }
+.upgrade-compare--phone { grid-template-columns: repeat(auto-fit, minmax(390px, max-content)); justify-content: start; }
+.upgrade-compare-cell { min-width: 0; overflow: auto; }
+.upgrade-compare-label { display: block; margin-bottom: 0.25rem; color: var(--navy); }
+.upgrade-frame--small { height: 280px; min-height: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.upgrade-review-choice { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 1rem; margin: 0.8rem 0; }
+.upgrade-review-choice legend { font-weight: 700; color: var(--navy); padding: 0 0.4rem; }
+.upgrade-review-option { display: block; margin: 0.35rem 0; cursor: pointer; }
+.upgrade-review-option input { width: auto; accent-color: var(--green); }
+.upgrade-review-reason { display: grid; grid-template-columns: minmax(200px, 280px) 1fr; gap: 0.6rem; margin: 0.5rem 0 0.2rem 1.6rem; }
+.upgrade-review-reason[hidden] { display: none; }
+.upgrade-review-nav { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 0.8rem; }
+.upgrade-review-nav .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.upgrade-link { background: none; border: none; padding: 0; color: var(--navy); text-decoration: underline; cursor: pointer; font: inherit; }
+.upgrade-review-summary .upgrade-review-lines li { margin: 0.45rem 0; }
+@media (max-width: 700px) { .upgrade-review-reason { grid-template-columns: 1fr; } }
+.upgrade-frame--phone { height: 420px; }
+
+/* ---- the final report ---------------------------------------------------------------- */
+.upgrade-report-summary { margin: 0.5rem 0 1rem; padding-left: 1.2rem; }
+.upgrade-report-summary li { margin: 0.25rem 0; }
+.upgrade-report-kept { border-left: 4px solid var(--navy); }
+.upgrade-report-kept p { margin: 0.3rem 0; }
+.upgrade-report-check { margin: 0.4rem 0; padding-left: 1.2rem; }
+.upgrade-report-check li { margin: 0.35rem 0; color: #7a4a00; }

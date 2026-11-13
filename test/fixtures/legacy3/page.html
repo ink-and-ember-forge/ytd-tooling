@@ -1,0 +1,189 @@
+<!-- A real page built on the nested-CSS, --burgundy generation (before 3.1.0) with an OLDER icon toggle: the grid is
+     <div id="data-icons-grid"> and the tiles are plain divs with onclick="openAccordion(...)", none of the current block's
+     classes. Only its JS and handlers give it away. Also kept from the real page: an unclosed quote (alt=" class="...") on
+     the first resource card, a doubled </section>, an org chart, a download block and several accordions.
+     Text is shortened and repeated items are cut; every class and id is kept. -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<div id="page-container">
+  <nav aria-label="breadcrumb" id="breadcrumb-nav">
+    <ol id="breadcrumb-nav__list">
+      <li><a href="https://example.org/">Home</a></li>
+      <li><a href="https://example.org/hub">Hub</a></li>
+      <li>Strategy</li>
+    </ol>
+  </nav>
+  <header class="header">
+    <img id="header-img" src="https://example.org/banner.png" alt="" />
+  </header>
+  <main class="main-grid standard-container">
+    <nav id="table-of-contents">
+      <h3 id="table-of-contents-heading">Table of Contents</h3>
+      <ul>
+        <li><a href="#understand-org" class="toc-link">Understand your organisation</a></li>
+        <li><a href="#use-data-decisions" class="toc-link">Use data to support decisions</a></li>
+      </ul>
+    </nav>
+    <div class="content-column">
+      <h1 id="header-h1">Strategy</h1>
+      <div id="at-a-glance">
+        <h3 id="at-a-glance-heading">At a glance</h3>
+        <ul>
+          <li>Understand organisational structures and escalation pathways.</li>
+          <li>Use data and digital systems to inform decisions.</li>
+        </ul>
+      </div>
+      <div class="content-body">
+        <section id="understand-org">
+          <h2>Understanding your organisation</h2>
+          <h3>What is your organisational structure?</h3>
+          <p>Leading a ward is <strong>essential to leading safely</strong>.</p>
+          <ul>
+            <li>Be <strong>accountable for the ward</strong>.</li>
+            <li>Know and use <strong>escalation pathways</strong>.</li>
+          </ul>
+          <div aria-labelledby="org-structure-heading" class="section-block">
+            <p><strong>Example of an organisational structure:</strong></p>
+            <div class="org-chart" role="img" aria-label="flowchart">
+              <div class="org-box">Welsh Government</div>
+              <i class="fa-solid fa-arrow-down"></i>
+              <div class="org-box">Health Board / Trust</div>
+              <div>
+                <i class="fa-solid fa-arrow-down"></i>
+                <i class="fa-solid fa-arrow-up"></i>
+              </div>
+              <div class="org-box">Ward</div>
+            </div>
+          </div>
+          <div class="section-block">
+            <h3 id="directorate-heading">Who is in your directorate?</h3>
+            <p>Knowing who is in your directorate helps you access the right support.</p>
+            <div class="accordion" id="directorateAccordion">
+              <div class="accordion-item">
+                <h4 class="accordion-header" id="headingOne">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                    <span class="accordion-text">1. Your Directorate: Key Roles</span>
+                  </button>
+                </h4>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#directorateAccordion">
+                  <div class="accordion-body">
+                    <ul>
+                      <li><strong>Directorate Manager:</strong> Overall management of the directorate.</li>
+                      <li><strong>Clinical Director:</strong> Leads on the clinical services.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="download-template">
+              <p>
+                <a href="https://example.org/template.docx" target="_blank" aria-label="Template (opens in new tab)" rel="noopener noreferrer">
+                  <br>
+                  <strong>Download a template <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+                  </strong>
+                </a>
+                <span class="grey-text">(PDF, 1 page, 1MB)</span> to complete.
+              </p>
+            </div>
+        </section>
+        </section>
+        <section id="understand-vision">
+          <h2>Understand your organisation's vision</h2>
+          <ol>
+            <li><strong>Understand and model</strong> the vision, values, and behaviours.</li>
+            <li><strong>Work with your ward team</strong> to translate these principles.</li>
+          </ol>
+          <div class="accordion">
+            <div class="accordion-item">
+              <div class="accordion-header" id="headingWardVision">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseWardVision" aria-expanded="false" aria-controls="collapseWardVision">
+                  <span class="accordion-text"><strong>Read a ward vision example</strong></span>
+                </button>
+              </div>
+              <div id="collapseWardVision" class="accordion-collapse collapse" aria-labelledby="headingWardVision">
+                <div class="accordion-body"><p>An example vision.</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="optimise-patient-flow">
+          <h2>Optimise patient flow</h2>
+          <div class="accordion">
+            <div class="accordion-item">
+              <h4 class="accordion-header" id="headingPatientFlow">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePatientFlow" aria-expanded="false" aria-controls="collapsePatientFlow">
+                  <span class="accordion-text"><strong>More resources</strong> about optimising patient flow </span>
+                </button>
+              </h4>
+              <div id="collapsePatientFlow" class="accordion-collapse collapse" aria-labelledby="headingPatientFlow">
+                <div class="accordion-body resource-card-grid">
+                  <div class="resource-card">
+                    <img src="https://example.org/card.png" alt=" class="resource-card__img" />
+                    <div>
+                      <a href="https://example.org/six-goals" class="stretched-link" target="_blank" rel="noopener noreferrer">
+                        <strong>Six Goals for Urgent and Emergency Care</strong>
+                        <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+                      </a>
+                      <p><strong>Publication </strong><span>Long Read</span></p>
+                    </div>
+                  </div>
+                  <div class="resource-card">
+                    <img src="https://example.org/card.png" alt="" class="resource-card__img" />
+                    <div>
+                      <a href="https://example.org/discharge" class="stretched-link" target="_blank" rel="noopener noreferrer">
+                        <strong>Hospital Discharge and Patient Flow</strong>
+                        <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+                      </a>
+                      <p><strong>Publication </strong><span>Long Read</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section id="use-data-decisions">
+          <h2>Use data to support decisions</h2>
+          <p>As a ward manager, you are <strong>expected to use data effectively</strong>.</p>
+          <div id="data-icons-grid">
+            <div onclick="openAccordion(this, 'info-gov-content')" onkeydown="openAccordionKey(event, this, 'info-gov-content')" tabindex="0">
+              <div class="data-icon-card">
+                <img src="https://example.org/icon1.png" alt="" />
+                <h5>Information Governance</h5>
+              </div>
+            </div>
+            <div onclick="openAccordion(this, 'clinical-quality-content')" onkeydown="openAccordionKey(event, this, 'clinical-quality-content')" tabindex="0">
+              <div class="data-icon-card">
+                <img src="https://example.org/icon2.png" alt="" />
+                <h5>Clinical Quality Management</h5>
+              </div>
+            </div>
+          </div>
+          <div class="content-display" id="info-gov-content">
+            <div class="content-display-inner-grid">
+              <div>
+                <h5>Information Governance</h5>
+                <p><strong>Ward Manager’s role:</strong> Ensure data is used appropriately and securely.</p>
+              </div>
+              <img src="https://example.org/icon1.png" alt="" />
+            </div>
+          </div>
+          <div class="content-display" id="clinical-quality-content">
+            <div class="content-display-inner-grid">
+              <div>
+                <h5>Clinical Quality Management</h5>
+                <p><strong>Ward Manager’s role:</strong> Monitor and improve quality and safety.</p>
+              </div>
+              <img src="https://example.org/icon2.png" alt="" />
+            </div>
+          </div>
+          <p class="timestamp">Webpage last updated on: 1 <sup> st </sup> October 2026 </p>
+        </section>
+      </div>
+    </div>
+  </main>
+  <button class="back-to-top" aria-label="Back to top">
+    <img src="https://example.org/back-to-top.png" alt="chevron arrow icon facing up" />
+    <span>Back to Top</span>
+  </button>

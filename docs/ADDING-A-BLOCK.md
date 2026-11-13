@@ -48,7 +48,7 @@ The Explain tab shows the block's real generated code. Hover a line and it light
 
 ## Telling the upgrade tool how to spot your block
 
-Give the block a `detect` signature in `index.js`, using the class names or ids its generated HTML carries (`detect: { classes: ["my-block"] }` or `{ ids: ["my-block"] }`). The upgrade tool uses it to work out which blocks a pasted page uses, so it can output CSS for exactly those blocks. A test (`test/upgrade.test.js`) fails if a block with CSS or JS has no signature, if the signature doesn't match the block's own output, or if it also matches a different block's output.
+Give the block a `detect` signature in `index.js`, using the class names or ids its generated HTML carries (`detect: { classes: ["my-block"] }` or `{ ids: ["my-block"] }`). If an older version of the block used different markup, add `patterns` (regexes tested against the page's HTML, e.g. an `onclick` handler) so those pages are still recognised; a page whose JS already defines your block's functions is recognised too. The upgrade tool uses it to work out which blocks a pasted page uses, so it can output CSS for exactly those blocks. A test (`test/upgrade.test.js`) fails if a block with CSS or JS has no signature, if the signature doesn't match the block's own output, or if it also matches a different block's output.
 
 ## New field types
 

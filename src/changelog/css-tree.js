@@ -132,6 +132,17 @@ export function serializeCss(node, indent = "") {
   return out;
 }
 
+// A rule's content in one short line, so a person can judge it: its first declarations, then how much more there is.
+// e.g. "color: red; margin: 0 auto; +2 more, and 1 nested rule"
+export function summariseNode(node, maxDecls = 4) {
+  const decls = [...node.decls].flatMap(([prop, values]) => values.map((v) => `${prop}: ${v}`));
+  const shown = decls.slice(0, maxDecls).join("; ");
+  const more = [];
+  if (decls.length > maxDecls) more.push(`+${decls.length - maxDecls} more`);
+  if (node.children.length) more.push(`${node.children.length} nested rule${node.children.length === 1 ? "" : "s"}`);
+  return [shown, more.join(", and ")].filter(Boolean).join("; ") || "(empty)";
+}
+
 export const countDecls = (node) => [...node.decls.values()].reduce((n, v) => n + v.length, 0) + node.children.reduce((n, c) => n + countDecls(c), 0);
 
 // b's declarations win over a's for the same rule and property; rules only in b are added. Returns a new tree.

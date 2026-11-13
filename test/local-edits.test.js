@@ -275,3 +275,11 @@ test("self-check: the upgraded code has nothing left to copy", () => {
   assert.deepEqual(r.check.manualSteps, []);
   assert.ok(buildUpgrade(pageOf(pristineCss()), { baseline: old }).check.ok);
 });
+
+test("a rule of the author's own says what it does, so it can be judged", () => {
+  const css = pristineCss().replace(/\n<\/style>$/, "\n#page-container .banner { background: #fee; color: red; margin: 0 auto; padding: 1rem; border: 1px solid red; .inner { gap: 1px } }\n</style>");
+  const [edit] = findLocalEdits(css, old).edits;
+  assert.equal(edit.kind, "added-rule");
+  assert.equal(edit.summary, "#page-container .banner: a rule of your own — background: #fee; color: red; margin: 0 auto; padding: 1rem; +1 more, and 1 nested rule");
+  assert.equal(parseCss(".a { }").children[0].decls.size, 0);
+});
