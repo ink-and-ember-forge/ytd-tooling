@@ -11,6 +11,7 @@ import { buildReview, ledgerLine, REASONS } from "../changelog/review.js";
 import { buildReport, reportMarkdown } from "../changelog/report.js";
 import { loadBaseline } from "../lib/baseline.js";
 import { outputCard, renderCheck, pageDoc, plural } from "./upgrade-parts.js";
+import { createCloseup } from "./closeup.js";
 
 const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
 
@@ -127,9 +128,21 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     card.appendChild(makeEl("p", "upgrade-review-headline", `${plural(step.rows.length, "rule", "rules")} to decide. ${step.elements === null ? "" : step.elements === 0 ? "No element on this page matches, so this has no effect here." : `Together they affect ${plural(step.elements, "element", "elements")} on this page.`}`));
     card.appendChild(makeEl("p", "upgrade-hint", step.why));
 
-    let frames = stepFrames(step, null);
-    card.appendChild(frames);
-    const show = (row) => { const next = stepFrames(step, row); frames.replaceWith(next); frames = next; };
+    card.appendChild(makeEl("p", "upgrade-guide", "How to read this: each rule below has a close-up of one element it changes. The template's version is first, then yours, so you are comparing the same thing both ways. The orange outline marks the element on show (solid) and the others the rule touches (dashed). Use Previous and Next to step through the elements that look different."));
+    const whole = document.createElement("details");
+    whole.className = "upgrade-whole";
+    whole.appendChild(makeEl("summary", "", "See the whole page instead, template and yours"));
+    let wholeBuilt = false;
+    whole.addEventListener("toggle", () => { if (whole.open && !wholeBuilt) { wholeBuilt = true; whole.appendChild(stepFrames(step, null)); } });
+    card.appendChild(whole);
+
+    // Each close-up compares ONE rule with the template, so it does not depend on what is decided for the other rules.
+    let templatePage = null;
+    const pagesFor = (row) => () => {
+      templatePage ||= (() => { const r = migrate([...state.keep], false); return { html: r.html, css: r.css, js: r.js }; })();
+      const y = migrate([...state.keep, ...row.keys], false);
+      return { template: templatePage, yours: { html: y.html, css: y.css, js: y.js } };
+    };
 
     const next = makeEl("button", "primary-btn", i === n - 1 ? "Finish the review" : "Next group");
     const controls = []; // one per row: { row, sync() }
@@ -172,10 +185,6 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       const head = makeEl("div", "upgrade-review-row-head");
       head.appendChild(makeEl("strong", "upgrade-review-row-label", row.label));
       head.appendChild(makeEl("span", "upgrade-muted", row.elements === null ? "" : row.elements === 0 ? " — matches nothing on this page" : ` — ${plural(row.elements, "element", "elements")}`));
-      const peek = makeEl("button", "upgrade-link", "Show just this one");
-      peek.type = "button";
-      peek.addEventListener("click", () => show(row));
-      head.appendChild(peek);
       li.appendChild(head);
       li.appendChild(makeEl("p", "upgrade-hint upgrade-review-hint", row.hint));
       const lines = makeEl("ul", "upgrade-review-lines");
@@ -185,6 +194,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
         lines.appendChild(item);
       });
       li.appendChild(lines);
+      if (row.selectors.length) li.appendChild(createCloseup(row, pagesFor(row), { phone: step.width === "phone" }).el);
 
       const choice = makeEl("div", "upgrade-review-choice");
       const radios = {};

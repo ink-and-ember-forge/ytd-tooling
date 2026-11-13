@@ -34,14 +34,33 @@ export function outputCard(title, description, text, { blocked = null } = {}) {
 // A <style>/<script> wrapper if the author pasted bare code.
 const wrap = (text, tag) => (!text.trim() || new RegExp(`^\\s*<${tag}`, "i").test(text) ? text : `<${tag}>\n${text}\n</${tag}>`);
 
+// The script of a close-up (src/ui/closeup.js). It outlines the elements a rule touches, measures their computed styles and
+// reports them to the builder, and scrolls this frame (never the builder) to the element it is asked to show.
+// probe: { selectors[], pad, lines: [{ sel, prop, media, pseudo, measurable }] }
+const probeMarkup = (probe) => `<style>.__hl{outline:3px dashed #e07b00!important;outline-offset:2px}.__cur{outline:3px solid #e07b00!important;outline-offset:2px}.back-to-top{display:none!important}</style><script>(function(P){
+var els=[];function q(s){try{return[].slice.call(document.querySelectorAll(s))}catch(x){return[]}}
+P.selectors.forEach(function(s){q(s).forEach(function(e){if(els.indexOf(e)<0)els.push(e)})});
+els.sort(function(a,b){return a.compareDocumentPosition(b)&4?-1:1});
+els.forEach(function(e){e.classList.add("__hl")});
+function text(e){var t=(e.textContent||"").replace(/\\s+/g," ").trim();return t.length>40?t.slice(0,40)+"\u2026":t}
+var lines=P.lines.map(function(l){var applies=true;if(l.media){try{applies=matchMedia(l.media.replace(/^@media\\s*/,"")).matches}catch(x){}}
+var set=q(l.sel);return{applies:applies,measurable:l.measurable,vals:els.map(function(e){if(set.indexOf(e)<0)return null;try{return getComputedStyle(e,l.pseudo||null).getPropertyValue(l.prop).trim()}catch(x){return null}})}});
+var cur=null;
+function show(i){if(cur)cur.classList.remove("__cur");cur=els[i];if(!cur)return;cur.classList.add("__cur");
+var r=cur.getBoundingClientRect();parent.postMessage({__closeup:1,type:"size",h:r.height},"*");
+var go=function(){var r2=cur.getBoundingClientRect();window.scrollTo(0,Math.max(0,r2.top+window.pageYOffset-P.pad))};go();setTimeout(go,80);setTimeout(go,300)}
+addEventListener("message",function(e){if(e.data&&e.data.__closeup==="go")show(e.data.i)});
+parent.postMessage({__closeup:1,type:"report",n:els.length,desc:els.map(function(e){return"<"+e.tagName.toLowerCase()+"> \u201c"+text(e)+"\u201d"}),lines:lines},"*");
+})(${JSON.stringify(probe).replace(/</g, "\\u003c")})<\/script>`;
+
 // A whole page as an iframe document. Scripts are allowed to run (it is the author's own page) but the frame is
 // sandboxed, so it cannot reach the builder.
 // `highlight`: selectors whose elements are outlined, and (scroll "first") the first brought to the middle of the frame; "top"
 // leaves the page at its top (for the review's side-by-side frames). The frame is scrolled with window.scrollTo, NOT
 // scrollIntoView: scrollIntoView inside an iframe also scrolls the PARENT page to show the frame, which threw the whole
 // builder around every time a frame loaded.
-export const pageDoc = ({ html, css, js }, { highlight = [], scroll = "first" } = {}) => {
-  const mark = highlight.length
+export const pageDoc = ({ html, css, js }, { highlight = [], scroll = "first", probe = null } = {}) => {
+  const mark = probe ? probeMarkup(probe) : highlight.length
     ? `<style>.__hl{outline:3px dashed #e07b00!important;outline-offset:2px}</style><script>(function(){var first;${JSON.stringify(highlight).replace(/</g, "\\u003c")}.forEach(function(s){try{document.querySelectorAll(s).forEach(function(e){e.classList.add("__hl");first=first||e})}catch(x){}});${scroll === "first" ? "if(first)setTimeout(function(){window.scrollTo(0,Math.max(0,first.getBoundingClientRect().top+window.pageYOffset-window.innerHeight\/2))},50);" : ""}})()<\/script>`
     : "";
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0">${wrap(css, "style")}${html}${wrap(js, "script")}${mark}</body></html>`;
