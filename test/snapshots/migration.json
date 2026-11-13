@@ -1,0 +1,265 @@
+{
+  "version": "3.5.0",
+  "fixtures": {
+    "legacy": {
+      "fit": {
+        "legacy": true,
+        "signals": 4
+      },
+      "theme": "gwella",
+      "themeDetected": "gwella",
+      "blocks": [
+        "image-text-section",
+        "buttons"
+      ],
+      "groups": [
+        "custom: cta-button",
+        "custom: intro-text",
+        "custom: journey-section",
+        "custom: journey-image",
+        "custom: journey-content",
+        "custom: important-label",
+        "custom: gwella-message",
+        "custom: burgundy-link",
+        "custom: desktop-image",
+        "custom: mobile-image",
+        "custom: info-section",
+        "custom: text",
+        "deviation: differs:section",
+        "deviation: differs:.content-column h2",
+        "deviation: differs:.image-text-section > img",
+        "deviation: differs:.image-text-section > div",
+        "deviation: differs:.timestamp",
+        "deviation: differs:.buttons",
+        "deviation: differs:.buttons a",
+        "deviation: differs:.buttons a i",
+        "deviation: differs:.buttons a:hover",
+        "deviation: differs:.standard-container",
+        "deviation: differs:.main-grid",
+        "deviation: differs:#header-img",
+        "deviation: differs:#breadcrumb-nav",
+        "deviation: differs:#table-of-contents",
+        "deviation: differs:#table-of-contents-heading",
+        "deviation: differs:#table-of-contents li",
+        "deviation: differs:p",
+        "deviation: differs:li"
+      ],
+      "review": [
+        "Your phone and tablet layout > p (1)",
+        "Your phone and tablet layout > li (1)",
+        "Your phone and tablet layout > #table-of-contents li (1)",
+        "Your phone and tablet layout > .main-grid (2)",
+        "Your phone and tablet layout > .standard-container (1)",
+        "Your phone and tablet layout > #breadcrumb-nav (2)",
+        "Your phone and tablet layout > #header-img (4)",
+        "Your phone and tablet layout > #table-of-contents (2)",
+        "Your phone and tablet layout > #table-of-contents-heading (1)",
+        "Buttons component > .buttons a + .buttons a:hover (10)",
+        "Buttons component > .buttons a i (2)",
+        "Buttons component > .buttons (5)",
+        "Page header, contents list and layout > section (2)",
+        "Page header, contents list and layout > .timestamp (5)",
+        "Text and headings > .content-column h2 (1)",
+        "Image-text-section component > .image-text-section > div (1)",
+        "Image-text-section component > .image-text-section > img (6)"
+      ],
+      "dropped": {
+        "base": 23,
+        "standard": 30,
+        "unused": 26
+      },
+      "htmlChanges": [
+        "Added the Gwella theme class and the version marker to #page-container.",
+        "Swapped the back-to-top image for the standard Font Awesome icon, which the new CSS styles."
+      ],
+      "notes": [],
+      "lint": {
+        "unstyledClasses": [],
+        "undefinedVars": [
+          "--buttons"
+        ],
+        "missingFunctions": [],
+        "tagProblems": 8
+      },
+      "output": {
+        "html": "7009e9c0836c",
+        "css": "2919af2af284",
+        "js": "1b9c410affb0"
+      }
+    },
+    "legacy2": {
+      "fit": {
+        "legacy": true,
+        "signals": 3
+      },
+      "theme": "gwella",
+      "themeDetected": "gwella",
+      "blocks": [
+        "at-a-glance",
+        "accordion",
+        "icon-toggle"
+      ],
+      "groups": [
+        "custom: inline-icon",
+        "custom: accordion-text",
+        "custom: resource-card-grid",
+        "custom: resource-card",
+        "deviation: differs:ol",
+        "deviation: differs:ol li",
+        "deviation: differs:ol li::marker",
+        "deviation: differs:strong",
+        "deviation: differs:.content-column h4",
+        "deviation: differs:#breadcrumb-nav #breadcrumb-nav__list",
+        "deviation: differs:#header-h1",
+        "deviation: differs:h5",
+        "deviation: differs:a",
+        "deviation: differs:#at-a-glance #at-a-glance-heading",
+        "deviation: differs:.accordion .accordion-header",
+        "deviation: differs:section",
+        "deviation: differs:.main-grid",
+        "deviation: differs:#table-of-contents",
+        "deviation: differs:#at-a-glance",
+        "deviation: differs:.content-body",
+        "deviation: differs:.timestamp",
+        "deviation: differs:.back-to-top",
+        "deviation: differs:h2",
+        "deviation: differs:#table-of-contents li",
+        "deviation: differs:#page-container"
+      ],
+      "review": [
+        "Text and headings > strong (1)",
+        "Text and headings > ol li::marker (1)",
+        "Text and headings > h5 (1)",
+        "Text and headings > .content-column h4 (2)",
+        "Text and headings > Design variables this page sets (1)",
+        "Fixes that use !important > a (2)",
+        "Fixes that use !important > ol li (1)",
+        "Fixes that use !important > .accordion .accordion-header (1)",
+        "Fixes that use !important > #at-a-glance #at-a-glance-heading (1)",
+        "Your phone and tablet layout > #table-of-contents li (1)",
+        "Your phone and tablet layout > h2 (1)",
+        "Your phone and tablet layout > section (1)",
+        "Your phone and tablet layout > .back-to-top (2)",
+        "Your phone and tablet layout > .content-body (2)",
+        "Your phone and tablet layout > .main-grid (1)",
+        "Your phone and tablet layout > .timestamp (2)",
+        "Your phone and tablet layout > #at-a-glance (1)",
+        "Your phone and tablet layout > #table-of-contents (1)",
+        "Rules that work together: list markers and spacing inside (left) > ol + #breadcrumb-nav #breadcrumb-nav__list (5)",
+        "Page header, contents list and layout > #header-h1 (1)"
+      ],
+      "dropped": {
+        "base": 19,
+        "standard": 63,
+        "unused": 10
+      },
+      "htmlChanges": [
+        "Added the Gwella theme class and the version marker to #page-container.",
+        "Swapped the back-to-top image for the standard Font Awesome icon, which the new CSS styles."
+      ],
+      "notes": [],
+      "lint": {
+        "unstyledClasses": [],
+        "undefinedVars": [],
+        "missingFunctions": [],
+        "tagProblems": 0
+      },
+      "output": {
+        "html": "d837a814c8a7",
+        "css": "69002ed9851d",
+        "js": "dcb155123989"
+      }
+    },
+    "legacy3": {
+      "fit": {
+        "legacy": true,
+        "signals": 3
+      },
+      "theme": "gwella",
+      "themeDetected": "gwella",
+      "blocks": [
+        "at-a-glance",
+        "accordion",
+        "icon-toggle"
+      ],
+      "groups": [
+        "custom: inline-icon",
+        "custom: grey-text",
+        "custom: section-block",
+        "custom: org-chart",
+        "custom: org-box",
+        "custom: accordion-text",
+        "custom: resource-card-grid",
+        "custom: resource-card",
+        "custom: data-icons-grid",
+        "custom: download-template",
+        "deviation: differs:strong",
+        "deviation: differs:#header-h1",
+        "deviation: differs:h5",
+        "deviation: differs:a",
+        "deviation: differs:#at-a-glance #at-a-glance-heading",
+        "deviation: differs:.accordion .accordion-header",
+        "deviation: differs:.data-icon-card img",
+        "deviation: differs:.content-display",
+        "deviation: differs:.content-display .content-display-inner-grid",
+        "deviation: differs:.content-display h5",
+        "deviation: differs:.content-display img",
+        "deviation: differs:section",
+        "deviation: differs:.main-grid",
+        "deviation: differs:#table-of-contents",
+        "deviation: differs:#at-a-glance",
+        "deviation: differs:.content-body",
+        "deviation: differs:.data-icon-card",
+        "deviation: differs:.content-display .content-display-inner-grid img",
+        "deviation: differs:.back-to-top",
+        "deviation: differs:h2",
+        "deviation: differs:#table-of-contents li"
+      ],
+      "review": [
+        "Your phone and tablet layout > h2 (1)",
+        "Your phone and tablet layout > section (1)",
+        "Your phone and tablet layout > .content-display .content-display-inner-grid img (1)",
+        "Your phone and tablet layout > .data-icon-card (1)",
+        "Your phone and tablet layout > #table-of-contents li (1)",
+        "Your phone and tablet layout > .back-to-top (2)",
+        "Your phone and tablet layout > .content-body (2)",
+        "Your phone and tablet layout > .main-grid (1)",
+        "Your phone and tablet layout > #at-a-glance (1)",
+        "Your phone and tablet layout > #table-of-contents (1)",
+        "Text and headings > strong (1)",
+        "Fixes that use !important > a (2)",
+        "Fixes that use !important > .accordion .accordion-header (1)",
+        "Fixes that use !important > #at-a-glance #at-a-glance-heading (1)",
+        "Icon-toggle component > .content-display (7)",
+        "Icon-toggle component > .content-display .content-display-inner-grid (5)",
+        "Icon-toggle component > .content-display img (2)",
+        "Icon-toggle component > .data-icon-card img (1)",
+        "Rules that work together: text colour > h5 + .content-display h5 (5)",
+        "Page header, contents list and layout > #header-h1 (1)"
+      ],
+      "dropped": {
+        "base": 19,
+        "standard": 55,
+        "unused": 1
+      },
+      "htmlChanges": [
+        "Added the Gwella theme class and the version marker to #page-container.",
+        "Swapped the back-to-top image for the standard Font Awesome icon, which the new CSS styles."
+      ],
+      "notes": [
+        "Your page uses an older version of the Icon-toggle block. The new code applies the current version's styling and JS, with your own overrides on top, so check how it looks."
+      ],
+      "lint": {
+        "unstyledClasses": [],
+        "undefinedVars": [],
+        "missingFunctions": [],
+        "tagProblems": 4
+      },
+      "output": {
+        "html": "82e4204cc003",
+        "css": "ae2729613b3d",
+        "js": "dcb155123989"
+      }
+    }
+  }
+}

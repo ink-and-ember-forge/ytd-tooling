@@ -8,6 +8,7 @@
     "test": "node --test test/*.test.js",
     "test:e2e": "node test/e2e/builder.e2e.cjs",
     "snapshot:update": "UPDATE_SNAPSHOTS=1 node --test test/golden.test.js",
+    "snapshot:migration": "UPDATE_MIGRATION=1 node --test test/migration.test.js",
     "check": "npm test",
     "release": "node scripts/release.js",
     "new-block": "node scripts/new-block.js",

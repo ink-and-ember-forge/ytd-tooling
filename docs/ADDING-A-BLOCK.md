@@ -59,3 +59,7 @@ Give the block a `detect` signature in `index.js`, using the class names or ids 
 If no existing field type fits, add one to **both** `buildField` and `collectValue` in `src/ui/fields.js`, and add its value shape to a fixture.
 
 Existing simple types: `text`, `select`, and `checkbox` (`{ type: "checkbox", id, label, help?, default? }`; the label is the checkbox's own text, the value is `true`/`false`, and a project saved before the field existed reads as `undefined`, so treat missing as off).
+
+## Teach the migration about it
+
+A new block (or a changed one) is also a migration question: pages built before 3.1.0 are migrated onto the template, and the migration recognises blocks by their `detect` (classes, ids, `patterns` for older markup with no classes). Check it recognises the OLD markup of this block as well as the new, add a fixture if a real legacy page shows a pattern the existing ones don't, and follow the **Migration check** in `docs/RELEASING.md` (`npm run snapshot:migration`).

@@ -65,4 +65,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv.includes(
   }
   writeBaselineIndex();
   console.log(`Released ${BUILDER_VERSION} to baseline/${BUILDER_VERSION}/`);
+  // The migration tool is built on the template, so every release needs it checked (npm test fails until it has been).
+  console.log(`\nNext: the MIGRATION CHECK. The migration tool depends on the template, so check what ${BUILDER_VERSION} did to it:\n  1. npm run snapshot:migration, then READ the diff of test/snapshots/migration.json\n  2. new or renamed tokens go in KNOWN_TOKENS / TOKEN_MAP (src/changelog/migrate.js); changed blocks need their old markup still detected\n  3. npm run test:e2e\nDetails: docs/RELEASING.md, "Migration check".`);
 }
