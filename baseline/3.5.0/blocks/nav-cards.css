@@ -1,0 +1,124 @@
+  .nav-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Auto-fits 185–210px cards, wrapping as needed. */
+  .nav-cards-grid.nav-cards-grid--numbered {
+    grid-template-columns: repeat(auto-fit, minmax(185px, 210px));
+    justify-content: center;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .nav-card {
+    background-color: var(--secondary-colour);
+    border-top: 6px solid var(--primary-colour);
+    border-radius: 0 0 10px 10px;
+    padding: 1.75rem 1.5rem;
+    text-align: left;
+
+    .nav-card__icon {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background-color: var(--primary-colour);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem;
+
+      img {
+        width: 34px;
+        height: 34px;
+        display: block;
+      }
+    }
+
+    p {
+      margin: 0 0 1.25rem;
+      color: var(--card-text-colour);
+      font-weight: 500;
+    }
+
+    .nav-card__button {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: var(--primary-colour);
+      color: var(--text-on-primary) !important;
+      font-weight: 700;
+      text-decoration: none !important;
+      padding: 0.6rem 2rem;
+      border-radius: 15px;
+
+      &:hover {
+        background: color-mix(in srgb, var(--primary-colour), black 15%);
+        text-decoration: none;
+      }
+    }
+
+    &.nav-card--numbered {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      max-width: 210px;
+      min-width: 185px;
+      padding: 16px;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 16px color-mix(in srgb, var(--shadow-colour) 15%, transparent);
+      }
+
+      h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--card-text-colour);
+        margin: 0;
+      }
+
+      .nav-card__number {
+        color: var(--primary-colour);
+      }
+
+      .nav-card__icon-plain {
+        margin-top: auto;
+        padding-top: 1.5rem;
+
+        img {
+          width: 78px;
+          height: 78px;
+          object-fit: contain;
+          display: block;
+        }
+      }
+
+      @media (max-width: 768px) {
+        flex-direction: row;
+        align-items: center;
+        max-width: none;
+        min-width: 0;
+
+        h3 {
+          flex: 1;
+        }
+
+        .nav-card__icon-plain {
+          margin-top: 0;
+          padding-top: 0;
+          margin-left: 1rem;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }

@@ -171,7 +171,7 @@ test("report: totals, the reasons for what was kept, and what the page takes fro
   const { steps, r } = report("legacy2", (s, row) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Your phone and tablet layout" && row.label === ".main-grid" ? keep("problem", "the contents list must come first on phones") : tpl));
   const textRows = steps.find((s) => s.title === "Text and headings").rows.length;
   assert.equal(r.totals.decisions, steps.flatMap((s) => s.rows).length);
-  assert.deepEqual({ ...r.totals, decisions: 0, template: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, components: 4, componentsKept: 4, htmlChanges: 2 });
+  assert.deepEqual({ ...r.totals, decisions: 0, template: 0, unchecked: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, visible: 0, invisible: 0, unchecked: 0, components: 4, componentsKept: 4, htmlChanges: 2 });
   assert.equal(r.totals.template, r.totals.decisions - r.totals.kept);
   assert.ok(r.kept.some((k) => k.title === "Text and headings \u203a strong" && k.reason === "A deliberate design choice" && k.note === "bold is our house style"));
   assert.ok(r.kept.some((k) => k.title === "Your phone and tablet layout \u203a .main-grid" && k.reason === "It fixes a problem (say which)"));
@@ -271,4 +271,39 @@ test("rows: no two rows touch the same property of the same element", () => {
     const { p, steps } = review(dir);
     assert.deepEqual(crossDecisionLinks(steps.flatMap((s) => s.rows.map((r) => ({ title: r.path, lines: r.lines }))), p.html), [], dir);
   }
+});
+
+// ---- the report says which changes you will actually see ----------------------------------------
+
+test("report: it separates the changes you will see from the ones that make no difference, using what the previews measured", () => {
+  const { p, steps } = review("legacy2");
+  const rows = steps.flatMap((s) => s.rows), by = (label) => rows.find((r) => r.label === label);
+  const measured = new Map([
+    [by("strong").id, { status: "differs", n: 10, differing: 2, text: "2 of the 10 elements look different. The others already match the template, so they are skipped here.", lines: [{ label: "text weight", measurable: true, template: "900", yours: "700", differs: true }] }],
+    [by("ol li::marker").id, { status: "same", n: 5, differing: 0, text: "No visible difference on this page: the 5 elements look the same with or without your rule.", lines: [{ label: "text weight", measurable: true, template: "400", yours: "400", differs: false }] }],
+  ]);
+  const r = buildReport(buildMigration(p, { reference }), steps, new Map(), { date: "2026-11-20", measured });
+  assert.equal(r.totals.visible, 1);
+  assert.equal(r.totals.invisible, 1);
+  assert.equal(r.totals.unchecked, rows.length - 2, "the rules that were not previewed are said to be unchecked, not assumed to be fine");
+  assert.equal(r.template[0].title, "Text and headings \u203a strong", "what you will see comes first");
+  const md = reportMarkdown(r);
+  assert.match(md, /Of the 20 rules following the template, \*\*1 change how the page looks\*\*, 1 make no visible difference, and 18 could not be checked/);
+  assert.match(md, /### Changes you will see \(1\)\n\n#### Text and headings \u203a strong\n/);
+  assert.match(md, /- Measured: text weight: the template gives `900`, yours gives `700`/);
+  assert.match(md, /### No visible difference on this page \(1\)\n\n#### Text and headings \u203a ol li::marker/);
+  assert.match(md, /### Could not be checked \(18\)/);
+  assert.match(md, /Not previewed: this rule was decided without its preview/);
+  assert.match(md, /`not set` means the template has no rule for that exact selector/);
+});
+
+test("report: a rule kept for a deliberate reason but without a note is flagged, and the singular reads properly", () => {
+  const { p, steps } = review("legacy2");
+  const strong = steps.flatMap((s) => s.rows).find((r) => r.label === "strong");
+  const r = buildReport(buildMigration(p, { reference }), steps, new Map([[strong.id, { choice: "keep", reason: "design", note: "" }]]), { date: "2026-11-20" });
+  assert.ok(r.toCheck.some((c) => /"Text and headings \u203a strong" was kept without a note\./.test(c)));
+  const withNote = buildReport(buildMigration(p, { reference }), steps, new Map([[strong.id, { choice: "keep", reason: "design", note: "house style" }]]), { date: "2026-11-20" });
+  assert.ok(!withNote.toCheck.some((c) => /without a note/.test(c)));
+  assert.match(reportMarkdown({ ...r, dropped: { unused: 1 } }), /Dropped 1 rule for classes not used on the page\./);
+  assert.match(reportMarkdown({ ...r, dropped: { unused: 0 } }), /No rules for unused classes were dropped\./);
 });

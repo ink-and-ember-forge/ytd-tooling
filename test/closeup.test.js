@@ -2,7 +2,7 @@
 import "./setup.js";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compareReports, lookAt, summaryLine, probeFor, openedNote, frameHeight, roomFor } from "../src/ui/closeup.js";
+import { compareReports, lookAt, summaryLine, probeFor, openedNote, frameHeight, roomFor, measuredSummary } from "../src/ui/closeup.js";
 
 const line = (vals, extra = {}) => ({ applies: true, measurable: true, vals, ...extra });
 const report = (lines, n = lines[0].vals.length) => ({ n, desc: Array.from({ length: n }, (_, i) => `<p> “item ${i}”`), lines });
@@ -65,4 +65,19 @@ test("closeup: the frames take the room the slide has, stacked halves of it or a
   assert.equal(roomFor(500), 300, "never smaller than a readable minimum");
   assert.equal(frameHeight({ room: 390, stacked: true }), 195);
   assert.equal(frameHeight({ room: 390, stacked: false }), 390);
+});
+
+test("closeup: what was measured is kept as real values from the first element the rule changes", () => {
+  const t = report([line(["900", "400", "400"]), line(["x", "y", "z"], { measurable: false })]);
+  const y = report([line(["700", "400", "400"]), line(["x", "y", "z"], { measurable: false })]);
+  const m = measuredSummary(compareReports(t, y, labels), t, y, labels);
+  assert.equal(m.status, "differs");
+  assert.equal(m.differing, 1);
+  assert.deepEqual(m.lines[0], { label: "text weight", measurable: true, template: "900", yours: "700", differs: true });
+  assert.equal(m.lines[1].measurable, false, "a hover rule has nothing measured");
+  const same = report([line(["700", "700"])]);
+  const s = measuredSummary(compareReports(same, same, labels), same, same, labels);
+  assert.equal(s.status, "same");
+  assert.deepEqual(s.lines[0], { label: "text weight", measurable: true, template: "700", yours: "700", differs: false });
+  assert.equal(measuredSummary(compareReports(report([line([])], 0), report([line([])], 0), labels), report([line([])], 0), report([line([])], 0), labels).status, "none");
 });

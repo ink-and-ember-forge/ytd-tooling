@@ -29,6 +29,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     keep: new Set(),          // the page's own components to carry
     steps: [], rules: [],     // the review: groups, and the flat list of rules (one slide each)
     decisions: new Map(), reviewed: new Set(), // by rule id
+    measured: new Map(),      // by rule id: what its preview measured (kept for the report)
     pos: 0, visited: new Set(), active: false,
     prefs: { mode: "stacked", show: "template" }, // how previews are shown, shared by every slide
   };
@@ -152,6 +153,21 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     progress.setAttribute("aria-live", "polite");
     card.append(progress, makeEl("h4", "upgrade-review-title", row.label));
 
+    // What the preview measured replaces guessing from the template's rule for the same selector: the template may style these
+    // elements through another selector, so "not set" can be wrong. The report keeps the same numbers.
+    const lineEls = [];
+    const onMeasured = (m) => {
+      state.measured.set(row.id, m);
+      lineEls.forEach((el, idx) => {
+        const l = m.lines[idx];
+        el.querySelector(".upgrade-measured")?.remove();
+        if (!l || !l.measurable) return;
+        const span = makeEl("span", "upgrade-measured");
+        span.append(" On this page the template gives ", makeEl("code", "", l.template === "" ? "not set" : l.template), ", yours gives ", makeEl("code", "", l.yours === "" ? "not set" : l.yours), l.differs ? "" : " (the same)");
+        el.appendChild(span);
+      });
+      renderReport();
+    };
     const grid = makeEl("div", "upgrade-slide-grid");
     const main = makeEl("div", "upgrade-slide-main");
     let tpl = null;
@@ -162,7 +178,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
         const y = migrate([...state.keep, ...row.keys], false);
         return { template: tpl, yours: { html: y.html, css: y.css, js: y.js } };
       };
-      main.appendChild(createCloseup(row, pages, { phone: step.width === "phone" && row.lines.every((l) => l.media), prefs: state.prefs }).el);
+      main.appendChild(createCloseup(row, pages, { phone: step.width === "phone" && row.lines.every((l) => l.media), prefs: state.prefs, onMeasured }).el);
     } else {
       main.appendChild(makeEl("p", "upgrade-closeup-summary", "This is a design variable the page defines, not a rule for one element, so there is nothing to preview. It changes whatever uses it."));
     }
@@ -174,6 +190,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       const item = makeEl("li");
       item.append(`${l.media ? "On small screens: " : ""}${l.where} — ${l.label}: yours `, makeEl("code", "", l.mine), ", template ", makeEl("code", "", l.template ?? "not set"));
       lines.appendChild(item);
+      lineEls.push(item);
     });
     side.appendChild(lines);
     const about = document.createElement("details");
@@ -379,12 +396,13 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       els.report.appendChild(makeEl("p", "upgrade-hint", `The report appears when the review is finished (${plural(reviewLeft(), "rule", "rules")} left).`));
       return;
     }
-    const rep = buildReport(r, state.steps, state.decisions, { date: new Date().toISOString().slice(0, 10) });
+    const rep = buildReport(r, state.steps, state.decisions, { date: new Date().toISOString().slice(0, 10), measured: state.measured });
     const t = rep.totals;
     els.report.appendChild(makeEl("p", "upgrade-hint", "What was decided about every place your page differed from the template, and why. Keep it with the page, or give it to whoever looks after the template."));
     const summary = makeEl("ul", "upgrade-report-summary");
     [`${plural(t.differences, "difference", "differences")} from the template, decided as ${plural(t.decisions, "rule", "rules")}.`,
       `Kept as your own: ${t.kept}. Following the template: ${t.template}.`,
+      ...(t.template ? [`Of the rules following the template, ${t.visible} change how the page looks, ${t.invisible} make no visible difference, and ${t.unchecked} could not be checked.`] : []),
       `Your own components carried over: ${t.componentsKept} of ${t.components}.`,
       `${plural(t.htmlChanges, "change", "changes")} to your HTML.`].forEach((x) => summary.appendChild(makeEl("li", "", x)));
     els.report.appendChild(summary);
@@ -395,6 +413,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       const card = makeEl("div", "upgrade-output upgrade-report-kept");
       card.appendChild(makeEl("strong", "", k.title));
       card.appendChild(makeEl("p", "", `Why: ${k.reason}${k.note ? `. ${k.note}` : ""}`));
+      if (k.impact?.text) card.appendChild(makeEl("p", "upgrade-hint", `On this page: ${k.impact.text}`));
       if (k.elements !== null) card.appendChild(makeEl("p", "upgrade-hint", `Affects ${plural(k.elements, "element", "elements")} on this page.`));
       const details = document.createElement("details");
       details.appendChild(makeEl("summary", "", "What it overrides"));
@@ -406,7 +425,8 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     const following = document.createElement("details");
     following.appendChild(makeEl("summary", "", `Following the template (${t.template})`));
     following.appendChild(makeEl("p", "upgrade-hint", "The page now takes these from the template, so it matches every other page."));
-    following.appendChild(codeBlock(rep.template.map((s) => s.title).join("\n") || "Nothing: every difference was kept."));
+    const labels = { differs: "Changes you will see", unchecked: "Could not be checked", same: "No visible difference on this page" };
+    following.appendChild(codeBlock(Object.entries(labels).filter(([k]) => rep.templateGroups[k].length).map(([k, label]) => `${label} (${rep.templateGroups[k].length})\n${rep.templateGroups[k].map((s) => `  ${s.title}${s.impact?.text && k === "differs" ? ` — ${s.impact.text}` : ""}`).join("\n")}`).join("\n\n") || "Nothing: every difference was kept."));
     els.report.appendChild(following);
 
     els.report.appendChild(makeEl("h4", "upgrade-group", "Still worth a look"));
@@ -516,6 +536,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       state.keep = new Set(first.groups.filter((g) => g.kind === "custom").map((g) => g.key));
       state.decisions = new Map();
       state.reviewed = new Set();
+      state.measured = new Map();
       state.visited = new Set();
       state.steps = buildReview(first, code().html);
       state.rules = state.steps.flatMap((step) => step.rows.map((row, idx) => ({ row, step, k: idx + 1, m: step.rows.length })));

@@ -1,6 +1,36 @@
 {
   "releases": [
     {
+      "version": "3.5.0",
+      "date": "2026-11-13",
+      "summary": "Icon toggle panel images are smaller: 110px on every screen size (was 150px). Taken from a migrated page that had kept this size as its own override.",
+      "changes": [
+        {
+          "id": "CHG-3.5.0-01",
+          "type": "visual",
+          "scope": "block:icon-toggle",
+          "blocks": [
+            "icon-toggle"
+          ],
+          "summary": "The image in an Icon toggle panel is 110px wide on every screen size, instead of 150px.",
+          "detect": {
+            "patterns": [
+              "data-icon-card"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "width:\\s*110px"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Icon toggle block's CSS. A page that sized its panel images itself in its own overrides can drop that override."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.4.0",
       "date": "2026-11-13",
       "summary": "The greys are named for what they are used for (--divider-colour, --secondary-text-colour, --hover-background, --tile-border-colour). --dark-grey, --light-grey and --mid-grey still work, as aliases, until 3.6.0. No visual change.",

@@ -65,6 +65,23 @@ export function summaryLine(cmp) {
   return `${cmp.differing.length} of the ${plural(cmp.n, "element", "elements")} ${cmp.n === 1 ? "looks" : "look"} different. ${cmp.differing.length === cmp.n ? "" : "The others already match the template, so they are skipped here."}`.trim();
 }
 
+// What the preview measured, in a form the rest of the wizard (the slide's value lines, the final report) can keep:
+//   { status: "differs" | "same" | "none" | "state" | "screen", n, differing, text, lines: [{ label, measurable, template, yours, differs }] }
+// The values of a line are read from the first element the rule CHANGES (else the first it touches), so they are the real
+// rendered values on this page, not just what the template's rule for the same selector says.
+export function measuredSummary(cmp, template, yours, labels) {
+  const status = cmp.n === 0 ? "none" : !cmp.measured ? (cmp.unmeasurable ? "state" : "screen") : cmp.differing.length ? "differs" : "same";
+  const lines = template.lines.map((t, i) => {
+    const y = yours.lines[i], measurable = t.applies && t.measurable;
+    if (!measurable) return { label: labels[i], measurable: false, template: null, yours: null, differs: false };
+    let j = t.vals.findIndex((tv, e) => tv !== null && y.vals[e] !== null && tv !== y.vals[e]);
+    const differs = j !== -1;
+    if (!differs) j = t.vals.findIndex((tv) => tv !== null);
+    return { label: labels[i], measurable: j !== -1, template: j === -1 ? null : t.vals[j], yours: j === -1 ? null : y.vals[j], differs };
+  });
+  return { status, n: cmp.n, differing: cmp.differing.length, text: summaryLine(cmp), lines };
+}
+
 // The note when the element was inside something closed, e.g. ['the accordion "Culture"'].
 export const openedNote = (notes) => (notes && notes.length ? `It was inside ${notes.join(" and ")}, so that has been opened for you.` : "");
 
@@ -75,9 +92,9 @@ export const roomFor = (innerHeight) => Math.max(300, innerHeight - 510);
 export const frameHeight = ({ room, stacked }) => (stacked ? Math.floor(room / 2) : room);
 
 // row: a review row. pages(): { template, yours } as { html, css, js }, built when the preview comes into view.
-// phone: show at phone width. prefs: { mode: "stacked" | "flip", show: "template" | "yours" }, shared by every preview in the
+// phone: show at phone width. onMeasured(summary): called once both versions have reported. prefs: { mode: "stacked" | "flip", show: "template" | "yours" }, shared by every preview in the
 // wizard so a choice sticks. Returns { el, load }.
-export function createCloseup(row, pages, { phone = false, prefs = { mode: "stacked", show: "template" } } = {}) {
+export function createCloseup(row, pages, { phone = false, prefs = { mode: "stacked", show: "template" }, onMeasured = null } = {}) {
   const probe = probeFor(row);
   const labels = probe.lines.map((l) => l.label);
   const root = makeEl("div", `upgrade-closeup${phone ? " upgrade-closeup--phone" : ""}`);
@@ -149,6 +166,7 @@ export function createCloseup(row, pages, { phone = false, prefs = { mode: "stac
 
   function analyse() {
     cmp = compareReports(side.template.report, side.yours.report, labels);
+    if (onMeasured) onMeasured(measuredSummary(cmp, side.template.report, side.yours.report, labels));
     summary.textContent = summaryLine(cmp);
     summary.classList.toggle("upgrade-closeup-summary--same", cmp.n > 0 && cmp.measured > 0 && !cmp.differing.length);
     order = cmp.differing.length ? cmp.differing : [...Array(cmp.n).keys()];

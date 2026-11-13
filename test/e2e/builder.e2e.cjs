@@ -343,6 +343,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const strongLook = await page.textContent("#view-upgrade .upgrade-closeup-look");
   ok("9c it measures the real page: how many elements actually look different", /^\d+ of the 10 elements look different/.test(strongSummary), strongSummary);
   ok("9c and says what to look at, and what the template and yours give", /^Looking at the <strong>/.test(strongLook) && /text weight: the template gives \d+, yours gives \d+/.test(strongLook), strongLook);
+  ok("9c and once measured, the slide says what the template really gives on this page, not just 'not set'", /On this page the template gives\s*\d+,\s*yours gives\s*\d+/.test((await page.textContent("#view-upgrade .upgrade-review-lines")).replace(/\s+/g, " ")), (await page.textContent("#view-upgrade .upgrade-review-lines")).slice(0, 200));
   ok("9c the slide says in plain words what the rule sets, against the template", (await page.textContent("#view-upgrade .upgrade-review-lines")).includes("text weight") && (await page.textContent("#view-upgrade .upgrade-review-lines")).includes("template"));
   // stepping through the elements that differ: the frames follow, the builder's own page does not move
   const yBefore = await page.evaluate(() => Math.round(scrollY));
@@ -459,6 +460,8 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const [download] = await Promise.all([page.waitForEvent("download"), page.click('#view-upgrade button:has-text("Download report")')]);
   const reportText = fs.readFileSync(await download.path(), "utf8");
   ok("9c the downloaded report is a Markdown file a person can keep", download.suggestedFilename() === "migration-report.md" && reportText.startsWith("# Migration report") && reportText.includes("## Kept as your own (20)") && reportText.includes("- **Why:** A deliberate design choice. bold is our house style") && reportText.includes("strong — text weight: yours `bold`, template `not set`") && reportText.includes("## Still worth a look"), reportText.slice(0, 80));
+  ok("9c the report says what the previews measured: what you will see for a kept rule, and the real values", reportText.includes("**On this page:** 2 of the 10 elements look different") && /\*\*Measured:\*\* text weight: the template gives `\d+`, yours gives `\d+`/.test(reportText), reportText.slice(reportText.indexOf("### Text and headings"), reportText.indexOf("### Text and headings") + 400));
+  ok("9c and says that a rule kept without a note is worth a second look", /"Text and headings \u203a ol li::marker" was kept without a note/.test(reportText));
 
   // change the first rule and the rest of its group afterwards: back to the template
   await gotoStep("review");
