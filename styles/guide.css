@@ -3,16 +3,16 @@
 .guide-btn {
   font-family: inherit;
   cursor: pointer;
-  border: 1px solid var(--navy);
+  border: 1px solid var(--accent);
   background: #fff;
-  color: var(--navy);
+  color: var(--accent);
   font-weight: 600;
   font-size: 0.82rem;
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
   white-space: nowrap;
 }
-.guide-btn:hover { background: var(--navy); color: #fff; }
+.guide-btn:hover { background: var(--accent); color: #fff; }
 
 .guide-dialog {
   /* The card fills the dialog, so only a click on the backdrop reaches the <dialog> itself. */
@@ -48,7 +48,7 @@
   padding: 0.9rem 1.25rem;
   border-bottom: 1px solid var(--line);
 }
-.guide-head h2 { margin: 0; font-size: 1.1rem; color: var(--navy); }
+.guide-head h2 { margin: 0; font-size: 1.1rem; color: var(--accent); }
 
 .guide-close {
   font-family: inherit;
@@ -72,7 +72,7 @@
 }
 .guide-body:focus { outline: none; }
 
-.guide-body h4 { margin: 1.4rem 0 0.4rem; font-size: 0.9rem; color: var(--navy); }
+.guide-body h4 { margin: 1.4rem 0 0.4rem; font-size: 0.9rem; color: var(--accent); }
 .guide-body h4:first-child { margin-top: 0; }
 .guide-body p { margin: 0 0 0.9rem; }
 
@@ -131,7 +131,7 @@
   padding: 0.2rem 1rem;
   background: #fbfaf8;
 }
-.guide-body details > summary { cursor: pointer; font-weight: 700; color: var(--navy); padding: 0.55rem 0; }
+.guide-body details > summary { cursor: pointer; font-weight: 700; color: var(--accent); padding: 0.55rem 0; }
 .guide-body details[open] > summary { border-bottom: 1px solid var(--line); margin-bottom: 0.7rem; }
 .guide-body details ol { margin: 0 0 0.9rem; padding-left: 1.3rem; }
 .guide-body details li { margin-bottom: 0.4rem; line-height: 1.6; }

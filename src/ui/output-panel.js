@@ -1,5 +1,6 @@
 // The generated code for one block, always up to date: HTML, plus (when the
-// block has them) a contents entry, CSS and JS. One tab each, with a Copy button.
+// block has them) a contents entry, CSS and JS. One tab each. There is ONE Copy button, in the
+// card header: it copies whichever tab is showing and is labelled for it (Copy HTML / CSS / JS).
 import { initTabs } from "./tabs.js";
 import { copyToClipboard } from "../lib/dom.js";
 import { toast } from "./toast.js";
@@ -28,13 +29,13 @@ export function createOutputPanel(block, { explainEl, onTab } = {}) {
       note: "Doesn't include its own <script> tags: add it inside the script block from Base JS, not as a separate one. Only needed once even if this block appears several times on the page." });
   }
 
-  // The header keeps "Copy HTML" in reach even when the code is collapsed away, so the
+  // The header's Copy button stays in reach even when the code is collapsed away, so the
   // preview can have the whole pane without losing the most common action.
   el.innerHTML = `
     <div class="card-head">
       <h3>Code to paste</h3>
       <div class="card-tools">
-        <button type="button" class="primary-btn head-copy">Copy HTML</button>
+        <button type="button" class="primary-btn head-copy" data-copy-label="Copy HTML">Copy HTML</button>
         <button type="button" class="collapse-btn" aria-expanded="true" title="Show or hide the code">▾</button>
       </div>
     </div>
@@ -66,35 +67,35 @@ export function createOutputPanel(block, { explainEl, onTab } = {}) {
     }
     body.innerHTML = `
       <p class="output-heading"></p>
-      <div class="output-wrap"><button type="button" class="copy-btn"></button><textarea rows="8" readonly spellcheck="false"></textarea></div>
+      <div class="output-wrap"><textarea rows="8" readonly spellcheck="false"></textarea></div>
       ${o.note ? `<p class="note"></p>` : ""}`;
     body.querySelector(".output-heading").textContent = o.heading;
     if (o.note) body.querySelector(".note").textContent = o.note;
-    const copyBtn = body.querySelector(".copy-btn");
-    copyBtn.textContent = o.copy;
-    if (o.key === "html") copyBtn.hidden = true; // the card header's "Copy HTML" is always in view
     const area = body.querySelector("textarea");
     area.setAttribute("aria-label", o.heading);
-    copyBtn.addEventListener("click", async () => {
-      area.select();
-      try { await copyToClipboard(area.value, copyBtn); toast(`${o.tab} copied`); }
-      catch (e) { toast("Couldn't copy. Select the code and press Ctrl+C."); }
-    });
     bodies.appendChild(body);
     areas[o.key] = area;
     tab._body = body;
   });
 
   const tabs = Array.from(tablist.children);
-  const tabsApi = initTabs({ tabs, panelFor: (t) => t._body, onSelect: (t) => { if (onTab) onTab(t._key); } });
+  const headCopy = el.querySelector(".head-copy");
+  let current = outputs[0];
+  const tabsApi = initTabs({ tabs, panelFor: (t) => t._body, onSelect: (t) => {
+    current = outputs.find((o) => o.key === t._key);
+    headCopy.hidden = !current.copy; // the Explain tab has nothing to copy
+    if (current.copy) headCopy.dataset.copyLabel = headCopy.textContent = current.copy;
+    if (onTab) onTab(t._key);
+  } });
   if (tabs.length === 1) tablist.hidden = true;
 
-  // Header "Copy HTML" (always visible) and the collapse toggle. Collapsed state is shared by
-  // every block and remembered.
-  const headCopy = el.querySelector(".head-copy");
+  // The header's Copy button (copies the tab that is showing) and the collapse toggle.
+  // Collapsed state is shared by every block and remembered.
   headCopy.addEventListener("click", async () => {
-    try { await copyToClipboard(areas.html.value, headCopy); toast("HTML copied"); }
+    try { await copyToClipboard(areas[current.key].value, headCopy); toast(`${current.tab} copied`); }
     catch (e) { toast("Couldn't copy. Open the code and press Ctrl+C."); }
+    // copyToClipboard puts back the label it found; if the tab changed meanwhile, that label is stale.
+    setTimeout(() => { if (!headCopy.classList.contains("copied")) headCopy.textContent = current.copy || headCopy.textContent; }, 1600);
   });
   const collapseBtn = el.querySelector(".collapse-btn");
   const setCollapsed = (collapsed) => {

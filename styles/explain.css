@@ -80,11 +80,11 @@
   border-radius: 4px;
 }
 .explain-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; flex-wrap: wrap; }
-.explain-label { font-size: 0.95rem; color: var(--navy); }
+.explain-label { font-size: 0.95rem; color: var(--accent); }
 .explain-tag { color: #1f4f9a; background: #eef3fb !important; }
 .explain-what { font-weight: 500; }
 .explain-more { margin: 0.25rem 0; }
-.explain-more summary { cursor: pointer; font-weight: 700; color: var(--navy); font-size: 0.82rem; }
+.explain-more summary { cursor: pointer; font-weight: 700; color: var(--accent); font-size: 0.82rem; }
 .explain-more p { margin: 0.3rem 0 0.2rem 0.9rem; }
 
 .explain-attr {
@@ -122,7 +122,7 @@
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--navy);
+  color: var(--accent);
   padding: 0.2rem 0.6rem;
   margin-top: 0.3rem;
 }
