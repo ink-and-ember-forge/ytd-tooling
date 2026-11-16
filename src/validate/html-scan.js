@@ -73,6 +73,17 @@ export function scanHtml(html) {
   masked = masked.replace(/(<(script|style)\b[^>]*>)([\s\S]*?)(<\/\2\s*>)/gi, (m, open, _t, body, close) => open + blank(body) + close);
 
   const all = [], stack = [], unclosed = [], omitted = [];
+  // An end tag that shuts an ancestor while elements inside it are still open ("forces them shut"). The end tags those elements were
+  // really waiting for turn up later as strays, so a stray is matched back to the episode it belongs to rather than reported alone.
+  const episodes = [], misnested = [], pairedEls = new Set();
+  const claim = (tag) => {
+    for (let i = episodes.length - 1; i >= 0; i--) {
+      const ep = episodes[i];
+      const m = [...[...ep.forced].reverse(), ep.closed].find((x) => x.tag === tag && !ep.paired.has(x)); // innermost first, the ancestor last
+      if (m) { ep.paired.add(m); return { ep, m, forced: m !== ep.closed }; }
+    }
+    return null;
+  };
   const top = () => stack[stack.length - 1];
   let lastImplicitP = null;
   // An element whose end tag was left out: it ends here (`by`: the tag that ended it, or null at the end of the page).
@@ -119,6 +130,20 @@ export function scanHtml(html) {
     }
     const idx = stack.map((s) => s.tag).lastIndexOf(tag);
     if (idx === -1) {
+      const hit = claim(tag), here = { tag, start, end: start + whole.length };
+      if (hit && hit.forced) { // the end tag of an element an earlier end tag already forced shut: one fault, reported once, on that element
+        pairedEls.add(hit.m);
+        misnested.push({ el: hit.m, ep: hit.ep, stray: here });
+        continue;
+      }
+      if (hit) { // the end tag of an element that an earlier end tag of the same name already closed
+        const { ep, m } = hit, line = (o) => loc.at(o).line;
+        add("html/stray-close-tag", "error", start, start + whole.length, `</${tag}> closes nothing: the <${tag}> it belongs to (line ${line(m.start)}) was already ended by the </${ep.closer.tag}> on line ${line(ep.closer.start)}.`, {
+          why: `That earlier </${ep.closer.tag}> shut it first${ep.forced.length ? `, and forced ${ep.forced.map((f) => `<${f.tag}> (line ${line(f.start)})`).join(", ")} shut on the way` : ""}. An end tag above is missing, or there is one too many, so everything from there on is shifted by one level.`,
+          related: [relatedAt(loc, "html", m.start, `the <${tag}> this was meant to close`), relatedAt(loc, "html", ep.closer.start, `the </${ep.closer.tag}> that closed it first`)],
+        });
+        continue;
+      }
       let message = `</${tag}> has no matching <${tag}>.`, related = [], why = "The browser ignores it, but it usually means a tag above was closed too early or never opened.";
       if (HEADING.test(tag)) {
         const open = [...stack].reverse().find((s) => HEADING.test(s.tag));
@@ -131,13 +156,15 @@ export function scanHtml(html) {
       add("html/stray-close-tag", "error", start, start + whole.length, message, { why, related });
       continue;
     }
+    const forced = [];
     for (const skipped of stack.splice(idx + 1)) {
       if (OPTIONAL_END.has(skipped.tag)) endImplicitly(skipped, start, { tag, start, closing: true });
-      else unclosed.push({ el: skipped, closer: { tag, start } });
+      else { unclosed.push({ el: skipped, closer: { tag, start } }); forced.push(skipped); }
     }
     const el = stack.pop();
     el.end = start + whole.length;
     el.closeStart = start;
+    if (forced.length) episodes.push({ closer: { tag, start }, closed: el, forced, paired: new Set() });
   }
   for (const el of stack) {
     if (OPTIONAL_END.has(el.tag)) endImplicitly(el, html.length);
@@ -153,7 +180,26 @@ export function scanHtml(html) {
     });
   }
 
-  for (const { el, closer } of unclosed.sort((a, b) => a.el.start - b.el.start)) {
+  const stillOpen = unclosed.filter((u) => !pairedEls.has(u.el)).sort((a, b) => a.el.start - b.el.start);
+
+  // An element shut early by an end tag further up, whose own end tag then turned up and found nothing to close.
+  for (const { el, ep, stray } of misnested) {
+    const line = (o) => loc.at(o).line, c = ep.closer;
+    // The earliest thing left open before that end tag is usually where the nesting first went wrong.
+    const root = stillOpen.find((u) => u.el.start < c.start && u.el !== el);
+    add("html/misnested-tag", "error", el.start, el.openEnd, `<${el.tag}> (line ${line(el.start)}) is shut early by the </${c.tag}> on line ${line(c.start)}, so its own </${el.tag}> on line ${line(stray.start)} closes nothing.`, {
+      why: `That </${c.tag}> ends the <${ep.closed.tag}> opened on line ${line(ep.closed.start)}, and a browser closes everything still open inside it, <${el.tag}> included. An end tag above is missing, or there is one too many, so the nesting is shifted by one level from there on.${root ? ` The first thing left open above it is the <${root.el.tag}> on line ${line(root.el.start)}: that is probably where it started.` : ""}`,
+      related: [
+        relatedAt(loc, "html", c.start, `the </${c.tag}> that shuts it early`),
+        relatedAt(loc, "html", stray.start, `its own </${el.tag}>, which now closes nothing`),
+        relatedAt(loc, "html", ep.closed.start, `the <${ep.closed.tag}> that the </${c.tag}> closes`),
+        ...(root ? [relatedAt(loc, "html", root.el.start, `the <${root.el.tag}> left open: probably where it started`)] : []),
+      ],
+      data: { tag: el.tag, shutBy: c.tag, ownEndLine: line(stray.start) },
+    });
+  }
+
+  for (const { el, closer } of stillOpen) {
     const until = closer ? closer.start : html.length;
     const inside = all.filter((e) => e.start >= el.openEnd && e.start < until);
     const span = inside.length ? `lines ${loc.at(el.openEnd).line}–${loc.at(until).line}` : null;

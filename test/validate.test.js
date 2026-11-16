@@ -61,6 +61,44 @@ test("html: a stray close tag, and a heading closed with the wrong level, with a
   assert.equal(ofId(r, "html/unclosed-tag").length, 1, "and the <h3> is reported as never closed");
 });
 
+test("html: an element shut early by an outer end tag and its own end tag turning up later are ONE finding, not two that contradict", () => {
+  const r = v('<div id="a">\n<main>\n<p>x</p>\n</div>\n</main>\n</div>');
+  const mis = ofId(r, "html/misnested-tag");
+  assert.equal(mis.length, 1);
+  assert.equal(mis[0].line, 2);
+  assert.match(mis[0].message, /<main> \(line 2\) is shut early by the <\/div> on line 4, so its own <\/main> on line 5 closes nothing/);
+  assert.deepEqual(mis[0].related.map((x) => x.line), [4, 5, 1]);
+  assert.equal(ofId(r, "html/unclosed-tag").length, 0, "it is not also reported as never closed");
+  const stray = ofId(r, "html/stray-close-tag");
+  assert.equal(stray.length, 1, "</main> is not also reported as a stray");
+  assert.equal(stray[0].line, 6);
+  assert.match(stray[0].message, /the <div> it belongs to \(line 1\) was already ended by the <\/div> on line 4/);
+  assert.match(stray[0].why, /forced <main> \(line 2\) shut/);
+});
+
+test("html: the earliest element left open is named as probably where it went wrong", () => {
+  // The <div class="open"> on line 3 is never closed: the </section> on line 4 shuts it. That shifts the nesting, so the </div> on
+  // line 6 ends #a instead and forces <main> shut, and <main>'s own </main> then finds nothing.
+  const r = v('<div id="a">\n<section>\n<div class="open">\n</section>\n<main>\n</div>\n</main>\n</div>');
+  assert.deepEqual(ofId(r, "html/unclosed-tag").map((f) => f.line), [3]);
+  const [mis] = ofId(r, "html/misnested-tag");
+  assert.equal(mis.data.tag, "main");
+  assert.match(mis.why, /first thing left open above it is the <div> on line 3: that is probably where it started/);
+  assert.deepEqual(mis.related.map((x) => x.line), [6, 7, 1, 3]);
+  // With nothing left open before it, no root is guessed.
+  const [none] = ofId(v('<div id="a">\n<main>\n</div>\n</main>\n</div>'), "html/misnested-tag");
+  assert.doesNotMatch(none.why, /first thing left open/);
+});
+
+test("html: an end tag that matches nothing earlier stays an ordinary stray, and an element with no later end tag stays 'never closed'", () => {
+  const stray = v("<div></div></span>");
+  assert.equal(ofId(stray, "html/stray-close-tag").length, 1);
+  assert.equal(ofId(stray, "html/misnested-tag").length, 0);
+  const open = v("<div><section><p>x</p></div>");
+  assert.equal(ofId(open, "html/unclosed-tag").length, 1);
+  assert.equal(ofId(open, "html/misnested-tag").length, 0);
+});
+
 test("html: a closing tag on a void element is an error (</br> adds a line break)", () => {
   const [f] = ofId(v("<p>a<br></br>b</p>"), "html/void-close-tag");
   assert.match(f.message, /<\/br> is not allowed/);
@@ -256,12 +294,26 @@ test("validate: a pack adds its own findings", () => {
 const read = (name) => readFileSync(new URL(`./fixtures/validate/${name}`, import.meta.url), "utf8");
 const page = (n) => validate({ html: read(`example-${n}.html`), css: read(`example-${n}.css`), js: "" });
 
-test("fixtures: example 1 has an unclosed main, div, ul and section, three strays and a </br>", () => {
+test("fixtures: example 1 has one root fault (a <div> and <ul> left open) and its consequences, each reported once and consistently", () => {
   const r = page(1);
-  assert.deepEqual(ofId(r, "html/unclosed-tag").map((f) => `${f.data.tag}@${f.line}`), ["main@26", "div@80", "ul@92", "section@99"]);
-  assert.deepEqual(ofId(r, "html/stray-close-tag").map((f) => f.line), [116, 210, 219]);
+  // The root: the <div> on line 80 and the <ul> on line 92 are never closed.
+  assert.deepEqual(ofId(r, "html/unclosed-tag").map((f) => `${f.data.tag}@${f.line}`), ["div@80", "ul@92"]);
+  // The consequences: later end tags land one level out, so <main> and <section> are shut early and their own end tags find nothing.
+  const mis = ofId(r, "html/misnested-tag");
+  assert.deepEqual(mis.map((f) => `${f.data.tag}@${f.line}`), ["main@26", "section@99"]);
+  assert.equal(mis[0].data.shutBy, "div");
+  assert.equal(mis[0].data.ownEndLine, 210);
+  assert.match(mis[0].why, /first thing left open above it is the <div> on line 80/);
+  assert.deepEqual(mis[0].related.map((x) => x.line), [207, 210, 4, 80]);
+  // And the final </div> is explained too, instead of contradicting the <main> finding.
+  const stray = ofId(r, "html/stray-close-tag");
+  assert.deepEqual(stray.map((f) => f.line), [219]);
+  assert.match(stray[0].message, /was already ended by the <\/div> on line 207/);
+  // No finding says <main> is never closed while another says </main> has nothing to close.
+  assert.ok(!r.findings.some((f) => /<main> is never closed/.test(f.message)));
+  assert.ok(!r.findings.some((f) => /<\/main> has no matching/.test(f.message)));
   assert.equal(ofId(r, "html/void-close-tag")[0].line, 150);
-  assert.equal(r.counts.error, 8);
+  assert.equal(r.counts.error, 6);
   assert.equal(r.counts.warning, 0);
 });
 
