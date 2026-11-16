@@ -11,7 +11,8 @@ Status: **first slice built** (see "What exists" below). Cross-file JS checks an
 | Finding id | Severity | What |
 |---|---|---|
 | `html/unclosed-tag` | error | Never closed; says where it stops and how much it swallowed, with the ending tag as a related place |
-| `html/stray-close-tag` | error | A close tag with no open one; a heading closed at the wrong level says which it meant; a `</p>` after a list says the `<p>` was closed early by it |
+| `html/misnested-tag` | error | An element **shut early by an outer end tag**, whose own end tag then turns up and closes nothing (`<main>` forced shut by a `</div>` that closes `#page-container`, then a stray `</main>`). It is **one finding on the element**, not "never closed" plus "no matching `<main>`", which would contradict each other. It names the end tag that shut it, its own end tag, the element that end tag closed, and the earliest thing left open above it ("probably where it started") |
+| `html/stray-close-tag` | error | A close tag with no open one; a heading closed at the wrong level says which it meant; a `</p>` after a list says the `<p>` was closed early by it; one that belongs to an element an earlier end tag of the same name already closed says which and why (the same fault as a `html/misnested-tag`, from the other end) |
 | `html/void-close-tag` | error | `</br>` and friends |
 | `html/unclosed-quote` | error | An unclosed quote, or a stray quote where an attribute name should be |
 | `html/duplicate-attribute` | error | Written twice on one tag (the second is ignored) |
@@ -25,6 +26,8 @@ Status: **first slice built** (see "What exists" below). Cross-file JS checks an
 | `css/unused-selector` | info | A selector that never matches anything in the HTML (shown as the selector it really is, with nested rules resolved); with the size in bytes. A rule that is wholly unused takes its nested rules with it |
 | `css/unused-summary` | info | N of M rules, about X bytes and Y% of the CSS, never match anything |
 | `css/unused-variable` | info | A custom property nothing uses (no `var()`, nothing in the HTML or JS) |
+
+**One fault, reported once.** A single missing or extra end tag shifts the nesting, and a browser's recovery then closes the wrong elements, so a naive scanner reports several findings that describe the same fault from different sides (and seem to contradict each other). The scanner records each end tag that shuts an ancestor while elements inside it are still open (an "episode"), and matches later strays back to the episode they belong to, innermost first. The finding that remains is the earliest one (the element genuinely left open); the rest say what they are consequences of. Example 1 in `test/fixtures/validate/` is the test case: its `<div>` and `<ul>` left open on lines 80 and 92 are the cause, and `<main>`, `<section>` and the last `</div>` are consequences.
 
 **Unused CSS** only reports what a static page can prove. It does not report: `:hover`, `:focus`, `::before` and other states and pseudo-elements; rules on the host page's `html`, `body` and `:root`; `:not(.collapsed)`-style rules on a state class Bootstrap toggles; selectors naming a class or id that a script mentions or that Bootstrap adds at runtime (`show`, `collapsing`, `active`...); selectors the engine can't parse. It is `info`, never a warning: it is hygiene, and the template's own CSS has some (unused theme classes).
 

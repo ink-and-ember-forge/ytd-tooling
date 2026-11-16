@@ -1,18 +1,16 @@
 {
   "example-1": {
     "counts": {
-      "error": 8,
+      "error": 6,
       "warning": 0,
       "info": 31
     },
     "findings": [
-      "error html 26:3 html/unclosed-tag",
+      "error html 26:3 html/misnested-tag",
       "error html 80:11 html/unclosed-tag",
       "error html 92:13 html/unclosed-tag",
-      "error html 99:9 html/unclosed-tag",
-      "error html 116:7 html/stray-close-tag",
+      "error html 99:9 html/misnested-tag",
       "error html 150:71 html/void-close-tag",
-      "error html 210:1 html/stray-close-tag",
       "error html 219:1 html/stray-close-tag"
     ],
     "info": [
