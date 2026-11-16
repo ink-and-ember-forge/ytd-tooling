@@ -1,0 +1,431 @@
+<style>
+:root {
+  --heading-1: 1.625rem;
+  --heading-2: 1.375rem;
+  --numbered-subheading: 20px;
+  --burgundy: #a3195b;
+  --light-burgundy: #faf3f7;
+  --thinqi-navbar-height: 95px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  background-color: white !important;
+  scroll-behavior: smooth;
+  font-family: "Noto Sans", "Noto Sans Arabic", sans-serif !important;
+}
+
+p {
+  margin-block: 1em;
+}
+
+ul {
+  list-style-type: disc;
+  padding-left: 40px;
+}
+
+li {
+  line-height: 1.5em;
+}
+
+section {
+  padding-block: 1rem;
+  scroll-margin-top: calc(var(--thinqi-navbar-height) + 15px);
+}
+
+a {
+  text-decoration: underline;
+  color: var(--burgundy); 
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+#page-container a {
+  color: var(--burgundy);
+  text-decoration: underline;
+}
+
+.inline-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+#page-container a:hover {
+  text-decoration: none;
+}
+
+#accesskeys ul {
+  list-style-type: none;
+}
+
+
+#page-container {
+  margin-top: var(--thinqi-navbar-height);
+  line-height: 160%;
+}
+/* UTILS */
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-weight: bold;
+  margin-block: 1.5rem;
+}
+
+.standard-container {
+  max-width: 860px;
+  margin-inline: auto;
+}
+
+#breadcrumb-nav {
+  padding: 1rem;
+}
+
+#breadcrumb-nav__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 0.4rem;
+}
+
+#breadcrumb-nav__list li:not(:last-child)::after {
+  content: "|";
+  margin-left: 0.5rem;
+  color: #545454;
+}
+
+#breadcrumb-nav a {
+  color: var(--burgundy);
+  text-decoration: underline;
+}
+
+#breadcrumb-nav a:hover {
+  text-decoration: none;
+}
+
+#breadcrumb-nav__list li:last-child {
+  color: #545454;
+}
+
+.header {
+  width: 100%;
+}
+
+#header-img {
+  width: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  display: block;
+}
+#header-h1 {
+  font-size: var(--heading-1);
+  color: var(--burgundy);
+  line-height: 120%;
+  font-weight: bold;
+  margin-block: 1.5rem;
+}
+
+#page-container .content-column h2 {
+  font-size: var(--heading-2);
+  font-weight: bold;
+  margin-bottom: 1.5rem;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 2rem;
+  align-items: start;
+  padding-inline: 1rem;
+}
+
+/* P Class  */
+.more-resources-text {
+  text-align: center;
+}
+
+/* Table of Content left side  */
+
+/* override thinqi default style, to allow use of sticky position */
+body > main > article.plain-text {
+  overflow: visible !important;
+}
+
+#table-of-contents {
+  position: sticky;
+  top: 110px;
+}
+
+#table-of-contents-heading {
+  border-radius: 20px;
+  background-color: var(--burgundy);
+  color: white;
+  padding: 5px;
+  text-align: center;
+  font-weight: 400;
+  line-height: 1.5;
+  font-size: 1.2em;
+  margin-block: 1.5rem 0.75em;
+}
+
+#table-of-contents ul {
+  padding-left: 0;
+}
+
+#table-of-contents li {
+  list-style: none;
+  border-radius: 10px;
+  padding: 10px;
+  background-color: var(--light-burgundy); 
+  margin-left: 0;
+}
+
+#table-of-contents .toc-link {
+  color: var(--burgundy);
+}
+
+#table-of-contents li:hover {
+  background-color: #f1f1f1;
+}
+
+#table-of-contents .toc-link:hover {
+  text-decoration: none;
+}
+
+#table-of-contents li + li {
+  margin-top: 1rem;
+}
+
+/* Main content  */
+
+/* At a glance block  */
+#at-a-glance {
+  background-color: #e8e8e8;
+  border-bottom: 4px solid var(--burgundy);
+  border-radius: 20px 20px 0px 0px;
+  padding: 20px;
+}
+
+#at-a-glance-heading {
+  margin-block: 0 10px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+#at-a-glance ul {
+  margin-block: 0;
+}
+
+#at-a-glance ul li + li {
+  margin-top: 10px;
+}
+
+.content-body {
+  margin-top: 1rem;
+}
+
+#intro-text p:first-of-type {
+  font-size: larger;
+}
+
+/* 'Put into practice' section */
+#putting-practice h3 {
+  color: var(--burgundy);
+  font-size: var(--numbered-subheading);
+  font-weight: 600;
+}
+
+.image-text-section > img {
+  float: right;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 0 1rem 1.5rem;
+  border-radius: 16px;
+}
+
+.image-text-section > div {
+  min-width: 0;
+}
+
+.image-text-section::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+/* Further resources cards */
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  place-items: center;
+  gap: 1rem;
+}
+
+#further-resources .card {
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);}
+
+#further-resources .card:hover {
+  transform: translateY(-3px);
+  transition: 0.2s;  box-shadow: 8px 12px 29px -3px rgba(26, 26, 26, 0.4);
+}
+
+.resource-card__img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 10px 10px 0 0;
+}
+
+#further-resources .card > div {
+  padding: 1rem 1rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 180px;
+}
+
+#further-resources .card > div > a {
+  margin-bottom: 2rem;
+  color: var(--burgundy);
+}
+
+#further-resources .card p {
+  display: flex;
+  justify-content: space-between;
+}
+
+.timestamp {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+  font-size: 13px;
+  color: #616060;
+  padding-inline: 1rem;
+  margin-left: -1rem;
+}
+
+/* Back to Top button  */
+.back-to-top {
+  display: none;
+  flex-direction: column;
+  position: fixed;
+  right: 2rem;
+  bottom: 2rem;
+  background-color: rgba(255, 255, 255, 0.8);
+  border: none;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: var(--burgundy);
+  font-weight: bold;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 99;
+}
+
+.back-to-top > img {
+  width: 30px;
+}
+
+
+/*================ RESPONSIVE DESIGN================ */
+@media (max-width: 1200px) {
+  .standard-container {
+    max-width: 750px;
+  }
+
+  .principles-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    padding-inline: 2.5rem;
+  }
+}
+
+/* MOBILE VIEW starts here___  */
+
+@media (max-width: 768px) {
+  .standard-container {
+    max-width: 100%;
+    padding-inline: 1.2rem;
+  }
+
+  .main-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .content-column {
+    display: contents;
+  }
+
+  #header-h1 {
+    order: 1;
+  }
+
+  #at-a-glance {
+    order: 2;
+  }
+
+  #table-of-contents {
+    order: 3;
+    padding-top: 0;
+    position: static;
+    width: 100%;
+  }
+
+  .content-body {
+    order: 4;
+  }
+
+  .image-text-section img {
+    display: block;
+    margin: 0 auto 1rem;
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    object-position: 0 10%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 576px) {
+  #header-img {
+    object-fit: contain;
+  }
+
+  .cards-grid {
+    grid-template-columns: repeat(1, 90%);
+    justify-content: center;
+  }
+
+  #further-resources .card {
+    max-width: 300px;
+  }
+.timestamp {
+  margin-left: -1rem;
+  max-width: 250px;
+  line-height: 1.5;
+}
+}
+</style>

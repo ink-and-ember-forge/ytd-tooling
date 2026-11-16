@@ -26,7 +26,11 @@ export function buildReport(migration, steps, decisions, { date }) {
     if (d.reason === "unsure") toCheck.push(`Revisit "${s.title}": you kept it but weren't sure why.`);
     else if (d.reason === "problem" && !d.note.trim()) toCheck.push(`"${s.title}" was kept to fix a problem, but no note says which. Add one in the CSS comment so it can be re-tested later.`);
   }
-  for (const g of components.filter((c) => !c.kept)) toCheck.push(`Not carried: ${g.key}. Anything using it has lost its styling.`);
+  const goneFor = (g) => (migration.retired?.removed || []).some((x) => x.classes.includes(g.key));
+  for (const g of components.filter((c) => !c.kept)) {
+    toCheck.push(goneFor(g) ? `Rebuild .${g.key}: it was removed, and a placeholder comment in the HTML marks where it was.` : `Not carried: ${g.key}. Anything using it has lost its styling.`);
+  }
+  if (migration.retiring) for (const g of components.filter((c) => c.kept)) toCheck.push(`Kept for now: ${g.key}. Rebuild it, then remove its CSS from the overrides block.`);;
   if (lint.missingFunctions?.length) toCheck.push(`The HTML calls ${lint.missingFunctions.map((f) => `${f}()`).join(", ")}, which the JS doesn't define, so those controls do nothing.`);
   if (lint.unstyledClasses.length) toCheck.push(`No styling left for: ${lint.unstyledClasses.map((c) => `.${c}`).join(", ")}.`);
   if (lint.undefinedVars.length) toCheck.push(`CSS variables used but never defined: ${lint.undefinedVars.join(", ")}.`);
@@ -38,7 +42,9 @@ export function buildReport(migration, steps, decisions, { date }) {
     totals: { differences, decisions: rows.length, kept: kept.length, template: template.length, components: components.length, componentsKept: components.filter((c) => c.kept).length, htmlChanges: migration.htmlChanges.length },
     kept: kept.map((s) => ({ title: s.title, reason: reasonLabel(decided(s).reason), note: decided(s).note.trim(), elements: s.elements, lines: s.lines, linked: s.linked })),
     template: template.map((s) => ({ title: s.title, elements: s.elements, lines: s.lines })),
-    components: components.map((g) => ({ name: g.key, kept: g.kept })),
+    components: components.map((g) => ({ name: g.key, kept: g.kept, removed: goneFor(g) })),
+    retiring: !!migration.retiring,
+    removed: (migration.retired?.removed || []).map((x) => ({ classes: x.classes, tag: x.tag, line: x.line, id: x.id, original: x.original })),
     dropped: { unused: migration.dropped.unused.length },
     htmlChanges: migration.htmlChanges.map((c) => c.summary),
     toCheck,
@@ -51,7 +57,9 @@ export function reportMarkdown(r) {
   out.push("## Summary", "");
   out.push(`- The page differed from the template in ${plural(t.differences, "place", "places")}, decided as ${plural(t.decisions, "rule", "rules")} (rules that depend on each other are decided together).`);
   out.push(`- **Kept as your own: ${t.kept}.** Following the template: ${t.template}.`);
-  out.push(`- Your own components carried over: ${t.componentsKept} of ${t.components}.`);
+  out.push(r.retiring
+    ? `- Your own components: ${t.components - t.componentsKept} removed or not carried (to rebuild), ${t.componentsKept} kept for now, of ${t.components}.`
+    : `- Your own components carried over: ${t.componentsKept} of ${t.components}.`);
   out.push(`- ${plural(t.htmlChanges, "change", "changes")} to the HTML. ${plural(r.dropped.unused, "rule", "rules")} for classes not used on the page were dropped.`, "");
 
   out.push(`## Kept as your own (${t.kept})`, "");
@@ -73,7 +81,11 @@ export function reportMarkdown(r) {
 
   out.push(`## Your own components (${t.components})`, "");
   if (!r.components.length) out.push("None.", "");
-  else out.push(...r.components.map((c) => `- ${c.name}: ${c.kept ? "carried over" : "**not carried**"}`), "");
+  else out.push(...r.components.map((c) => `- ${c.name}: ${c.kept ? (r.retiring ? "kept for now, **rebuild it**" : "carried over") : c.removed ? "**removed**, rebuild it over the placeholder" : "**not carried**"}`), "");
+  if (r.removed.length) {
+    out.push("## Original code of what was removed", "", "Each of these was replaced by a placeholder comment (search the HTML for REBUILD). Rebuild it however you choose and paste it over the placeholder.", "");
+    for (const x of r.removed) out.push(`### ${x.classes.map((c) => `.${c}`).join(", ")} (line ${x.line}${x.id ? `, id "${x.id}"` : ""})`, "", "```html", x.original, "```", "");
+  }
 
   if (r.htmlChanges.length) out.push("## Changes to your HTML", "", ...r.htmlChanges.map((c) => `- ${c}`), "");
   out.push("## Still worth a look", "");
