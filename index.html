@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="gwella">
 <head>
 <meta charset="UTF-8" />
 <title>Gwella Page Builder</title>
@@ -16,6 +16,7 @@
 <link href="styles/explain.css" rel="stylesheet" />
 <link href="styles/changelog-upgrade.css" rel="stylesheet" />
 <link href="styles/validate.css" rel="stylesheet" />
+<link href="styles/tour.css" rel="stylesheet" />
 <link href="styles/toast.css" rel="stylesheet" />
 
 </head>
@@ -29,8 +30,8 @@
     <h1>Gwella Page Builder</h1>
     <nav class="modes" id="modes" role="tablist" aria-label="Builder sections">
       <button type="button" class="mode-btn" data-view="build">Build blocks</button>
-      <button type="button" class="mode-btn" data-view="upgrade">Upgrade a page</button>
-    <button type="button" class="mode-btn" data-view="validate">Validate code</button>
+      <button type="button" class="mode-btn" data-view="upgrade" data-dev>Upgrade a page</button>
+      <button type="button" class="mode-btn" data-view="validate" data-dev>Validate code</button>
       <button type="button" class="mode-btn" data-view="changelog">What's changed</button>
     </nav>
     <div class="topbar-actions">
@@ -56,8 +57,10 @@
           <button type="button" class="menu-item" id="load-project-btn">⬆ Load project from a file</button>
           <input type="file" id="load-project-input" accept="application/json,.json" hidden />
           <button type="button" class="menu-item menu-item--danger" id="reset-all-btn">Reset everything</button>
+          <button type="button" class="menu-item" id="dev-off-btn" hidden title="The Upgrade and Validate tools are showing. Click to hide them again.">Developer mode is on · turn off</button>
         </div>
       </details>
+      <button type="button" class="tour-btn" id="tour-btn" aria-label="Take a tour of this page" title="Take a tour of this page">?</button>
       <button type="button" class="download-btn" id="open-template-btn">Open template ↗</button>
     </div>
   </div>

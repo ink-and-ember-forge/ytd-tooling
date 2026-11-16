@@ -43,6 +43,10 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
   await stubCdn(ctx);
+  // Pretend this browser has been here before and is up to date, so the first-visit tour offer and the
+  // "what's new" lightbox stay out of the way of the tests below (section 12 tests them on their own).
+  // Developer mode is on too: the Upgrade and Validate views (sections 8-11) are hidden without it. Frames without storage (the sandboxed preview) are skipped.
+  await ctx.addInitScript(() => { try { if (!localStorage.getItem("gwella-builder:visit")) localStorage.setItem("gwella-builder:visit", JSON.stringify({ lastSeenVersion: "999.0.0", tours: { build: true } })); localStorage.setItem("gwella-builder:developer", "1"); } catch (e) { /* no storage here */ } });
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", e => errors.push("pageerror: " + e.message));
@@ -998,6 +1002,120 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("template: .tight-heading pulls an H2 up under the H1 (by 40px)", Math.round(before - after) === 40, `before=${before} after=${after}`);
   ok("template: content-column H3 is black", await tp.evaluate(() => { const h = document.createElement("h3"); document.querySelector(".content-body").prepend(h); return getComputedStyle(h).color === "rgb(0, 0, 0)"; }));
   ok("template: contents items have a themed border", await tp.$eval("#table-of-contents li", (e) => getComputedStyle(e).borderTopWidth === "1px"));
+
+  // 12. theming, tours, and the "what's new" lightbox
+  const accent = () => page.evaluate(() => ({ bar: getComputedStyle(document.querySelector("#topbar")).borderTopColor, mode: getComputedStyle(document.querySelector(".mode-btn.active")).backgroundColor }));
+  await page.click('.theme-toggle-btn[data-theme="gwella"]');
+  const burg = await accent();
+  ok("12 Gwella theme: the builder's own chrome is burgundy", burg.bar === "rgb(163, 25, 91)" && burg.mode === "rgb(163, 25, 91)", JSON.stringify(burg));
+  await page.click('.theme-toggle-btn[data-theme="ytydysgu"]');
+  const blue = await accent();
+  ok("12 Y Tŷ Dysgu theme: the builder's own chrome is blue", blue.bar === "rgb(50, 80, 131)" && blue.mode === "rgb(50, 80, 131)" && (await page.getAttribute("html", "data-theme")) === "ytydysgu", JSON.stringify(blue));
+  await page.click('.theme-toggle-btn[data-theme="gwella"]');
+
+  const VISIT = "gwella-builder:visit";
+  const current = JSON.parse(fs.readFileSync(path.join(ROOT, "changelog", "changelog.json"), "utf8")).releases[0].version;
+  const fresh = async (seed, query) => {
+    const c = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+    await stubCdn(c);
+    if (seed) await c.addInitScript(([k, v]) => { if (!localStorage.getItem(k)) localStorage.setItem(k, v); }, [VISIT, JSON.stringify(seed)]);
+    const p = await c.newPage();
+    p.on("pageerror", (e) => errors.push("pageerror: " + e.message));
+    await p.goto(BASE + "/index.html" + (query || ""), { waitUntil: "networkidle" });
+    return { c, p };
+  };
+  const stored = (p) => p.evaluate((k) => JSON.parse(localStorage.getItem(k)), VISIT);
+  const cardInView = (p) => p.evaluate(() => { const r = document.querySelector(".tour-card").getBoundingClientRect(); return r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; });
+
+  // first visit: no lightbox; a tour is offered once; the build tour walks every step with the card on screen
+  let v = await fresh(null);
+  ok("12 first visit: no what's-new lightbox, a tour is offered", (await v.p.$$("dialog[open]")).length === 0 && /New here/.test(await v.p.textContent(".toast")));
+  ok("12 first visit is recorded as caught up", (await stored(v.p)).lastSeenVersion === current);
+  await v.p.click(".toast-action");
+  let steps = 0, allInView = true;
+  while (await v.p.$(".tour")) {
+    steps++;
+    allInView = allInView && (await cardInView(v.p));
+    await v.p.click(".tour-next");
+  }
+  ok("12 the builder tour runs every step with its card on screen, and ends on Done", steps >= 8 && allInView, "steps=" + steps);
+  await v.p.reload({ waitUntil: "networkidle" });
+  ok("12 the tour is offered only once", (await v.p.$$(".toast")).length === 0);
+  await v.p.click("#tour-btn");
+  await v.p.keyboard.press("ArrowRight");
+  ok("12 arrow keys move through the tour", (await v.p.getAttribute(".tour", "data-step")) === "1");
+  await v.p.keyboard.press("Escape");
+  ok("12 Esc leaves the tour", (await v.p.$(".tour")) === null);
+  await v.c.close();
+
+  // returning after an update: the lightbox lists what is new, and only once
+  v = await fresh({ lastSeenVersion: "3.3.2", lastVisit: "2026-11-01T09:00:00Z", tours: { build: true } });
+  const wn = await v.p.textContent("dialog.whatsnew-dialog[open]").catch(() => "");
+  ok("12 returning after an update: the lightbox lists the newer release, not the old ones", /Version 3\.4\.0/.test(wn) && !/Version 3\.3\.2/.test(wn) && /3\.3\.2/.test(wn));
+  ok("12 the lightbox is not marked seen until it is closed", (await stored(v.p)).lastSeenVersion === "3.3.2");
+  await v.p.click(".whatsnew-dialog .primary-btn");
+  await v.p.waitForFunction(([k, cur]) => JSON.parse(localStorage.getItem(k)).lastSeenVersion === cur, [VISIT, current]).catch(() => {}); // the dialog's close event is asynchronous
+  ok("12 closing the lightbox records the current version", (await stored(v.p)).lastSeenVersion === current && (await v.p.$("dialog[open]")) === null);
+  await v.p.reload({ waitUntil: "networkidle" });
+  ok("12 and it does not come back", (await v.p.$("dialog[open]")) === null);
+  await v.c.close();
+  v = await fresh({ lastSeenVersion: "3.3.2", tours: { build: true } });
+  await v.p.click(".whatsnew-dialog .guide-btn");
+  ok("12 'See the full history' opens What's changed", await v.p.isVisible("#view-changelog"));
+  await v.c.close();
+  v = await fresh({ lastSeenVersion: "999.0.0", tours: { build: true } });
+  ok("12 opened by an older copy of the builder: nothing shown", (await v.p.$("dialog[open]")) === null && (await stored(v.p)).lastSeenVersion === current);
+  await v.c.close();
+
+  // the What's changed tour, and no tour button on views that have none yet
+  await page.click('.mode-btn[data-view="changelog"]');
+  await page.click("#tour-btn");
+  steps = 0; allInView = true;
+  while (await page.$(".tour")) { steps++; allInView = allInView && (await cardInView(page)); await page.click(".tour-next"); }
+  ok("12 the What's changed tour runs 5 steps with its card on screen", steps === 5 && allInView, "steps=" + steps);
+  await page.click('.mode-btn[data-view="upgrade"]');
+  ok("12 views without a tour hide the Tour button", !(await page.isVisible("#tour-btn")));
+  await page.click('.mode-btn[data-view="build"]');
+  ok("12 and Build shows it again", await page.isVisible("#tour-btn"));
+
+  // the one Copy button follows the tab: the same large header button for HTML, CSS and JS, hidden on Explain
+  const headCopyOf = (panel) => page.evaluate((sel) => { const b = document.querySelector(sel + " .head-copy"); return { text: b.textContent, shown: b.offsetParent !== null }; }, panel);
+  await page.click('#tabbar .tab-btn:has-text("Accordion")');
+  const accordionTabs = await page.$$eval("#panel-accordion .output-tab", (t) => t.map((x) => x.textContent));
+  for (const name of accordionTabs) {
+    await page.click(`#panel-accordion .output-tab:text-is("${name}")`);
+    const h = await headCopyOf("#panel-accordion");
+    const expected = name === "Explain" ? null : name === "Contents entry" ? "Copy entry" : "Copy " + name;
+    ok(`12b accordion ${name} tab: ${expected ? "header button reads " + expected : "no copy button"}`, expected ? h.shown && h.text === expected : !h.shown, JSON.stringify(h));
+  }
+  ok("12b no small inline Copy buttons are left in the code card, and the CSS tab exists", (await page.$$("#panel-accordion .output-wrap .copy-btn")).length === 0 && accordionTabs.includes("CSS"));
+  await page.click('#panel-accordion .output-tab:text-is("HTML")');
+
+  // 13. developer mode: Upgrade and Validate are hidden unless ?dev has been used
+  const modesOf = (p) => p.$$eval(".mode-btn", (b) => b.map((x) => x.dataset.view));
+  ok("13 developer mode (as seeded for these tests) shows all four views", (await modesOf(page)).join() === "build,upgrade,validate,changelog");
+  ok("13 the header is still a single row in developer mode", (await page.$eval("#topbar", (e) => e.offsetHeight)) < 70, (await page.$eval("#topbar", (e) => e.offsetHeight)) + "px");
+  v = await fresh({ lastSeenVersion: current, tours: { build: true } });
+  ok("13 a normal visitor sees only Build and What's changed, and no Upgrade or Validate panels", (await modesOf(v.p)).join() === "build,changelog" && (await v.p.$("#view-upgrade, #view-validate")) === null);
+  ok("13 the header is a single row for a normal visitor", (await v.p.$eval("#topbar", (e) => e.offsetHeight)) < 70);
+  await v.p.goto(BASE + "/index.html#upgrade", { waitUntil: "networkidle" });
+  ok("13 #upgrade does nothing without developer mode", await v.p.isVisible("#view-build"));
+  await v.p.click('.mode-btn[data-view="changelog"]');
+  await v.p.click("#tour-btn");
+  steps = 0; while (await v.p.$(".tour")) { steps++; await v.p.click(".tour-next"); }
+  ok("13 without developer mode the What's changed tour leaves out the Upgrade step", steps === 4, "steps=" + steps);
+  await v.p.goto(BASE + "/index.html?dev#validate", { waitUntil: "networkidle" });
+  ok("13 ?dev turns it on, tidies the address, and #validate then works", (await modesOf(v.p)).join() === "build,upgrade,validate,changelog" && !/dev/.test(new URL(v.p.url()).search) && await v.p.isVisible("#view-validate"));
+  await v.p.reload({ waitUntil: "networkidle" });
+  ok("13 and it is remembered on the next visit", (await modesOf(v.p)).length === 4);
+  await v.p.click("#menu-project summary");
+  await v.p.click("#dev-off-btn");
+  await v.p.waitForLoadState("networkidle");
+  ok("13 'Developer mode is on · turn off' (Project menu) turns it off again", (await modesOf(v.p)).join() === "build,changelog" && (await v.p.$("#dev-off-btn:not([hidden])")) === null);
+  await v.p.goto(BASE + "/index.html?dev=1", { waitUntil: "networkidle" });
+  await v.p.goto(BASE + "/index.html?dev=off", { waitUntil: "networkidle" });
+  ok("13 ?dev=off also turns it off", (await modesOf(v.p)).length === 2);
+  await v.c.close();
 
   ok("no page errors", errors.length === 0, errors.join("; "));
   await browser.close();

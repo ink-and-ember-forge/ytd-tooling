@@ -1,10 +1,10 @@
 /* "Validate code": the code on the left, the findings on the right, linked. */
 .validate-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin: 1rem 0 0.75rem; }
-.validate-summary { margin: 0; font-weight: 600; color: var(--navy); }
+.validate-summary { margin: 0; font-weight: 600; color: var(--accent); }
 .validate-filters { display: flex; gap: 0.4rem; margin-left: auto; }
 .validate-bar .copy-btn--inline { margin-top: 0; }
 .validate-filter { font: inherit; font-size: 0.82rem; padding: 0.25rem 0.7rem; border-radius: 999px; border: 1px solid var(--line); background: #fff; color: #1a1a1a; cursor: pointer; }
-.validate-filter[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+.validate-filter[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
 .validate-filter:disabled { opacity: 0.45; cursor: default; }
 .validate-filter:focus-visible, .validate-tab:focus-visible, .vf:focus-visible, .vno:focus-visible { outline: 3px solid #000; outline-offset: 2px; }
 
@@ -13,7 +13,7 @@
 
 .validate-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); background: var(--paper); }
 .validate-tab { font: inherit; font-size: 0.85rem; font-weight: 600; padding: 0.55rem 1rem; border: 0; border-bottom: 3px solid transparent; background: transparent; color: var(--dark-grey); cursor: pointer; }
-.validate-tab[aria-selected="true"] { color: var(--navy); border-bottom-color: var(--navy); background: #fff; }
+.validate-tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); background: #fff; }
 
 .validate-code { height: 70vh; min-height: 320px; overflow: auto; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.8rem; line-height: 1.55; background: #fff; }
 .validate-empty { margin: 1rem; color: var(--dark-grey); font-family: inherit; }

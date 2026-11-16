@@ -1,10 +1,10 @@
 .release { margin-bottom: 2rem; }
-.release-title { font-size: 1.05rem; color: var(--navy); margin: 0 0 0.25rem; }
+.release-title { font-size: 1.05rem; color: var(--accent); margin: 0 0 0.25rem; }
 .release-summary { color: var(--dark-grey); margin: 0 0 0.9rem; }
 .change-card { border: 1px solid #e4dfd4; border-radius: 8px; background: #fff; padding: 0.8rem 1rem; margin-bottom: 0.7rem; }
 .change-card-head { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .change-id { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.78rem; color: var(--dark-grey); }
-.change-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eef2f8; color: var(--navy); }
+.change-type { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eef2f8; color: var(--accent); }
 .change-type--breaking { background: #fde8ef; color: #a3195b; }
 .change-type--action { background: #e6f4f1; color: #00695c; }
 .change-summary { margin: 0.5rem 0 0.25rem; }
@@ -13,7 +13,7 @@
 .upgrade-row { display: flex; gap: 0.6rem; align-items: center; margin: 0.8rem 0; flex-wrap: wrap; }
 .upgrade-version { width: auto; min-width: 260px; }
 .upgrade-message { font-weight: 600; }
-.upgrade-group { margin: 1.2rem 0 0.5rem; color: var(--navy); font-size: 0.95rem; }
+.upgrade-group { margin: 1.2rem 0 0.5rem; color: var(--accent); font-size: 0.95rem; }
 .upgrade-banner { background: #fde8ef; color: #7a1040; padding: 0.7rem 0.9rem; border-radius: 6px; font-weight: 600; }
 .upgrade-warning { background: #fff4e5; color: #7a4a00; padding: 0.7rem 0.9rem; border-radius: 6px; }
 .changelog-check { margin: 12px 0; font-weight: 600; }
@@ -21,7 +21,7 @@
 .changelog-check--fail { color: #9b1c1c; }
 .schema-doc { white-space: pre-wrap; font-size: 0.85rem; line-height: 1.5; background: #f5f5f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
 .upgrade-field { margin: 0.6rem 0; }
-.upgrade-label { display: block; font-weight: 600; color: var(--navy); font-size: 0.9rem; margin-bottom: 0.25rem; }
+.upgrade-label { display: block; font-weight: 600; color: var(--accent); font-size: 0.9rem; margin-bottom: 0.25rem; }
 .upgrade-input { width: 100%; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.82rem; padding: 0.5rem; border: 1px solid #cfc8b8; border-radius: 6px; background: #fff; resize: vertical; }
 
 
@@ -30,9 +30,9 @@
 
 /* ---- upgrade stepper ------------------------------------------------------ */
 .step { margin: 1.5rem 0; padding: 1rem 1.25rem; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
-.step-title { margin: 0 0 0.75rem; font-size: 1rem; color: var(--navy); }
+.step-title { margin: 0 0 0.75rem; font-size: 1rem; color: var(--accent); }
 .upgrade-detected { margin: 0 0 0.75rem; font-weight: 600; color: var(--dark-grey); }
-.upgrade-progress { font-weight: 700; color: var(--navy); margin: 1rem 0 0; }
+.upgrade-progress { font-weight: 700; color: var(--accent); margin: 1rem 0 0; }
 .upgrade-finish { margin-top: 1.5rem; padding: 1rem; border: 2px solid var(--green); border-radius: 8px; background: #e6f4f1; }
 .change-done { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0.6rem 0 0 1rem; font-weight: 600; cursor: pointer; }
 .change-done input { width: auto; accent-color: var(--green); }
@@ -68,7 +68,7 @@
 .upgrade-tweak .upgrade-hint, .upgrade-tweak .upgrade-flag { margin-left: 1.6rem; }
 .upgrade-step details, section.step > details { margin: 0.6rem 0; }
 .upgrade-theme { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 1rem; margin: 0.6rem 0; }
-.upgrade-theme legend { font-weight: 700; color: var(--navy); padding: 0 0.4rem; }
+.upgrade-theme legend { font-weight: 700; color: var(--accent); padding: 0 0.4rem; }
 .upgrade-theme-option { display: flex; align-items: center; gap: 0.4rem; margin: 0.3rem 0; cursor: pointer; }
 .upgrade-theme-option input { width: auto; accent-color: var(--green); }
 .upgrade-html-changes .upgrade-diff { white-space: pre-wrap; word-break: break-all; margin: 0.2rem 0 0.5rem; }
@@ -78,15 +78,15 @@
 .upgrade-check-line--warn { color: #7a4a00; }
 .upgrade-check-line .upgrade-hint { font-weight: 400; }
 .upgrade-seg { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0; }
-.upgrade-seg-btn { border: 1px solid var(--line); background: #fff; color: var(--navy); border-radius: 999px; padding: 0.3rem 0.9rem; font: inherit; font-weight: 600; cursor: pointer; }
-.upgrade-seg-btn[aria-pressed="true"] { background: var(--navy); color: #fff; border-color: var(--navy); }
+.upgrade-seg-btn { border: 1px solid var(--line); background: #fff; color: var(--accent); border-radius: 999px; padding: 0.3rem 0.9rem; font: inherit; font-weight: 600; cursor: pointer; }
+.upgrade-seg-btn[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: var(--accent); }
 .upgrade-stage { overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .upgrade-frame { display: block; height: 70vh; min-height: 420px; border: 0; margin: 0 auto; }
 
 /* ---- the guided review (one decision at a time) ---------------------------------- */
-.upgrade-review-card { border: 2px solid var(--navy); border-radius: 10px; padding: 1rem 1.25rem; margin: 0.8rem 0; background: #fff; }
+.upgrade-review-card { border: 2px solid var(--accent); border-radius: 10px; padding: 1rem 1.25rem; margin: 0.8rem 0; background: #fff; }
 .upgrade-review-progress { margin: 0; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--dark-grey); }
-.upgrade-review-title { margin: 0.2rem 0 0.4rem; font-size: 1.15rem; color: var(--navy); }
+.upgrade-review-title { margin: 0.2rem 0 0.4rem; font-size: 1.15rem; color: var(--accent); }
 .upgrade-review-headline { margin: 0.2rem 0; font-weight: 600; }
 .upgrade-review-lines { margin: 0.6rem 0; padding-left: 1.2rem; }
 .upgrade-review-lines li { margin: 0.3rem 0; font-size: 0.9rem; }
@@ -94,16 +94,16 @@
 .upgrade-compare { display: grid; grid-template-columns: 1fr; gap: 0.8rem; margin: 0.8rem 0; }
 .upgrade-compare--phone { grid-template-columns: repeat(auto-fit, minmax(390px, max-content)); justify-content: start; }
 .upgrade-compare-cell { min-width: 0; overflow: auto; }
-.upgrade-compare-label { display: block; margin-bottom: 0.25rem; color: var(--navy); }
+.upgrade-compare-label { display: block; margin-bottom: 0.25rem; color: var(--accent); }
 .upgrade-frame--small { height: 280px; min-height: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
 .upgrade-review-choice { border: 1px solid var(--line); border-radius: 8px; padding: 0.6rem 1rem; margin: 0.8rem 0; }
-.upgrade-review-choice legend { font-weight: 700; color: var(--navy); padding: 0 0.4rem; }
+.upgrade-review-choice legend { font-weight: 700; color: var(--accent); padding: 0 0.4rem; }
 .upgrade-review-option { display: block; margin: 0.35rem 0; cursor: pointer; }
 .upgrade-review-option input { width: auto; accent-color: var(--green); }
 .upgrade-review-rows { list-style: none; margin: 1rem 0 0; padding: 0; }
 .upgrade-review-row { border: 1px solid var(--line); border-radius: 8px; padding: 0.7rem 1rem; margin: 0 0 0.8rem; }
 .upgrade-review-row-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.4rem; }
-.upgrade-review-row-label { color: var(--navy); word-break: break-word; }
+.upgrade-review-row-label { color: var(--accent); word-break: break-word; }
 .upgrade-guide { margin: 0.6rem 0; padding: 0.6rem 0.8rem; background: #fdf6ec; border-left: 4px solid #e07b00; border-radius: 4px; font-size: 0.9rem; }
 .upgrade-whole { margin: 0.6rem 0; }
 .upgrade-closeup { margin: 0.6rem 0; padding: 0.6rem 0.8rem; background: #fafafa; border: 1px solid var(--line); border-radius: 8px; }
@@ -126,7 +126,7 @@
 .upgrade-review-reason[hidden] { display: none; }
 .upgrade-review-nav { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: center; margin-top: 0.8rem; }
 .upgrade-review-nav .primary-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.upgrade-link { background: none; border: none; padding: 0; color: var(--navy); text-decoration: underline; cursor: pointer; font: inherit; }
+.upgrade-link { background: none; border: none; padding: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; }
 .upgrade-review-summary .upgrade-review-lines li { margin: 0.45rem 0; }
 @media (max-width: 700px) { .upgrade-review-reason { grid-template-columns: 1fr; } }
 .upgrade-frame--phone { height: 420px; }
@@ -134,7 +134,7 @@
 /* ---- the final report ---------------------------------------------------------------- */
 .upgrade-report-summary { margin: 0.5rem 0 1rem; padding-left: 1.2rem; }
 .upgrade-report-summary li { margin: 0.25rem 0; }
-.upgrade-report-kept { border-left: 4px solid var(--navy); }
+.upgrade-report-kept { border-left: 4px solid var(--accent); }
 .upgrade-report-kept p { margin: 0.3rem 0; }
 .upgrade-report-check { margin: 0.4rem 0; padding-left: 1.2rem; }
 .upgrade-report-check li { margin: 0.35rem 0; color: #7a4a00; }
@@ -147,9 +147,9 @@
 .wizard-steps { display: flex; flex-wrap: wrap; gap: 0.3rem 0.8rem; list-style: none; margin: 0; padding: 0; }
 .wizard-step-item { display: flex; align-items: center; gap: 0.35rem; }
 .wizard-step-number { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #e8e8e8; font-size: 0.8rem; font-weight: 700; }
-.wizard-step { background: none; border: 0; padding: 0.2rem 0.1rem; font: inherit; color: var(--navy); cursor: pointer; border-bottom: 2px solid transparent; }
-.wizard-step[aria-current="step"] { font-weight: 700; border-bottom-color: var(--navy); }
-.wizard-step[aria-current="step"] + .wizard-step-number, .wizard-step-item:has(.wizard-step[aria-current="step"]) .wizard-step-number { background: var(--navy); color: #fff; }
+.wizard-step { background: none; border: 0; padding: 0.2rem 0.1rem; font: inherit; color: var(--accent); cursor: pointer; border-bottom: 2px solid transparent; }
+.wizard-step[aria-current="step"] { font-weight: 700; border-bottom-color: var(--accent); }
+.wizard-step[aria-current="step"] + .wizard-step-number, .wizard-step-item:has(.wizard-step[aria-current="step"]) .wizard-step-number { background: var(--accent); color: #fff; }
 .wizard-step--done::after { content: " \2713"; color: var(--green); }
 .wizard-foot { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; padding: 0.7rem 0; background: #fff; border-top: 1px solid var(--line); }
 .wizard-foot-hint { flex: 1; text-align: right; color: var(--dark-grey); font-size: 0.9rem; }
@@ -158,7 +158,7 @@
 .upgrade-slide-grid { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr); gap: 1.4rem; align-items: start; margin-top: 0.6rem; }
 .upgrade-slide-main { min-width: 0; }
 .upgrade-slide-side { min-width: 0; }
-.upgrade-side-title { display: block; margin: 0.8rem 0 0.25rem; font-size: 0.9rem; color: var(--navy); }
+.upgrade-side-title { display: block; margin: 0.8rem 0 0.25rem; font-size: 0.9rem; color: var(--accent); }
 .upgrade-slide-side > .upgrade-review-hint:first-child { margin-top: 0; font-size: 1rem; }
 .upgrade-slide-side .upgrade-review-choice { margin: 0.9rem 0 0; padding: 0.7rem 1rem; border: 1px solid var(--line); border-radius: 8px; }
 .upgrade-slide-side .upgrade-review-option { display: block; margin: 0.3rem 0; }
@@ -169,6 +169,6 @@
 .upgrade-closeup { margin: 0; padding: 0; background: none; border: 0; }
 .upgrade-closeup-bar { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; margin: 0 0 0.6rem; }
 .upgrade-closeup-bar [hidden], .upgrade-closeup-cell[hidden], .upgrade-closeup-nav[hidden] { display: none !important; }
-.upgrade-closeup-opened { margin: 0 0 0.5rem; padding: 0.3rem 0.6rem; background: #eef6ff; border-left: 4px solid var(--navy); border-radius: 4px; font-size: 0.88rem; }
+.upgrade-closeup-opened { margin: 0 0 0.5rem; padding: 0.3rem 0.6rem; background: #eef6ff; border-left: 4px solid var(--accent); border-radius: 4px; font-size: 0.88rem; }
 .upgrade-closeup-opened:empty { display: none; }
 .upgrade-closeup-summary { font-size: 1.05rem; }
