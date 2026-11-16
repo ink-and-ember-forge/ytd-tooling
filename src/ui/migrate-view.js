@@ -14,6 +14,7 @@ import { makeEl, downloadText, copyToClipboard } from "../lib/dom.js";
 import { buildMigration, THEMES } from "../changelog/migrate.js";
 import { buildReview, ledgerLine, REASONS } from "../changelog/review.js";
 import { buildReport, reportMarkdown } from "../changelog/report.js";
+import { triageMigration } from "../changelog/triage.js";
 import { loadBaseline } from "../lib/baseline.js";
 import { outputCard, renderCheck, pageDoc, plural } from "./upgrade-parts.js";
 import { createCloseup } from "./closeup.js";
@@ -83,6 +84,59 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     back2.addEventListener("click", () => { stop(); onUpgradeInstead(); });
     els.found.appendChild(back2);
   }
+
+  // ---- the two ends of the triage (see changelog/triage.js) -------------------------------------------------
+  // Only the "found" section shows, and the paste step stays open so the author can fix the code and check again.
+  function showOnly(el) { Object.values(sectionOf).forEach((s) => { s.hidden = s !== el; }); }
+
+  // A page the tool won't migrate. There is deliberately no way past this: it says why and what to do.
+  function showRebuild() {
+    state.active = false;
+    bar.hidden = foot.hidden = true;
+    els.paste.hidden = false;
+    els.found.replaceChildren(makeEl("h3", "step-title", "This page can't be migrated automatically"));
+    els.found.appendChild(makeEl("p", "upgrade-message", "Migrating it would give you a page that looks finished but isn't, so the tool won't. Rebuilding it in the builder gets you a page that works."));
+    const list = makeEl("ul", "upgrade-signals upgrade-stops");
+    state.triage.reasons.forEach((s) => list.appendChild(makeEl("li", "", s)));
+    els.found.appendChild(list);
+    els.found.appendChild(makeEl("p", "upgrade-hint", "Rebuild it in the Build blocks tab and paste your text into the blocks. If you can fix what's listed above, you can also paste the page again and check it once more."));
+    showOnly(els.found);
+    els.found.scrollIntoView({ block: "start", behavior: "auto" }); // the paste step above stays open, so the message would sit below the fold
+  }
+
+  // A page that is already close to the template: one screen, the template's answer for every difference.
+  function showQuick() {
+    const r = state.result, own = r.groups.filter((g) => g.kind === "custom").length;
+    state.active = true;
+    els.paste.hidden = true;
+    bar.hidden = foot.hidden = true;
+    els.found.replaceChildren(makeEl("h3", "step-title", "This page is close to the template"));
+    const bits = [
+      state.rules.length ? `Only ${plural(state.rules.length, "rule", "rules")} differ from the template, and the template's version of each is used.` : "Nothing differs from the template apart from colour tokens that were renamed.",
+      own ? `Your own ${plural(own, "component", "components")} ${own === 1 ? "is" : "are"} kept.` : "",
+      `${THEMES[r.theme].label} theme, read from your old CSS.`,
+      `${plural(r.htmlChanges.length, "change", "changes")} to your HTML.`,
+    ].filter(Boolean);
+    const list = makeEl("ul", "upgrade-signals");
+    bits.forEach((s) => list.appendChild(makeEl("li", "", s)));
+    els.found.appendChild(list);
+    const actions = makeEl("div", "upgrade-review-nav");
+    const go2 = makeEl("button", "primary-btn", "Show me the new page");
+    const review = makeEl("button", "copy-btn copy-btn--inline", "Review each difference first");
+    go2.type = review.type = "button";
+    go2.addEventListener("click", () => {
+      state.rules.forEach((x) => state.reviewed.add(x.row.id)); // the template is the default for every rule
+      recompute();
+      renderChecksAndCopy();
+      enterWizard(firstOf("copy"));
+    });
+    review.addEventListener("click", () => { renderFound(); enterWizard(0); });
+    actions.append(go2, review);
+    els.found.appendChild(actions);
+    showOnly(els.found);
+  }
+
+  function enterWizard(pos) { bar.hidden = foot.hidden = false; go(pos); }
 
   // ---- 2. the page's own components -----------------------------------------------------------------------
   function renderComponents() {
@@ -520,15 +574,17 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       state.steps = buildReview(first, code().html);
       state.rules = state.steps.flatMap((step) => step.rows.map((row, idx) => ({ row, step, k: idx + 1, m: step.rows.length })));
       recompute();
+      state.triage = triageMigration(state.result, state.rules.length, code().html);
+      if (state.triage.tier === "rebuild") return showRebuild();
       state.active = true;
       els.paste.hidden = true;
-      bar.hidden = foot.hidden = false;
       renderFound();
       renderComponents();
       renderHtml();
       renderChecksAndCopy();
       state.pos = 0;
-      go(0);
+      if (state.triage.tier === "easy") return showQuick();
+      enterWizard(0);
     },
   };
 }

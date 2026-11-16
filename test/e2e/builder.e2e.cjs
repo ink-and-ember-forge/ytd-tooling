@@ -518,6 +518,38 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const tilesBefore = await tileWorks("Before"), tilesAfter = await tileWorks("After");
   ok("9d the icon tiles work in the original page", tilesBefore.first.open === 1 && tilesBefore.second.shown === "block");
   ok("9d and they still work after migrating: the first panel opens, then only the second", JSON.stringify(tilesAfter) === JSON.stringify(tilesBefore) && tilesAfter.first.shown === "block" && tilesAfter.second.firstNow === "none" && tilesAfter.errors.length === 0, JSON.stringify(tilesAfter));
+  // 9f. the triage around the wizard (src/changelog/triage.js): a page already close to the template gets one screen, and a page the
+  // tool can't migrate is told so, with no way past it.
+  const paste = async (dir) => {
+    const F = (f) => fs.readFileSync(path.join(ROOT, "test", "fixtures", dir, f), "utf8");
+    await editCode();
+    if (!(await page.isVisible("#view-upgrade .upgrade-input >> nth=0"))) await page.click('#view-upgrade button:has-text("Edit the pasted code")');
+    await page.fill("#view-upgrade .upgrade-input >> nth=0", F("page.html"));
+    await page.fill("#view-upgrade .upgrade-input >> nth=1", F("page.css"));
+    await page.fill("#view-upgrade .upgrade-input >> nth=2", F("page.js"));
+    await page.click("#view-upgrade .primary-btn");
+  };
+  await paste("legacy-easy");
+  await page.waitForSelector('#view-upgrade .step-title:has-text("close to the template")', { state: "visible" });
+  ok("9f an easy page gets one screen, not the wizard", !(await page.isVisible("#view-upgrade .wizard-bar")) && !(await page.isVisible("#view-upgrade .wizard-foot")) && await page.isVisible('#view-upgrade button:has-text("Show me the new page")') && await page.isVisible('#view-upgrade button:has-text("Review each difference first")'));
+  ok("9f it says what it did: the template's answer, the detected theme, the HTML changes", /Nothing differs|differ from the template/.test(await page.textContent("#view-upgrade .upgrade-signals")) && (await page.textContent("#view-upgrade .upgrade-signals")).includes("Gwella theme"));
+  await page.click('#view-upgrade button:has-text("Show me the new page")');
+  await page.waitForSelector('#view-upgrade .wizard-step[aria-current="step"]', { state: "visible" });
+  ok("9f 'Show me the new page' lands on the copy slide with nothing blocked", (await page.getAttribute('#view-upgrade .wizard-step[aria-current="step"]', "data-step")) === "copy" && (await page.$$('#view-upgrade .upgrade-output button[disabled]')).length === 0 && (await page.$$("#view-upgrade .upgrade-output")).length >= 3);
+  ok("9f and the wizard is there to go back through", await page.isVisible("#view-upgrade .wizard-bar") && !(await page.isDisabled("#view-upgrade .wizard-foot button:has-text('Back')")));
+  await paste("legacy-easy");
+  await page.waitForSelector('#view-upgrade button:has-text("Review each difference first")', { state: "visible" });
+  await page.click('#view-upgrade button:has-text("Review each difference first")');
+  await page.waitForSelector("#view-upgrade .wizard-bar", { state: "visible" });
+  ok("9f 'Review each difference first' opens the wizard at its first slide", (await page.getAttribute('#view-upgrade .wizard-step[aria-current="step"]', "data-step")) === "found" && await page.isVisible("#view-upgrade .wizard-foot"));
+
+  await paste("legacy-stop");
+  await page.waitForSelector('#view-upgrade .step-title:has-text("can\'t be migrated automatically")', { state: "visible" });
+  const stopText = await page.textContent("#view-upgrade .upgrade-stops");
+  ok("9f a page the tool can't migrate says so, and why", stopText.includes("launchRocket") && (await page.$$("#view-upgrade .upgrade-stops li")).length === 1, stopText);
+  ok("9f with no wizard and no way past it", !(await page.isVisible("#view-upgrade .wizard-bar")) && !(await page.isVisible("#view-upgrade .wizard-foot")) && !(await page.isVisible('#view-upgrade button:has-text("Treat it as a normal upgrade instead")')) && !(await page.isVisible('#view-upgrade button:has-text("Show me the new page")')));
+  ok("9f the paste step stays open, so the author can fix the code and check again", await page.isVisible("#view-upgrade .upgrade-input >> nth=0"));
+  await page.screenshot({ path: path.join(OUT, "9f-rebuild.png") });
   await page.setViewportSize(viewport0); // the wizard tests used a taller window
 
   // 9e. the preview frame opens whatever hides the element it is asked to show (an accordion panel, a closed <details>) and shuts
