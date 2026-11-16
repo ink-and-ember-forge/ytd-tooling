@@ -1,7 +1,8 @@
 // The migration half of "Upgrade a page", for pages built before version 3.1.0. It is a WIZARD: one thing at a time, each on its
 // own full slide with Back and Next, instead of one long page:
 //   found          why this is a migration
-//   components     the page's own components (kept: the template has nothing to replace them with)
+//   components     the page's own components: the template has nothing to replace them with, so they are removed (a placeholder
+//                  comment where each was) for the author to rebuild; ticking one keeps its styling for now
 //   review         where the page differs from the template: ONE RULE PER SLIDE, with a large preview (the template is the default)
 //                  and a summary slide at the end
 //   html           the theme, and the changes to the HTML
@@ -20,14 +21,14 @@ import { outputCard, renderCheck, pageDoc, plural } from "./upgrade-parts.js";
 import { createCloseup } from "./closeup.js";
 
 const codeBlock = (text) => makeEl("pre", "upgrade-diff", text);
-const STEPS = [["found", "What we found"], ["components", "Your components"], ["review", "Review"], ["html", "Theme and HTML"], ["check", "Check"], ["copy", "Copy"], ["report", "Report"]];
+const STEPS = [["found", "What we found"], ["components", "Components to rebuild"], ["review", "Review"], ["html", "Theme and HTML"], ["check", "Check"], ["copy", "Copy"], ["report", "Report"]];
 
 // els: { found, tweaks, review, changes, check, copy, report, paste } (the section elements; paste is the paste step, hidden
 // while the wizard is open). code(): the pasted { html, css, js }. onUpgradeInstead(): the author wants the normal upgrade flow.
 export function createMigrationView(els, { code, onUpgradeInstead }) {
   const state = {
     theme: undefined, reference: null, result: null,
-    keep: new Set(),          // the page's own components to carry
+    keep: new Set(),          // the page's own components to keep for now (none, unless the author ticks one)
     steps: [], rules: [],     // the review: groups, and the flat list of rules (one slide each)
     decisions: new Map(), reviewed: new Set(), // by rule id
     pos: 0, visited: new Set(), active: false,
@@ -51,10 +52,10 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   const setDecision = (row, patch) => state.decisions.set(row.id, { ...decisionOf(row), ...patch });
   const keptRows = () => state.rules.map((r) => r.row).filter((r) => decisionOf(r).choice === "keep");
   const keptKeys = () => keptRows().flatMap((r) => r.keys);
-  const ledger = () => keptRows().map((r) => ledgerLine(r, decisionOf(r)));
+  const ledger = () => [...state.keep].map((k) => `Component .${k}: kept for now, to be rebuilt`).concat(keptRows().map((r) => ledgerLine(r, decisionOf(r))));
   const reviewLeft = () => state.rules.filter((r) => !state.reviewed.has(r.row.id)).length;
   const reviewDone = () => reviewLeft() === 0;
-  const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [] });
+  const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [], retire: true });
   const recompute = () => { state.result = migrate([...state.keep, ...keptKeys()], true); };
 
   // ---- the order of the slides ----------------------------------------------------------------------------
@@ -75,7 +76,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
     const r = state.result;
     els.found.replaceChildren(makeEl("h3", "step-title", "This page needs migrating, not upgrading"));
     els.found.appendChild(makeEl("p", "upgrade-message", "This page was built before version 3.1.0, so it can't be brought up to date piece by piece."));
-    els.found.appendChild(makeEl("p", "", "Instead, your HTML is read to see what the page really uses, and the page is moved onto the current template. The template is where this is heading: your page's own components are kept, and you'll decide each place where your page differs from it, one rule at a time."));
+    els.found.appendChild(makeEl("p", "", "Instead, your HTML is read to see what the page really uses, and the page is moved onto the current template. The template is where this is heading: anything of your own that the template has no equivalent of is taken out and marked with a placeholder for you to rebuild, and you'll decide each place where your page differs from it, one rule at a time."));
     const list = makeEl("ul", "upgrade-signals");
     r.fit.signals.forEach((s) => list.appendChild(makeEl("li", "", s)));
     els.found.appendChild(list);
@@ -106,14 +107,13 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
 
   // A page that is already close to the template: one screen, the template's answer for every difference.
   function showQuick() {
-    const r = state.result, own = r.groups.filter((g) => g.kind === "custom").length;
+    const r = state.result;
     state.active = true;
     els.paste.hidden = true;
     bar.hidden = foot.hidden = true;
     els.found.replaceChildren(makeEl("h3", "step-title", "This page is close to the template"));
     const bits = [
       state.rules.length ? `Only ${plural(state.rules.length, "rule", "rules")} differ from the template, and the template's version of each is used.` : "Nothing differs from the template apart from colour tokens that were renamed.",
-      own ? `Your own ${plural(own, "component", "components")} ${own === 1 ? "is" : "are"} kept.` : "",
       `${THEMES[r.theme].label} theme, read from your old CSS.`,
       `${plural(r.htmlChanges.length, "change", "changes")} to your HTML.`,
     ].filter(Boolean);
@@ -142,8 +142,10 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   function renderComponents() {
     const r = state.result;
     const custom = r.groups.filter((g) => g.kind === "custom");
-    els.tweaks.replaceChildren(makeEl("h3", "step-title", `Your page's own components (${plural(custom.length, "group", "groups")})`));
-    els.tweaks.appendChild(makeEl("p", "upgrade-hint", "These style classes your HTML uses that the template has no equivalent of, so there is nothing to replace them with. They are kept unless you untick them (unticking removes their styling), and go in a labelled block at the end of the new CSS. Old colour tokens have been renamed to the current ones."));
+    els.tweaks.replaceChildren(makeEl("h3", "step-title", `Components to rebuild (${plural(custom.length, "group", "groups")})`));
+    els.tweaks.appendChild(makeEl("p", "upgrade-hint", "These style classes your HTML uses that the template has no equivalent of. They are not carried onto the new page. Where one was a container or an image it is replaced by a placeholder comment (search the HTML for REBUILD); rebuild it however you choose and paste the result over the placeholder. Anything else just loses the class and stays. The original code of everything removed is below, so nothing is lost. Tick one to keep its styling for now; that is recorded in your CSS as something to rebuild."));
+    const removedFor = (g) => r.retired.removed.filter((x) => x.classes.includes(g.key));
+    const strippedFor = (g) => r.retired.stripped.filter((x) => x.name === g.key);
     const list = makeEl("ul", "upgrade-tweaks upgrade-custom");
     custom.forEach((g) => {
       const li = makeEl("li", "upgrade-tweak");
@@ -151,14 +153,41 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       const box = document.createElement("input");
       box.type = "checkbox";
       box.checked = g.kept;
+      const status = makeEl("p", "upgrade-hint upgrade-removed-status");
+      const detail = makeEl("div", "upgrade-removed");
+      const refresh = () => {
+        const now = state.result.groups.find((x) => x.key === g.key);
+        const removed = removedFor(now), stripped = strippedFor(now);
+        detail.replaceChildren();
+        if (now.kept) status.textContent = "Kept for now: its styling and its HTML stay as they were.";
+        else if (removed.length) status.textContent = `Removed from the page: ${removed.map((x) => `a <${x.tag}> on line ${x.line}${x.id ? ` (id "${x.id}": give the rebuilt one the same id)` : ""}`).join("; ")}.`;
+        else if (stripped.length) status.textContent = `The class comes off ${stripped.map((x) => `${plural(x.count, "element", "elements")} (<${x.tag}>)`).join(", ")}. The elements and their content stay.`;
+        else status.textContent = "Nothing in the HTML needed removing; only its CSS is not carried.";
+        removed.forEach((x) => {
+          const d = document.createElement("details");
+          d.appendChild(makeEl("summary", "", `The original ${x.tag} on line ${x.line}`));
+          d.appendChild(codeBlock(x.original));
+          const copy = makeEl("button", "copy-btn copy-btn--inline", "Copy original");
+          copy.type = "button";
+          copy.addEventListener("click", () => copyToClipboard(x.original, copy));
+          d.appendChild(copy);
+          detail.appendChild(d);
+        });
+      };
       box.addEventListener("change", () => {
         box.checked ? state.keep.add(g.key) : state.keep.delete(g.key);
         recompute();
+        refresh();
         renderChecksAndCopy();
+        renderNav();
       });
-      label.append(box, " ", makeEl("strong", "", g.key));
-      li.appendChild(label);
-      li.appendChild(codeBlock(g.text));
+      label.append(box, " ", makeEl("strong", "", g.key), makeEl("span", "upgrade-muted", " keep its styling for now"));
+      li.append(label, status, detail);
+      refresh();
+      const css = document.createElement("details");
+      css.appendChild(makeEl("summary", "", "What it styled"));
+      css.appendChild(codeBlock(g.text));
+      li.appendChild(css);
       g.notes.forEach((n) => li.appendChild(makeEl("p", /not defined/.test(n) ? "upgrade-flag" : "upgrade-hint", n)));
       list.appendChild(li);
     });
@@ -567,7 +596,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       // What the template said when it was first stored: a rule that matches that is the OLD template, not the author's choice.
       state.reference ||= await loadBaseline("3.1.1");
       const first = buildMigration(code(), { reference: state.reference, keepGroups: [] });
-      state.keep = new Set(first.groups.filter((g) => g.kind === "custom").map((g) => g.key));
+      state.keep = new Set(); // the template is the default: nothing of the page's own is carried unless the author chooses
       state.decisions = new Map();
       state.reviewed = new Set();
       state.visited = new Set();

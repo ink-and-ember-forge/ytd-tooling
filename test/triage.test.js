@@ -14,13 +14,12 @@ const reference = await loadBaseline("3.1.1");
 const fixture = (dir) => (name) => readFileSync(new URL(`./fixtures/${dir}/page.${name}`, import.meta.url), "utf8");
 const real = (dir) => { const f = fixture(dir); return { html: f("html"), css: f("css"), js: f("js") }; };
 
-// What migrate-view's start() does: count the rules to review, then triage the migration with its defaults (the page's own
-// components kept, the template used for every rule).
+// What migrate-view's start() does: count the rules to review, then triage the migration with its defaults (nothing of the
+// page's own kept, its components removed, the template used for every rule).
 function triage(page) {
   const first = buildMigration(page, { reference, keepGroups: [] });
   const rules = buildReview(first, page.html).flatMap((s) => s.rows).length;
-  const keep = first.groups.filter((g) => g.kind === "custom").map((g) => g.key);
-  return triageMigration(buildMigration(page, { reference, keepGroups: keep }), rules, page.html);
+  return triageMigration(buildMigration(page, { reference, keepGroups: [], retire: true }), rules, page.html);
 }
 
 // A page that is the current template with only the pre-3.1.0 colour tokens: legacy by token, but nothing to decide.
@@ -77,7 +76,20 @@ test("triage: no #page-container is a stop", async () => {
 test("triage: a page with none of the builder's blocks is a stop", () => {
   const t = triage({ html: '<div id="page-container"><p>Hello</p></div>', css: "p { color: var(--burgundy); }\n.a{margin:0}\n.b{margin:0}\n.c{margin:0}\n.d{margin:0}\n.e{margin:0}", js: "" });
   assert.equal(t.tier, "rebuild");
-  assert.ok(t.reasons.some((r) => /blocks were recognised/.test(r)));
+  assert.ok(t.reasons.some((r) => /none of the template's page structure/.test(r)));
+});
+
+test("triage: a plain page of text and links has no blocks but has the template's page structure, so it is not refused", () => {
+  const html = '<div id="page-container"><nav id="breadcrumb-nav"><ol id="breadcrumb-nav__list"><li>Home</li></ol></nav><main class="main-grid"><nav id="table-of-contents"><ul><li><a href="#a" class="toc-link">A</a></li></ul></nav><div class="content-column"><h1 id="header-h1">T</h1><div class="content-body"><section id="a"><h2>A</h2><p>Words and <a href="#">links</a>.</p></section></div></div></main></div>';
+  const t = triage({ html, css: ":root { --burgundy: #a3195b; }\np { margin: 0 }", js: "" });
+  assert.notEqual(t.tier, "rebuild", t.reasons.join(" | "));
+});
+
+test("triage: a page with components of its own is never easy, because they are removed and need rebuilding", async () => {
+  const page = await nearTemplate();
+  const t = triage({ html: page.html.replace("</div>", '<div class="promo-box"><h4>Promo</h4><p>Offer</p></div></div>'), css: page.css + "\n.promo-box { border: 1px solid red; padding: 1rem; }", js: page.js });
+  assert.equal(t.tier, "guided");
+  assert.ok(t.reasons.some((r) => /components of its own/.test(r)), t.reasons.join(" | "));
 });
 
 test("triage: buttons that would do nothing are a stop, and name the function", async () => {

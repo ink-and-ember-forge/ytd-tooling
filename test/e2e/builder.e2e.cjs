@@ -233,22 +233,27 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.waitForSelector("#view-upgrade .upgrade-signals", { state: "visible" });
   ok("9b says why it is a migration", (await page.$$("#view-upgrade .upgrade-signals li")).length === 4);
   const stepNames = await page.$$eval("#view-upgrade .wizard-step", (l) => l.map((x) => x.textContent.replace(/ \u2713$/, "")));
-  ok("9b the migration is a wizard: the steps are along the top, and only the first slide shows", stepNames.join(" | ") === "What we found | Your components | Review (0/17) | Theme and HTML | Check | Copy | Report" && await page.isVisible("#view-upgrade .upgrade-signals") && !(await page.isVisible("#view-upgrade .upgrade-theme")) && !(await page.isVisible("#view-upgrade .upgrade-checks")) && !(await page.isVisible("#view-upgrade .upgrade-input >> nth=0")), stepNames.join(" | "));
+  ok("9b the migration is a wizard: the steps are along the top, and only the first slide shows", stepNames.join(" | ") === "What we found | Components to rebuild | Review (0/17) | Theme and HTML | Check | Copy | Report" && await page.isVisible("#view-upgrade .upgrade-signals") && !(await page.isVisible("#view-upgrade .upgrade-theme")) && !(await page.isVisible("#view-upgrade .upgrade-checks")) && !(await page.isVisible("#view-upgrade .upgrade-input >> nth=0")), stepNames.join(" | "));
   ok("9b Back is off on the first slide, and Next goes on", await page.isDisabled("#view-upgrade .wizard-foot button:has-text('Back')") && !(await page.isDisabled(WNEXT)));
   const groups = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak", (l) => l.map((x) => ({ name: x.querySelector("strong").textContent, kept: x.querySelector("input").checked })));
-  ok("9b the page's own styles are 12 groups, all kept by default", groups.length === 12 && groups.every((g) => g.kept), groups.map((g) => g.name).join(","));
+  ok("9b the page's own styles are 12 groups, and none is carried by default: the template is the default", groups.length === 12 && groups.every((g) => !g.kept), groups.map((g) => g.name).join(","));
+  const statuses = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-removed-status", (l) => l.map((x) => x.textContent));
+  ok("9b the components slide says what was taken out of the page, and what only lost a class", statuses.filter((t) => /^Removed from the page/.test(t)).length >= 3 && statuses.some((t) => /class comes off/.test(t)), statuses.join(" | ").slice(0, 200));
+  ok("9b and keeps the original code of each removed component, to copy", (await page.$$('#view-upgrade .upgrade-custom button:has-text("Copy original")')).length >= 3);
   await gotoStep("review");
   const progress1 = await page.textContent("#view-upgrade .upgrade-review-progress");
   ok("9b the 18 differences from the template are 17 rules, one slide each, in 5 groups", /rule 1 of 9 \u00b7 1 of 17 in all/.test(progress1), progress1);
   ok("9b the template is already chosen, and the slide gives the rule's hint and what it affects", await page.isChecked('#view-upgrade input[name="review-choice"][value="template"]') && (await page.textContent("#view-upgrade .upgrade-review-hint")).length > 20 && /look/.test(await page.textContent("#view-upgrade .upgrade-closeup-summary")));
   ok("9b copying is locked until the review is finished, and says why", await page.isDisabled('#view-upgrade button:has-text("Copy CSS")') && (await page.textContent("#view-upgrade .upgrade-results")).includes("Finish the review first (17 rules left)"));
   ok("9b the theme is detected from the old colour", await page.isChecked('#view-upgrade .upgrade-theme input[value="gwella"]') && (await page.textContent("#view-upgrade .upgrade-theme")).includes("detected"));
-  ok("9b two HTML changes are shown with before and after", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 2);
-  const region = (await code("CSS")).slice((await code("CSS")).indexOf("PAGE-SPECIFIC OVERRIDES"));
-  ok("9b the carried styles are in the labelled block, with old tokens renamed", region.includes(".cta-button") && region.includes("var(--primary-colour)") && !/--burgundy|#a3195b/i.test(region));
+  ok("9b six HTML changes are shown with before and after: the container, the icon, three components and one class", (await page.$$("#view-upgrade .upgrade-html-changes .upgrade-output")).length === 6);
+  ok("9b nothing of the page's own is carried, so the CSS has no overrides block", !(await code("CSS")).includes("PAGE-SPECIFIC OVERRIDES"));
+  const outHtml = await code("HTML");
+  ok("9b each container taken out is a placeholder comment, and the dropped classes are gone from the HTML", (outHtml.match(/<!-- REBUILD:/g) || []).length === 3 && !/class="[^"]*\b(cta-button|journey-section|info-section|burgundy-link)\b/.test(outHtml));
+  ok("9b the notes say how to rebuild", (await page.textContent("#view-upgrade .upgrade-results")).includes("paste it over its placeholder"));
   ok("9b the HTML gets the theme class and the standard back-to-top icon", (await code("HTML")).includes('class="gwella"') && (await code("HTML")).includes("fa-circle-chevron-up") && !(await code("HTML")).includes("back-to-top.png"));
   const checks = await page.textContent("#view-upgrade .upgrade-checks");
-  ok("9b checks: every class styled, the undefined --buttons and the broken tags are reported", checks.includes("Every class in your HTML has styling") && checks.includes("--buttons") && checks.includes("never closed"));
+  ok("9b checks: every class that is left is styled, and the broken tags are reported", checks.includes("Every class in your HTML has styling") && checks.includes("never closed"));
 
   // the page really looks the same before and after: compare computed styles inside the real frames
   await gotoStep("check");
@@ -256,12 +261,11 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.click("#view-upgrade .upgrade-preview summary");
   const frameOf = async () => { const el = await page.waitForSelector("#view-upgrade .upgrade-stage .upgrade-frame"); return el.contentFrame(); };
   const styles = (frame) => frame.evaluate(() => {
-    const pick = (sel, props) => { const e = document.querySelector(sel); if (!e) return null; const c = getComputedStyle(e); return Object.fromEntries(props.map((p) => [p, c[p]])); };
+    const comments = (() => { let n = 0; const w = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT); while (w.nextNode()) if (/REBUILD/.test(w.currentNode.data)) n++; return n; })();
     return {
-      cta: pick(".cta-button", ["backgroundColor", "borderRadius", "display", "color"]),
-      journey: pick(".journey-section", ["display", "gap"]),
-      info: pick(".info-section", ["display", "gap", "marginBottom"]),
-      link: pick(".burgundy-link", ["color"]),
+      cta: !!document.querySelector(".cta-button"), journey: !!document.querySelector(".journey-section"),
+      info: document.querySelectorAll(".info-section").length, link: !!document.querySelector(".burgundy-link"), placeholders: comments,
+      toc: getComputedStyle(document.querySelector("#table-of-contents-heading")).backgroundColor,
       icon: !!document.querySelector(".back-to-top i.fa-circle-chevron-up"),
     };
   });
@@ -271,22 +275,23 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await page.click('#view-upgrade .upgrade-seg-btn:has-text("After")');
   await page.waitForTimeout(400);
   const stylesAfter = await styles(await frameOf());
-  ok("9b the call-to-action button looks the same after migrating", JSON.stringify(stylesBefore.cta) === JSON.stringify(stylesAfter.cta) && stylesAfter.cta.backgroundColor === "rgb(163, 25, 91)", JSON.stringify(stylesAfter.cta));
-  ok("9b the journey and info sections keep their layout", JSON.stringify(stylesBefore.journey) === JSON.stringify(stylesAfter.journey) && stylesAfter.journey.display === "flex" && JSON.stringify(stylesBefore.info) === JSON.stringify(stylesAfter.info), JSON.stringify(stylesAfter.journey));
-  ok("9b the custom link keeps the theme colour", stylesBefore.link.color === stylesAfter.link.color && stylesAfter.link.color === "rgb(163, 25, 91)");
+  ok("9b the page before still has its own components", stylesBefore.cta && stylesBefore.journey && stylesBefore.info > 0 && stylesBefore.link && stylesBefore.placeholders === 0, JSON.stringify(stylesBefore));
+  ok("9b after migrating they are gone, with a placeholder where each container was", !stylesAfter.cta && !stylesAfter.journey && stylesAfter.info === 0 && stylesAfter.placeholders === 3, JSON.stringify(stylesAfter));
+  ok("9b the link keeps its words and takes the template's link colour", !stylesAfter.link);
   ok("9b the back-to-top icon is now the standard one", stylesAfter.icon === true && stylesBefore.icon === false);
-  await page.click('#view-upgrade .upgrade-seg-btn:has-text("Phone")');
-  await page.waitForTimeout(400);
-  const phone = await (await frameOf()).evaluate(() => ({ desktop: getComputedStyle(document.querySelector(".desktop-image")).display, mobile: getComputedStyle(document.querySelector(".mobile-image")).display }));
-  ok("9b the phone layout carries over (mobile image shown, desktop image hidden)", phone.desktop === "none" && phone.mobile === "block", JSON.stringify(phone));
-  await page.click('#view-upgrade .upgrade-seg-btn:has-text("Desktop")');
+  ok("9b the template's own parts take the theme colour", stylesAfter.toc === "rgb(163, 25, 91)", stylesAfter.toc);
 
-  // untick a group: the check names exactly what lost its styling; tick it again to restore
+  // keep a component for now: its HTML and styling stay, and the CSS records that it is to be rebuilt
   await gotoStep("components");
-  await page.uncheck('#view-upgrade .upgrade-tweak:has(strong:text-is("cta-button")) input');
-  ok("9b unticking a group is reported as unstyled", (await page.textContent("#view-upgrade .upgrade-checks")).includes(".cta-button") && !(await code("CSS")).includes(".cta-button"));
-  await page.check('#view-upgrade .upgrade-tweak:has(strong:text-is("cta-button")) input');
-  ok("9b and ticking it again restores it", (await code("CSS")).includes(".cta-button") && (await page.textContent("#view-upgrade .upgrade-checks")).includes("Every class in your HTML has styling"));
+  await page.check('#view-upgrade .upgrade-tweak:has(strong:text-is("burgundy-link")) input');
+  ok("9b keeping a component carries its styling and its HTML, and records that it is to be rebuilt", (await code("CSS")).includes(".burgundy-link") && /Component \.burgundy-link/.test(await code("CSS")) && /class="[^"]*burgundy-link/.test(await code("HTML")));
+  await page.uncheck('#view-upgrade .upgrade-tweak:has(strong:text-is("burgundy-link")) input');
+  ok("9b and unticking it removes both again", !(await code("CSS")).includes(".burgundy-link") && !/class="[^"]*burgundy-link/.test(await code("HTML")));
+  await page.check('#view-upgrade .upgrade-tweak:has(strong:text-is("info-section")) input');
+  await page.check('#view-upgrade .upgrade-tweak:has(strong:text-is("text")) input');
+  ok("9b keeping a container keeps it in the page, and the other placeholder stays", (await code("HTML")).includes('class="info-section"') && ((await code("HTML")).match(/<!-- REBUILD:/g) || []).length === 1);
+  await page.uncheck('#view-upgrade .upgrade-tweak:has(strong:text-is("info-section")) input');
+  await page.uncheck('#view-upgrade .upgrade-tweak:has(strong:text-is("text")) input');
 
   // choose the other theme: the class, and the colours in the open frame, follow
   await gotoStep("html");
@@ -295,7 +300,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await gotoStep("check");
   await page.waitForTimeout(500);
   ok("9b choosing Y Tŷ Dysgu changes the theme class", (await code("HTML")).includes('class="ytydysgu"') && !(await code("HTML")).includes('class="gwella"'));
-  ok("9b and the colours in the preview", (await styles(await frameOf())).cta.backgroundColor === "rgb(50, 80, 131)");
+  ok("9b and the colours in the preview", (await styles(await frameOf())).toc === "rgb(50, 80, 131)");
   await gotoStep("html");
   await page.check('#view-upgrade .upgrade-theme input[value="gwella"]');
 
@@ -319,9 +324,16 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const y1 = await page.evaluate(() => Math.round(scrollY));
   ok("9c the page does not move by itself when the preview frames load", y0 === y1 && y1 < 1200, `${y0} -> ${y1}`);
   const custom2 = await page.$$eval("#view-upgrade .upgrade-custom .upgrade-tweak strong", (l) => l.map((x) => x.textContent));
-  ok("9c the page's own components are carried", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
+  ok("9c the page's own components are listed, to be rebuilt", custom2.join() === "inline-icon,accordion-text,resource-card-grid,resource-card", custom2.join());
+  ok("9c and with none kept, they are out of the page: a placeholder for each container and image", (((await code("HTML")).match(/<!-- REBUILD:/g)) || []).length > 0 && !/class="[^"]*\bresource-card-grid\b/.test(await code("HTML")));
+  // The rest of 9c is about following the template where the page overrode it, with the page's own components left alone: keep them.
+  await gotoStep("components");
+  for (const name of custom2) await page.check(`#view-upgrade .upgrade-tweak:has(strong:text-is("${name}")) input`);
+  ok("9c keeping them all puts their HTML and styling back", !(await code("HTML")).includes("REBUILD") && (await code("CSS")).includes(".resource-card-grid"));
+  await gotoStep("found");
   ok("9c the 21 differences are 20 rules, counted along the top", (await page.textContent("#view-upgrade .wizard-step[data-step=review]")).includes("Review (0/20)"));
-  ok("9c nothing is kept yet, and copying is locked", !(await code("CSS")).includes("kept:") && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
+  ok("9c no rule is kept yet, and copying is locked", !/kept: (?!Component )/.test(await code("CSS")) && await page.isDisabled('#view-upgrade button:has-text("Copy HTML")'));
+  ok("9c the components that were kept are recorded in the CSS as to be rebuilt", (await code("CSS")).includes("/* kept: Component .resource-card: kept for now, to be rebuilt */"));
 
   // the first rule, before choosing: a large preview, the template above and yours below
   const title = () => page.textContent("#view-upgrade .upgrade-review-title");
@@ -376,7 +388,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   const css1 = await code("CSS");
   ok("9c once it has a reason it can go on, and the reason is written into the CSS against that rule", !(await page.isDisabled(NEXTR)) && css1.includes("/* kept: Text and headings \u203a strong: A deliberate design choice, bold is our house style */"));
   await page.check('#view-upgrade input[name="review-choice"][value="template"]');
-  ok("9c going back to the template takes it out again", !(await code("CSS")).includes("kept:") && !(await page.isVisible("#view-upgrade .upgrade-reason")) && !(await page.isDisabled(NEXTR)));
+  ok("9c going back to the template takes it out again", !/kept: (?!Component )/.test(await code("CSS")) && !(await page.isVisible("#view-upgrade .upgrade-reason")) && !(await page.isDisabled(NEXTR)));
 
   // moving between slides: the wizard comes to the top, focus goes to the title, and the page does not jump about
   const barTop = () => page.evaluate(() => Math.round(document.querySelector("#view-upgrade .wizard-bar").getBoundingClientRect().top));
@@ -485,7 +497,9 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   await gotoStep("check");
   const checks3 = await page.textContent("#view-upgrade .upgrade-checks");
   ok("9d checks: every function the HTML calls is defined", checks3.includes("Every function your HTML calls is defined"));
-  ok("9d checks: the unclosed quote in the page's own HTML is reported", checks3.includes("unclosed quote") && checks3.includes('alt=" class='));
+  // The broken <img> sat inside the page's own resource-card-grid, which is a component the template has no equivalent of: it is out of
+  // the new page now, so there is nothing left to report, and the original code (broken quote included) is kept on the components slide.
+  ok("9d the unclosed quote was inside a removed component: gone from the new page, kept in the original code shown", !checks3.includes("unclosed quote") && await page.$$eval("#view-upgrade .upgrade-removed pre", (l) => l.some((x) => x.textContent.includes('alt=" class='))));
   ok("9d the author is told the older block now gets the current version's styling", (await page.textContent("#view-upgrade .upgrade-results")).includes("older version of the"));
   ok("9d the new JS defines the tile handlers", (await code("JS")).includes("function openAccordion(") && (await code("JS")).includes("function openAccordionKey("));
 

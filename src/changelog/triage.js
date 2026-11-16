@@ -1,7 +1,7 @@
 // How much of the migration wizard a legacy page deserves. Pure: no DOM, no file access.
 //
-//   easy     the page is already close to the template. One screen: the template's answer for every difference, the
-//            page's own components kept, and a button to see the result. The wizard is still there on request.
+//   easy     the page is already close to the template, with no components of its own to remove. One screen: the template's
+//            answer for every difference, and a button to see the result. The wizard is still there on request.
 //   guided   the ordinary migration wizard, one rule per slide.
 //   rebuild  the tool can't produce a page it would stand behind. It says so and why, and offers no way past: the author
 //            rebuilds the page in the builder. (Reasons are things the author can see and fix, so "fix it, then paste again"
@@ -16,6 +16,9 @@
 export const EASY_MAX_RULES = 5;
 
 const hasContainer = (html) => /<div\b[^>]*\bid="page-container"/.test(html);
+// The template's own page structure (breadcrumb, contents list, content column...). A plain page of text and links has no BLOCKS
+// but does have this, and the base CSS styles it all: that page migrates fine.
+const hasSkeleton = (html) => /\b(?:id|class)="[^"]*\b(?:breadcrumb-nav|table-of-contents|content-column|main-grid|header-h1|content-body)\b/.test(html);
 
 // migration: buildMigration()'s result. rules: how many rules buildReview() asks about. html: the page's HTML.
 // Returns { tier, reasons[], rules }. `reasons` explain a `rebuild`, or what kept a page from being `easy`.
@@ -24,8 +27,8 @@ export function triageMigration(migration, rules, html) {
   if (!hasContainer(html)) {
     stops.push("There is no #page-container in the HTML, so there is nothing to put the template's page on.");
   }
-  if (!migration.blocks.length) {
-    stops.push("None of the builder's blocks were recognised on this page, so there is nothing to map onto the template.");
+  if (!migration.blocks.length && !hasSkeleton(html)) {
+    stops.push("None of the builder's blocks, and none of the template's page structure (breadcrumb, contents list, content column), were found, so there is nothing to map onto the template.");
   }
   const dead = migration.lint.missingFunctions;
   if (dead.length) {
@@ -37,6 +40,7 @@ export function triageMigration(migration, rules, html) {
   const needsEyes = [];
   if (!migration.ready) needsEyes.push("The page's theme couldn't be told from its CSS.");
   if (rules > EASY_MAX_RULES) needsEyes.push(`${rules} rules differ from the template (more than ${EASY_MAX_RULES}).`);
+  if (migration.groups.some((g) => g.kind === "custom" && !g.kept)) needsEyes.push("The page has components of its own, which are removed and need rebuilding.");
   if (migration.lint.tagProblems.length) needsEyes.push("The HTML has tag problems.");
   if (migration.lint.unstyledClasses.length) needsEyes.push("Some classes lost their styling.");
   if (migration.lint.undefinedVars.length) needsEyes.push("The CSS uses variables that aren't defined.");

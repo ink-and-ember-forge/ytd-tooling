@@ -18,6 +18,8 @@ import { getPageCSS, getPageJS, forToc } from "../base/index.js";
 import { assembleCSS } from "../lib/assemble.js";
 import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
+import { retireComponents } from "./components.js";
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const stripScriptTags = (t) => t.replace(/^\s*<script[^>]*>/i, "").replace(/<\/script>\s*$/i, "");
 import { OVERRIDES_START, OVERRIDES_END, ledgerComment } from "./local-edits.js";
 
@@ -222,8 +224,8 @@ export function analyseLegacyCss(css, html, standardCss, { referenceCss = null, 
     for (const item of rule.items) {
       const kind = kindOf(item, standard, used);
       if (kind === "custom") {
-        const key = namesIn(item).find((n) => !standard.has(n)).slice(1);
-        const group = groups.get(key) || { key, kind: "custom", entries: [] };
+        const name = namesIn(item).find((n) => !standard.has(n)), key = name.slice(1); // `name` keeps the sigil: .x is a class, #x an id
+        const group = groups.get(key) || { key, name, kind: "custom", entries: [] };
         group.entries.push({ media: rule.media, selector: item, decls: rule.decls, spec: specificity(item), order: order++ });
         groups.set(key, group);
         continue;
@@ -297,7 +299,7 @@ function prepareGroups(groups, theme, definedVars) {
     const against = g.kind === "deviation"
       ? rules.flatMap((r) => [...r.decls].map(([p, v]) => `${r.media ? `${r.media} ` : ""}${r.selector || "#page-container"}: ${p}: ${v.join(" / ")}  (template: ${r.standard.get(p) ?? "nothing"})`))
       : [];
-    return { key: g.key, kind: g.kind, rules, notes: [...new Set(notes)], text, against };
+    return { key: g.key, name: g.name, kind: g.kind, rules, notes: [...new Set(notes)], text, against };
   });
 }
 
@@ -374,7 +376,7 @@ export function migrateHtml(html, { theme = null, version = BUILDER_VERSION } = 
 // ---- checks on the finished page --------------------------------------------
 
 // Bootstrap and Font Awesome classes: styled by their own stylesheets, not the page's.
-const IGNORED_CLASSES = /^(fa|fa-[\w-]+|collapse|collapsed|collapsing|show|active|accordion(-[\w-]+)?|btn(-[\w-]+)?|row|col(-[\w-]+)?|container(-[\w-]+)?|d-[\w-]+|visually-hidden|stretched-link|tooltip|popover|modal(-[\w-]+)?|dropdown(-[\w-]+)?|nav(-[\w-]+)?|navbar(-[\w-]+)?|badge|alert(-[\w-]+)?|card(-[\w-]+)?|list-group(-[\w-]+)?|form-[\w-]+|table(-[\w-]+)?|img-fluid|text-(start|end|center|muted|[a-z]+)|bg-[\w-]+|border(-[\w-]+)?|rounded(-[\w-]+)?|shadow(-[\w-]+)?|[mp][tbxyse]?-\d|w-\d+|h-\d+|flex(-[\w-]+)?|justify-content-[\w-]+|align-items-[\w-]+|position-[\w-]+|float-[\w-]+)$/;
+export const IGNORED_CLASSES = /^(fa|fa-[\w-]+|collapse|collapsed|collapsing|show|active|accordion(-[\w-]+)?|btn(-[\w-]+)?|row|col(-[\w-]+)?|container(-[\w-]+)?|d-[\w-]+|visually-hidden|stretched-link|tooltip|popover|modal(-[\w-]+)?|dropdown(-[\w-]+)?|nav(-[\w-]+)?|navbar(-[\w-]+)?|badge|alert(-[\w-]+)?|card(-[\w-]+)?|list-group(-[\w-]+)?|form-[\w-]+|table(-[\w-]+)?|img-fluid|text-(start|end|center|muted|[a-z]+)|bg-[\w-]+|border(-[\w-]+)?|rounded(-[\w-]+)?|shadow(-[\w-]+)?|[mp][tbxyse]?-\d|w-\d+|h-\d+|flex(-[\w-]+)?|justify-content-[\w-]+|align-items-[\w-]+|position-[\w-]+|float-[\w-]+)$/;
 const SET_BY_JS = /^--(thinqi-navbar-height|anchor-section-offset|bs-[\w-]+)$/;
 
 // Functions called from onclick="..." and the like that the page's JS does not define: clicking would do nothing (or throw).
@@ -419,12 +421,15 @@ export function customJs(oldJs, standardJs) {
 //   ledger     reasons for kept overrides, written into the overrides block as comments (see review.js)
 //   reference  an older stored baseline (lib/baseline.js): what the template used to say, so a rule that matches the
 //              OLD template is not mistaken for the author's own choice
+//   retire     true: the page's own components that are NOT kept are taken out of the HTML (see components.js): a container is
+//              replaced by a placeholder comment for the author to paste a rebuilt one over, anything else just loses the class
 // Returns {
 //   fit, theme, themeDetected, blocks (ids), groups[{ key, kind: "custom" | "deviation", text, against, notes, kept }],
 //   dropped{ base, standard, unused },
-//   html, htmlChanges[], css, js, customJs[], lint, ready (false until a theme is chosen), notes[]
+//   html, htmlChanges[], css, js, customJs[], lint, ready (false until a theme is chosen), notes[],
+//   retired { removed[], stripped[], unresolved[] } (empty unless `retire`)
 // }
-export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [] } = {}) {
+export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [], retire = false } = {}) {
   const { html = "", css = "", js = "" } = page;
   const detected = detectTheme(css);
   const chosen = theme === undefined ? detected : theme;
@@ -448,6 +453,18 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
   const region = overridesFrom(prepared.filter((g) => g.kept), ledger);
   const outCss = region ? standardCss.replace(/\n<\/style>$/, `\n\n${region}\n</style>`) : standardCss;
 
+  // Components the author is not keeping: out of the HTML, a placeholder where each container was.
+  const retired = retire
+    ? retireComponents(migrated.html, prepared.filter((g) => g.kind === "custom" && !g.kept && g.name?.startsWith(".") && !IGNORED_CLASSES.test(g.key)).map((g) => g.key))
+    : { html: migrated.html, removed: [], stripped: [], unresolved: [] };
+  const htmlChanges = [...migrated.changes];
+  for (const r of retired.removed) {
+    htmlChanges.push({ id: `component:${r.name}`, summary: `Removed ${r.classes.map((c) => `.${c}`).join(", ")} (line ${r.line}) and left a placeholder comment. Rebuild it and paste it over the placeholder.`, before: r.original, after: `<!-- REBUILD: ${r.classes.map((c) => `.${c}`).join(", ")} … -->` });
+  }
+  for (const s of retired.stripped) {
+    htmlChanges.push({ id: `class:${s.name}`, summary: `Took the class ${s.name} off ${s.count === 1 ? `a <${s.tag}>` : `${s.count} <${s.tag}> elements`}. Its styling isn't carried; the element and its content stay.`, before: `class="… ${s.name} …"`, after: "(class removed)" });
+  }
+
   const notes = [];
   const skipped = (css.match(/@(keyframes|font-face|supports|import)\b/g) || []).length;
   if (skipped) notes.push(`The old CSS has ${skipped} at-rule(s) (@keyframes, @font-face...) that are not carried automatically. Check the page.`);
@@ -456,6 +473,10 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
   for (const b of used.filter((b) => !hasCurrentMarkup(html, b))) {
     notes.push(`Your page uses an older version of the ${b.label} block. The new code applies the current version's styling and JS, with your own overrides on top, so check how it looks.`);
   }
+  if (retired.removed.length) {
+    notes.push(`${plural(retired.removed.length, "component", "components")} the template has no equivalent of ${retired.removed.length === 1 ? "was" : "were"} removed and replaced by a placeholder comment (search the HTML for "REBUILD"): ${retired.removed.map((r) => r.classes.map((c) => `.${c}`).join(", ")).join("; ")}. Rebuild each however you choose and paste it over its placeholder.`);
+  }
+  retired.unresolved.forEach((u) => notes.push(`.${u.name} (a <${u.tag}> on line ${u.line}) was not removed: ${u.why}.`));
   const standardJs = getPageJS(used);
   const own = js.trim() ? customJs(js, standardJs) : [];
   if (own.length) notes.push(`Your JS also looks for ${own.join(", ")}, which the standard JS doesn't. Re-add whatever code uses it after pasting.`);
@@ -467,12 +488,14 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
     blocks: used.map((b) => b.id),
     groups: prepared,
     dropped,
-    html: migrated.html,
-    htmlChanges: migrated.changes,
+    html: retired.html,
+    htmlChanges,
+    retiring: retire,
+    retired: { removed: retired.removed, stripped: retired.stripped, unresolved: retired.unresolved },
     css: outCss,
     js: standardJs,
     customJs: own,
-    lint: lintPage({ html: migrated.html, css: outCss, js: standardJs, before: css }),
+    lint: lintPage({ html: retired.html, css: outCss, js: standardJs, before: css }),
     ready: !!chosen,
     notes,
   };
