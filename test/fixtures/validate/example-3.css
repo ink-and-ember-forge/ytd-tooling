@@ -1,0 +1,641 @@
+<style>
+/* GWELLA PAGE — base styling.
+   Every block's own CSS (generated from a tab in this tool) gets
+   pasted INSIDE the #page-container { ... } block below, alongside
+   these rules — not as a separate rule outside it.
+
+   --thinqi-navbar-height and --anchor-section-offset are both set
+   dynamically by the Base JS (download it too) — it measures thinqi's
+   real navbar (and an optional subnav) at runtime rather than guessing
+   at a breakpoint. This file only ever READS these with a fallback
+   (var(--thinqi-navbar-height, 95px), var(--anchor-section-offset, 145px))
+   — it must never redeclare/override them locally, or the real
+   measured values get silently ignored. */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body > main > article.plain-text {
+  overflow: visible !important;
+}
+
+#page-container {
+  --heading-1: 1.625rem;
+  --heading-2: 1.375rem;
+  --heading-3: 1.125rem;
+  --heading-4: 1rem;
+  --numbered-subheading: 20px;
+
+  --burgundy: #a3195b;
+  --light-burgundy: #faf3f7;
+  --light-grey: #f1f1f1;
+
+  --bs-font-sans-serif: "Noto Sans", "Noto Sans Arabic", sans-serif;
+  --bs-body-font-family: "Noto Sans", "Noto Sans Arabic", sans-serif;
+
+  margin-top: var(--thinqi-navbar-height, 95px);
+  line-height: 160%;
+  background-color: white !important;
+  font-family: var(--bs-font-sans-serif) !important;
+
+  &,
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  p {
+    margin-block: 1em;
+  }
+
+  ul {
+    list-style-type: disc;
+    padding-left: 40px;
+  }
+
+  li {
+    line-height: 1.5em;
+  }
+
+  section {
+    /* padding-bottom (20px) + next section's padding-top (20px) + the
+       H2's own margin-top (24px, from the shared heading rule below)
+       = 64px total gap between sections, as specified. Padding is what
+       makes this work — it stops the H2's margin from collapsing across
+       the section boundary the way it would if this were plain margin. */
+    padding-block: 1.25rem;
+    scroll-margin-top: var(--anchor-section-offset, 145px);
+  }
+
+  i {
+    /* Intentionally no margin/weight override — icons should sit inline
+       with their surrounding text or button, not inherit heading spacing. */
+  }
+
+@media (max-width: 768px) {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    margin-block: 0.75rem;
+  }
+
+  section {
+    padding-block: 0.75rem;
+  }
+}
+    /* Covers the case where a ToC link (or any anchor) points directly
+       at a heading's own id rather than a wrapping <section id="...">
+       — same buffer either way, so the target isn't hidden under the
+       navbar regardless of which element the id actually sits on. */
+    scroll-margin-top: var(--anchor-section-offset, 145px);
+  }
+
+  a {
+    color: var(--burgundy) !important;
+    text-decoration: underline !important;
+
+    &:hover {
+      text-decoration: none !important;
+    }
+  }
+
+  .standard-container {
+    max-width: 860px;
+    margin-inline: auto;
+
+    @media (max-width: 1200px) {
+      max-width: 750px;
+    }
+
+@media (max-width: 768px) {
+  max-width: 100%;
+  padding-inline: 0.75rem;
+}
+}
+
+  .content-column {
+    h2 {
+      font-size: var(--heading-2);
+      font-weight: bold;
+      margin-block: 1.5rem;
+    }
+
+    h3 {
+      font-size: var(--heading-3);
+      font-weight: 600;
+      color: var(--burgundy);
+    }
+
+    h4 {
+      font-size: var(--heading-4);
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      display: contents;
+    }
+  }
+
+  .burgundy {
+    color: var(--burgundy);
+  }
+
+  .button-icon {
+    margin-left: 0.25rem;
+  }
+
+  #breadcrumb-nav {
+    padding: 1rem;
+
+    #breadcrumb-nav__list {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      gap: 0.4rem;
+
+      li:not(:last-child)::after {
+        content: "|";
+        margin-left: 0.5rem;
+        color: var(--dark-grey);
+      }
+
+      li:last-child {
+        color: var(--dark-grey);
+      }
+    }
+
+  a {
+    color: var(--burgundy);
+    text-decoration: underline !important;
+
+    &:hover {
+      text-decoration: none !important;
+    }
+  }
+  }
+
+  .header {
+    width: 100%;
+  }
+
+  #header-img {
+    width: 100%;
+    object-fit: cover;
+    object-position: center 30%;
+    display: block;
+
+    @media (max-width: 576px) {
+      object-fit: contain;
+    }
+  }
+
+  #header-h1 {
+    font-size: var(--heading-1);
+    color: var(--burgundy);
+    line-height: 120%;
+    font-weight: bold;
+    margin-block: 1.5rem;
+
+    @media (max-width: 768px) {
+      order: -1;
+    }
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    gap: 2rem;
+    align-items: start;
+    padding-inline: 1rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+  }
+
+  .content-body {
+    margin-top: 1rem;
+
+    /* section/.timestamp themselves are never direct grid items — they
+       live inside .content-body, which is what actually gets flattened
+       into the grid (only .content-column gets display:contents, not
+       .content-body too). The order has to live on .content-body itself,
+       or it defaults to order:0 and jumps ahead of the title/at-a-glance/
+       ToC, which order 1–3 above are trying to place ahead of it. */
+    @media (max-width: 768px) {
+      order: 4;
+    }
+  }
+
+  #table-of-contents {
+    position: sticky;
+    top: 110px;
+
+    @media (max-width: 768px) {
+      order: 0;
+      padding-top: 0;
+      position: relative;
+      top: 0;
+width: 100%;
+min-width: 0;
+box-sizing: border-box;
+    }
+
+    #table-of-contents-heading {
+      border-radius: 20px;
+      background-color: var(--burgundy);
+      color: white;
+      padding: 5px;
+      text-align: center;
+      font-weight: 400;
+      line-height: 1.5;
+      font-size: 1.2em;
+      margin-block: 1.5rem 0.75em;
+    }
+
+    ul {
+      padding-left: 0;
+    }
+
+    li {
+      list-style: none;
+      border-radius: 10px;
+      padding: 10px;
+      background-color: var(--light-burgundy); 
+      margin-left: 0;
+
+      &:hover {
+        background-color: var(--light-grey);
+      }
+
+      & + li {
+        margin-top: 1rem;
+      }
+    }
+
+.toc-link {
+  color: var(--burgundy);
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+
+  &:hover {
+    text-decoration: none;
+  }
+}
+  }
+.timestamp {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--dark-grey);
+  padding-inline: 1rem;
+
+  @media (max-width: 768px) {
+    display: block;
+    clear: both;
+    width: 100%;
+    order: 5;
+  }
+}
+  .back-to-top {
+    display: none;
+    flex-direction: column;
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    color: var(--burgundy);
+    font-weight: bold;
+    padding: 0.5rem 0.8rem;
+    border-radius: 10px;
+    cursor: pointer;
+    z-index: 99;
+
+    & > img {
+      width: 30px;
+    }
+  }
+
+
+  .pdf-size {
+    color: #999999 !important;
+    font-size: 0.95em !important;
+    text-decoration: none !important;
+    font-weight: normal;
+    margin-top: 0.25rem;
+  }
+
+
+   .accordion {
+margin-block: 0.5rem;
+
+    .accordion-header {
+      margin: 0px !important;
+    }
+
+    .accordion-item {
+      border: none !important;
+    }
+
+    .accordion-button {
+      color: var(--primary-colour) !important;
+      background-color: transparent !important;
+      padding: 0.5rem 0 !important;
+      box-shadow: none !important;
+      font-weight: 600;
+
+      .accordion-button-text {
+        text-decoration: underline;
+      }
+
+      &:hover .accordion-button-text {
+        text-decoration: none;
+      }
+
+      &::after {
+        display: none;
+      }
+
+      &::before {
+        content: "▸";
+        scale: 2;
+        margin-right: 8px;
+        transition: transform 0.2s ease-in-out;
+        color: var(--primary-colour);
+      }
+
+      &:not(.collapsed) {
+        background-color: transparent !important;
+        color: var(--primary-colour) !important;
+        box-shadow: none !important;
+
+        &::before {
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    .accordion-body {
+      padding: 1rem 0;
+    }
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    justify-items: center;
+    align-items: stretch;
+    gap: 1rem;
+
+    @media (max-width: 576px) {
+      grid-template-columns: repeat(1, 90%);
+      justify-content: center;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      transition: 0.2s;
+
+      &:hover {
+        transform: translateY(-3px);
+        box-shadow: 8px 12px 29px -3px rgba(26, 26, 26, 0.4);
+      }
+
+      @media (max-width: 576px) {
+        max-width: 300px;
+      }
+
+      > div {
+        flex: 1;
+        padding: 1rem 1rem 0 1rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 180px;
+
+        > a {
+          margin-bottom: 2rem;
+          color: var(--burgundy);
+        }
+      }
+
+      p {
+        display: flex;
+        justify-content: space-between;
+      }
+    }
+
+    .resource-card__img {
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      border-radius: 10px 10px 0 0;
+    }
+  }
+
+  .image-text-section {
+    > img,
+    > iframe {
+      float: right;
+      width: 100%;
+      max-width: 275px;
+      margin: 0 0 1rem 1.5rem;
+      border-radius: 16px;
+    }
+
+    > iframe {
+      aspect-ratio: 16 / 9;
+      height: auto;
+      border: none;
+    }
+
+    > img.media-large {
+      width: 340px;
+      max-width: 45%;
+    }
+
+    > div {
+      min-width: 0;
+    }
+
+    &::after {
+      content: "";
+      display: block;
+      clear: both;
+    }
+
+    h3 {
+      color: var(--burgundy);
+      font-size: var(--numbered-subheading);
+      font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+      margin-top: 0;
+
+      > img,
+      > iframe {
+        float: none;
+        display: block;
+        max-width: none;
+        width: 100%;
+        margin: 0 0 1rem;
+      }
+
+
+  > img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+    margin: 0 auto 1rem;
+  }
+      > img.media-large {
+        float: right;
+        display: inline;
+        width: 200px;
+        max-width: 40%;
+        aspect-ratio: auto;
+        object-fit: initial;
+        margin: 0 0 1.5rem 2.5rem;
+      }
+    }
+  }
+@media (max-width: 768px) {
+  #page-container {
+    max-width: 100%;
+  }
+
+  #page-container .main-grid,
+  #page-container .standard-container {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #page-container img,
+  #page-container iframe {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+
+  #page-container {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  #page-container *,
+  #page-container *::before,
+  #page-container *::after {
+    box-sizing: border-box;
+  }
+
+  #page-container .main-grid.standard-container {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  #page-container .content-column,
+  #page-container .content-body,
+  #page-container section,
+  #page-container #at-a-glance,
+  #page-container #table-of-contents {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  #page-container p,
+  #page-container li,
+  #page-container a,
+  #page-container h1,
+  #page-container h2,
+  #page-container h3,
+  #page-container .accordion-button-text {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
+  #page-container img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  #page-container .cards-grid,
+  #page-container .card,
+  #page-container .accordion,
+  #page-container .accordion-item,
+  #page-container .accordion-body,
+  #page-container .image-text-section {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  #page-container .table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+  }
+
+  #page-container .table th,
+  #page-container .table td {
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+}
+
+  #at-a-glance {
+    background-color: #e8e8e8;
+    border-bottom: 4px solid var(--burgundy);
+    border-radius: 20px 20px 0 0;
+    padding: 20px;
+
+    #at-a-glance-heading {
+      margin-block: 0 10px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #000 !important;
+    }
+
+    ul {
+      margin-block: 0;
+
+      li + li {
+        margin-top: 10px;
+      }
+    }
+  }
+
+
+
+  /* ============================================================
+     PLACE NEW BLOCK CSS ABOVE THIS LINE
+     (still inside this #page-container block — every block's CSS
+     nests in here, never as a separate rule of its own)
+     ============================================================ */
+}
+</style>

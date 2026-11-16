@@ -904,6 +904,79 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("10 no horizontal page scroll at 390px", overflow <= 0, "overflow=" + overflow);
   await m.screenshot({ path: path.join(OUT, "ui-mobile.png") });
 
+  // 11. the validator: the code and the findings side by side, linked both ways (src/validate/, src/ui/validate-panel.js)
+  await page.setViewportSize({ width: 1400, height: 900 });
+  const V = "#view-validate";
+  const vfix = (f) => fs.readFileSync(path.join(ROOT, "test", "fixtures", "validate", f), "utf8");
+  await page.click('.mode-btn[data-view="validate"]');
+  await page.fill(`${V} .upgrade-input >> nth=0`, vfix("example-3.html"));
+  await page.fill(`${V} .upgrade-input >> nth=1`, vfix("example-3.css"));
+  await page.click(`${V} .primary-btn`);
+  await page.waitForSelector(`${V} .validate-report`, { state: "visible" });
+  const vsum = await page.textContent(`${V} .validate-summary`);
+  ok("11 the report says how many errors, warnings and notes were found", /10 errors, 2 warnings, \d+ notes/.test(vsum), vsum);
+  ok("11 the paste step gives way to the report, with the code and the findings side by side", !(await page.isVisible(`${V} .upgrade-input >> nth=0`)) && await page.isVisible(`${V} .validate-code`) && await page.isVisible(`${V} .validate-findings`));
+  const lineCount = vfix("example-3.html").split("\n").length;
+  ok("11 it opens on the HTML, one numbered line per line of code", (await page.getAttribute(`${V} .validate-tab[data-lang="html"]`, "aria-selected")) === "true" && (await page.$$(`${V} .vline`)).length === lineCount, String(lineCount));
+  ok("11 lines with findings are marked in the gutter", (await page.$$(`${V} button.vno`)).length >= 8 && await page.isVisible(`${V} .vline--error`));
+
+  const scrollY0 = await page.evaluate(() => Math.round(scrollY));
+  await page.click(`${V} .vf[data-id="html/duplicate-id"] >> nth=0`);
+  const sel1 = await page.$$eval(`${V} .vline--sel`, (l) => l.map((x) => +x.dataset.line));
+  const rel1 = await page.$$eval(`${V} .vline--rel`, (l) => l.map((x) => +x.dataset.line));
+  ok("11 choosing a finding highlights its line, the exact text, and the first use of the id", sel1.join() === "194" && rel1.join() === "65" && await page.isVisible(`${V} .vmark`), `${sel1} / ${rel1}`);
+  ok("11 and shows why it matters and where the other place is", (await page.textContent(`${V} .vf-item--sel .vf-why`)).includes("FIRST element") && (await page.textContent(`${V} .vf-item--sel .vf-related`)).includes("HTML line 65"));
+  const inView = await page.evaluate(() => { const c = document.querySelector("#view-validate .validate-code"), r = c.querySelector('.vline[data-line="194"]'); const cb = c.getBoundingClientRect(), rb = r.getBoundingClientRect(); return rb.top >= cb.top && rb.bottom <= cb.bottom; });
+  ok("11 the code scrolls to the line, and only the code: the page itself does not move", inView && (await page.evaluate(() => Math.round(scrollY))) === scrollY0, `scrollY ${scrollY0} -> ${await page.evaluate(() => Math.round(scrollY))}`);
+
+  await page.screenshot({ path: path.join(OUT, "11-validate-html.png") });
+  await page.click(`${V} .vf[data-id="css/unbalanced-brace"]`);
+  await page.screenshot({ path: path.join(OUT, "11-validate-css.png") });
+  ok("11 a CSS finding switches to the CSS tab, and highlights the stray } and the } that closes #page-container too early", (await page.getAttribute(`${V} .validate-tab[data-lang="css"]`, "aria-selected")) === "true" && (await page.$$eval(`${V} .vline--sel`, (l) => l.map((x) => +x.dataset.line))).join() === "640" && (await page.$$eval(`${V} .vline--rel`, (l) => l.map((x) => +x.dataset.line))).join() === "95");
+  await page.click(`${V} .vf-item--sel .vf-related .upgrade-link`);
+  const row95 = await page.evaluate(() => { const c = document.querySelector("#view-validate .validate-code"), r = c.querySelector('.vline[data-line="95"]'); const cb = c.getBoundingClientRect(), rb = r.getBoundingClientRect(); return rb.top >= cb.top && rb.bottom <= cb.bottom; });
+  ok("11 a related place is a link that jumps there", row95);
+
+  // from the code to the finding
+  await page.click(`${V} .validate-tab[data-lang="html"]`);
+  await page.click(`${V} .vline[data-line="395"] button.vno`);
+  ok("11 clicking a marked line chooses its first finding", (await page.getAttribute(`${V} .vf-item--sel .vf`, "data-id")) === "html/unclosed-tag" && (await page.textContent(`${V} .vf-item--sel`)).includes("<h3> is never closed"));
+  await page.click(`${V} .vline[data-line="395"] button.vno`);
+  ok("11 and clicking it again goes on to the next one on that line", (await page.getAttribute(`${V} .vf-item--sel .vf`, "data-id")) === "html/stray-close-tag");
+
+  // keyboard: the language tabs
+  await page.focus(`${V} .validate-tab[data-lang="html"]`);
+  await page.keyboard.press("ArrowRight");
+  ok("11 the arrow keys move between the HTML, CSS and JS tabs", (await page.getAttribute(`${V} .validate-tab[data-lang="css"]`, "aria-selected")) === "true" && await page.$eval(`${V} .validate-tab[data-lang="css"]`, (e) => e === document.activeElement));
+  await page.keyboard.press("ArrowRight");
+  ok("11 the JS tab says plainly when no JS was pasted", /No JS was pasted/.test(await page.textContent(`${V} .validate-code`)));
+
+  // filters
+  await page.click(`${V} .validate-filter[data-severity="info"]`);
+  ok("11 turning notes off hides them from the list and the code", (await page.$$(`${V} .vf-item--info`)).length === 0 && (await page.$$(`${V} .vline--info`)).length === 0 && (await page.getAttribute(`${V} .validate-filter[data-severity="info"]`, "aria-pressed")) === "false");
+  await page.click(`${V} .validate-filter[data-severity="info"]`);
+  ok("11 and on again brings them back", (await page.$$(`${V} .vf-item--info`)).length > 0);
+  await page.screenshot({ path: path.join(OUT, "11-validate.png") });
+
+  // back to the code, and a clean page
+  await page.click(`${V} button:has-text("Edit the code")`);
+  ok("11 'Edit the code' brings the pasted code back, as it was", await page.isVisible(`${V} .upgrade-input >> nth=0`) && (await page.inputValue(`${V} .upgrade-input >> nth=0`)) === vfix("example-3.html").replace(/\r\n/g, "\n") /* a textarea normalises line endings */ && !(await page.isVisible(`${V} .validate-report`)));
+  await page.fill(`${V} .upgrade-input >> nth=0`, '<div id="a"><p>Hello</p><ul><li>one</li></ul></div>');
+  await page.fill(`${V} .upgrade-input >> nth=1`, "#a p { color: red }");
+  await page.click(`${V} .primary-btn`);
+  ok("11 a page with nothing wrong says so", (await page.textContent(`${V} .validate-summary`)) === "No problems found." && /No problems found/.test(await page.textContent(`${V} .validate-findings`)) && (await page.$$(`${V} .vf`)).length === 0);
+  await page.fill(`${V} .upgrade-input >> nth=0`, "").catch(() => {});
+  await page.click(`${V} button:has-text("Edit the code")`);
+  await page.fill(`${V} .upgrade-input >> nth=0`, "<ul><li>one<li>two</ul>");
+  await page.fill(`${V} .upgrade-input >> nth=1`, "");
+  await page.click(`${V} .primary-btn`);
+  ok("11 leaving out an end tag is flagged", (await page.$$(`${V} .vf[data-id="html/missing-end-tag"]`)).length === 2);
+  await page.setViewportSize({ width: 390, height: 800 });
+  const vOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  ok("11 the validator has no horizontal page scroll at 390px, and stacks", vOverflow <= 0 && await page.evaluate(() => { const l = document.querySelector("#view-validate .validate-codepane").getBoundingClientRect(), r = document.querySelector("#view-validate .validate-listpane").getBoundingClientRect(); return r.top >= l.bottom - 1; }), "overflow=" + vOverflow);
+  await page.setViewportSize({ width: 1400, height: 900 });
+  await page.click('.mode-btn[data-view="build"]');
+
   // the generated page (template/): base CSS 3.2.0 behaviour in a real browser
   const tctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
   await stubCdn(tctx);

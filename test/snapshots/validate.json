@@ -1,0 +1,139 @@
+{
+  "example-1": {
+    "counts": {
+      "error": 8,
+      "warning": 0,
+      "info": 31
+    },
+    "findings": [
+      "error html 26:3 html/unclosed-tag",
+      "error html 80:11 html/unclosed-tag",
+      "error html 92:13 html/unclosed-tag",
+      "error html 99:9 html/unclosed-tag",
+      "error html 116:7 html/stray-close-tag",
+      "error html 150:71 html/void-close-tag",
+      "error html 210:1 html/stray-close-tag",
+      "error html 219:1 html/stray-close-tag"
+    ],
+    "info": [
+      "1:1 css/unused-summary",
+      "5:3 css/unused-variable",
+      "62:1 css/unused-selector",
+      "89:1 css/unused-selector",
+      "89:1 css/unused-selector",
+      "218:1 css/unused-selector",
+      "225:1 css/unused-selector",
+      "231:1 css/unused-selector",
+      "235:1 css/unused-selector",
+      "263:2 css/unused-selector",
+      "269:1 css/unused-selector",
+      "277:1 css/unused-selector",
+      "280:1 css/unused-selector",
+      "312:1 css/unused-selector",
+      "340:1 css/unused-selector",
+      "344:1 css/unused-selector",
+      "349:1 css/unused-selector",
+      "356:1 css/unused-selector",
+      "364:1 css/unused-selector",
+      "369:1 css/unused-selector",
+      "499:3 css/unused-selector",
+      "522:1 css/unused-selector",
+      "558:3 css/unused-selector",
+      "586:3 css/unused-selector",
+      "598:3 css/unused-selector",
+      "607:3 css/unused-selector",
+      "617:3 css/unused-selector",
+      "637:3 css/unused-selector",
+      "642:3 css/unused-selector",
+      "649:3 css/unused-selector",
+      "659:3 css/unused-selector"
+    ]
+  },
+  "example-2": {
+    "counts": {
+      "error": 0,
+      "warning": 0,
+      "info": 6
+    },
+    "findings": [],
+    "info": [
+      "1:1 css/unused-summary",
+      "70:1 css/unused-selector",
+      "81:1 css/unused-selector",
+      "81:1 css/unused-selector",
+      "161:1 css/unused-selector",
+      "358:3 css/unused-selector"
+    ]
+  },
+  "example-3": {
+    "counts": {
+      "error": 10,
+      "warning": 2,
+      "info": 11
+    },
+    "findings": [
+      "error html 194:28 html/duplicate-id",
+      "error html 233:6 html/stray-close-tag",
+      "error html 395:1 html/unclosed-tag",
+      "error html 395:30 html/stray-close-tag",
+      "error html 400:38 html/duplicate-id",
+      "error html 405:14 html/duplicate-id",
+      "error html 430:1 html/unclosed-tag",
+      "error html 431:3 html/unclosed-tag",
+      "error html 472:402 html/duplicate-attribute",
+      "error css 640:1 css/unbalanced-brace",
+      "warning html 228:1 html/missing-end-tag",
+      "warning html 472:289 html/attribute-spacing"
+    ],
+    "info": [
+      "1:1 css/unused-summary",
+      "78:3 css/unused-selector",
+      "143:3 css/unused-selector",
+      "336:3 css/unused-selector",
+      "457:5 css/unused-selector",
+      "466:5 css/unused-selector",
+      "472:5 css/unused-selector",
+      "487:5 css/unused-selector",
+      "496:7 css/unused-selector",
+      "513:7 css/unused-selector",
+      "535:3 css/unused-selector"
+    ]
+  },
+  "example-4": {
+    "counts": {
+      "error": 4,
+      "warning": 0,
+      "info": 22
+    },
+    "findings": [
+      "error html 57:8 html/unclosed-tag",
+      "error html 68:11 html/unclosed-tag",
+      "error html 82:1 html/stray-close-tag",
+      "error html 135:1 html/stray-close-tag"
+    ],
+    "info": [
+      "1:1 css/unused-summary",
+      "66:3 css/unused-selector",
+      "66:3 css/unused-selector",
+      "114:5 css/unused-selector",
+      "125:3 css/unused-selector",
+      "304:3 css/unused-selector",
+      "320:3 css/unused-selector",
+      "325:3 css/unused-selector",
+      "412:5 css/unused-selector",
+      "437:5 css/unused-selector",
+      "443:5 css/unused-selector",
+      "510:6 css/unused-selector",
+      "564:5 css/unused-selector",
+      "582:3 css/unused-selector",
+      "586:3 css/unused-selector",
+      "613:3 css/unused-selector",
+      "630:3 css/unused-selector",
+      "647:5 css/unused-selector",
+      "704:5 css/unused-selector",
+      "729:5 css/unused-selector",
+      "740:3 css/unused-selector",
+      "745:3 css/unused-selector"
+    ]
+  }
+}

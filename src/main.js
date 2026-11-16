@@ -4,6 +4,7 @@ import { BLOCK_LIST } from "./blocks/index.js";
 import { buildBlockPanel } from "./ui/block-panel.js";
 import { buildUpgradePanel } from "./ui/upgrade-panel.js";
 import { buildChangelogPanel } from "./ui/changelog-panel.js";
+import { buildValidatePanel } from "./ui/validate-panel.js";
 import { initThemeToggle } from "./ui/theme.js";
 import { initTopbar } from "./ui/topbar.js";
 import { initTabs } from "./ui/tabs.js";
@@ -72,7 +73,7 @@ setRail(getPref("railOpen", window.innerWidth >= 1400));
 
 // ---- views: build / upgrade / what's changed ----------------------------------
 const main = document.getElementById("main");
-main.append(buildUpgradePanel(), buildChangelogPanel());
+main.append(buildUpgradePanel(), buildValidatePanel(), buildChangelogPanel());
 
 const modeTabs = Array.from(document.querySelectorAll(".mode-btn"));
 const viewOf = (btn) => document.getElementById("view-" + btn.dataset.view);

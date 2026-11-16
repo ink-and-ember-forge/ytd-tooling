@@ -13,7 +13,8 @@
 // the author wrote it. Where the tags are too broken to tell where an element ends, nothing is removed and the class is stripped
 // instead, and the element is reported as `unresolved`.
 
-const VOID = new Set(["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]);
+import { scanHtml } from "../validate/html-scan.js";
+
 const CONTAINERS = new Set(["div", "section", "article", "aside", "nav", "header", "footer", "figure", "ul", "ol", "dl", "form", "details", "fieldset"]);
 // An image or embed with a dropped class would be left at its natural size, unstyled: it is a component too.
 const MEDIA = new Set(["img", "iframe", "video", "picture", "svg"]);
@@ -24,28 +25,9 @@ const classesOf = (openTag) => ((openTag.match(/\sclass\s*=\s*"([^"]*)"/) || [])
 const idOf = (openTag) => (openTag.match(/\sid\s*=\s*"([^"]*)"/) || [])[1] || null;
 const lineOf = (html, index) => html.slice(0, index).split("\n").length;
 
-// Every element in the HTML: { tag, start, openEnd, end (null when it never closes), openTag }. Same recovery as migrate.js's
-// tagProblems: a close tag shuts the nearest matching open tag, and anything left open above it is unclosed.
-export function elementsOf(html) {
-  const all = [], stack = [];
-  const masked = html.replace(/<!--[\s\S]*?-->|<(script|style)\b[\s\S]*?<\/\1>/gi, (m) => " ".repeat(m.length));
-  for (const m of masked.matchAll(/<(\/?)([a-zA-Z][\w-]*)\b[^>]*?(\/?)>/g)) {
-    const [whole, closing, name, selfClosed] = m, tag = name.toLowerCase();
-    if (!closing) {
-      const el = { tag, start: m.index, openEnd: m.index + whole.length, end: null, openTag: html.slice(m.index, m.index + whole.length) };
-      all.push(el);
-      if (!VOID.has(tag) && !selfClosed) stack.push(el);
-      else el.end = el.openEnd;
-      continue;
-    }
-    const idx = stack.map((s) => s.tag).lastIndexOf(tag);
-    if (idx === -1) continue;
-    stack[idx].end = m.index + whole.length;
-    stack[idx].closeStart = m.index;
-    stack.length = idx; // the elements above it were never closed: their `end` stays null
-  }
-  return all;
-}
+// Every element in the HTML: { tag, start, openEnd, end (null when it never closes), closeStart, openTag, ... }. The tolerant scanner
+// the validator uses (src/validate/html-scan.js), so what counts as "closed" is decided in one place.
+export const elementsOf = (html) => scanHtml(html).elements;
 
 // names: class names (without the dot) the page's own components are known by. Returns
 //   { html, removed[], stripped[], unresolved[] }
