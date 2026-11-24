@@ -90,7 +90,7 @@ body > main > article.plain-text {
   section {
     /* Padding, not margin, gives the 64px gap between sections. */
     padding-block: 1.25rem;
-    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 1rem);
+    scroll-margin-top: var(--anchor-section-offset, 145px);
   }
 
   h1,
@@ -100,8 +100,8 @@ body > main > article.plain-text {
   h5 {
     font-weight: bold;
     margin-block: 1.5rem;
-    /* Keeps anchored headings clear of the navbar, with 1rem of space above them. */
-    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 1rem);
+    /* Keeps anchored headings clear of the navbar, with 50px of space above them. A section needs none: its own padding and its heading's margin already leave about that much. */
+    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 50px);
   }
 
   a {

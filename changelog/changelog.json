@@ -3,7 +3,7 @@
     {
       "version": "3.5.0",
       "date": "2026-11-24",
-      "summary": "The public site header no longer overlays the page, so the page container no longer reserves space for it: the top margin and the anchor offset are the app chrome's height when there is one, and none otherwise. Anchored sections and headings now stop 1rem below the top, instead of flush against it.",
+      "summary": "The public site header no longer overlays the page, so the page container no longer reserves space for it: the top margin and the anchor offset are the app chrome's height when there is one, and none otherwise. Anchored headings now stop 50px below the top, instead of flush against it.",
       "changes": [
         {
           "id": "CHG-3.5.0-01",
@@ -50,15 +50,15 @@
           "type": "visual",
           "scope": "base-css",
           "blocks": [],
-          "summary": "Anchored sections and headings get 1rem of space above them (scroll-margin-top is the anchor offset plus 1rem), so a link target is not flush against the top of the window.",
+          "summary": "Anchored headings get 50px of space above them (scroll-margin-top is the anchor offset plus 50px), so a link target is not flush against the top of the window. Sections keep the plain anchor offset: their padding and heading margin already leave about that much.",
           "detect": {
             "patterns": [
               "--anchor-section-offset"
             ]
           },
           "outdated": {
-            "present": [
-              "scroll-margin-top:\\s*var\\(--anchor-section-offset,\\s*145px\\);"
+            "missing": [
+              "calc\\(var\\(--anchor-section-offset,\\s*145px\\)\\s*\\+\\s*50px\\)"
             ]
           },
           "action": "copy",
