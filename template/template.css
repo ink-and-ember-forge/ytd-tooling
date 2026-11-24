@@ -1,4 +1,4 @@
-/* Gwella base CSS · version 3.4.1 */
+/* Gwella base CSS · version 3.5.0 */
 /* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */
 
 html {
@@ -90,7 +90,7 @@ body > main > article.plain-text {
   section {
     /* Padding, not margin, gives the 64px gap between sections. */
     padding-block: 1.25rem;
-    scroll-margin-top: var(--anchor-section-offset, 145px);
+    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 1rem);
   }
 
   h1,
@@ -100,8 +100,8 @@ body > main > article.plain-text {
   h5 {
     font-weight: bold;
     margin-block: 1.5rem;
-    /* Keeps anchored headings clear of the navbar. */
-    scroll-margin-top: var(--anchor-section-offset, 145px);
+    /* Keeps anchored headings clear of the navbar, with 1rem of space above them. */
+    scroll-margin-top: calc(var(--anchor-section-offset, 145px) + 1rem);
   }
 
   a {

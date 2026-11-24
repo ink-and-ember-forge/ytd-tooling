@@ -95,7 +95,7 @@
     "blocks/resource-cards.css",
     "blocks/two-column.css"
   ],
-  "3.4.1": [
+  "3.5.0": [
     "base.css",
     "base.html",
     "base.js",

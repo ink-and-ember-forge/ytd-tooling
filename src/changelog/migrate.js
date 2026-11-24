@@ -407,7 +407,7 @@ export function lintPage({ html, css, js = null, before = null }) {
 
 // Selectors an earlier base JS looked for that the current one no longer does. A page still carrying that base JS is
 // not using them for its own purposes, so they are not the author's. Add to this when a release drops a lookup.
-//   .public-site-header  3.4.1: the public header no longer overlays the page, so only div.app-chrome is measured
+//   .public-site-header  3.5.0: the public header no longer overlays the page, so only div.app-chrome is measured
 const RETIRED_BASE_SELECTORS = new Set([".public-site-header"]);
 
 // The standard JS for this page (base plus its blocks) names every selector it looks for; any other selector in the
