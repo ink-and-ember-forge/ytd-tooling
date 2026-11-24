@@ -4,7 +4,7 @@
    while you work on a long form. Below 1000px it stacks and the page scrolls.
    ========================================================================== */
 .view { max-width: 1600px; margin: 0 auto; padding: 1.25rem 1.5rem 4rem; }
-.view-title { margin: 0 0 0.25rem; font-size: 1.4rem; color: var(--navy); }
+.view-title { margin: 0 0 0.25rem; font-size: 1.4rem; color: var(--accent); }
 
 #view-build.workbench {
   --rail-w: 200px;
@@ -55,8 +55,8 @@ body.rail-collapsed .rail { display: none; }
   padding: 0.45rem 0.7rem;
   border-radius: 6px;
 }
-.tab-btn:hover { background: var(--light-grey); color: var(--navy); }
-.tab-btn.active { background: #e6f4f1; color: var(--navy); box-shadow: inset 3px 0 0 var(--green); }
+.tab-btn:hover { background: var(--light-grey); color: var(--accent); }
+.tab-btn.active { background: #e6f4f1; color: var(--accent); box-shadow: inset 3px 0 0 var(--green); }
 
 /* ---- a block's panel -------------------------------------------------------- */
 #panels { min-width: 0; min-height: 0; }
@@ -78,7 +78,7 @@ body.rail-collapsed .rail { display: none; }
   border-bottom: 1px solid var(--line);
   background: var(--paper);
 }
-.panel-title { margin: 0; font-size: 1.15rem; color: var(--navy); }
+.panel-title { margin: 0; font-size: 1.15rem; color: var(--accent); }
 .panel-desc {
   color: var(--dark-grey);
   font-size: 0.85rem;
@@ -175,7 +175,7 @@ body.rail-collapsed .rail { display: none; }
   cursor: pointer;
   border: 1px solid var(--line);
   background: #fff;
-  color: var(--navy);
+  color: var(--accent);
   font-weight: 600;
   font-size: 0.85rem;
   padding: 0.4rem 0.7rem;

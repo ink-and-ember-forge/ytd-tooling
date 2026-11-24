@@ -26,7 +26,7 @@
   cursor: pointer;
   border: 1px solid var(--line);
   background: #fff;
-  color: var(--navy);
+  color: var(--accent);
   font-size: 0.9rem;
   line-height: 1;
   padding: 0.3rem 0.55rem;
@@ -56,15 +56,15 @@
 .popout-btn {
   font-family: inherit;
   cursor: pointer;
-  border: 1px solid var(--navy);
+  border: 1px solid var(--accent);
   background: #fff;
-  color: var(--navy);
+  color: var(--accent);
   font-weight: 600;
   font-size: 0.78rem;
   padding: 0.3rem 0.65rem;
   border-radius: 6px;
 }
-.popout-btn:hover { background: var(--navy); color: #fff; }
+.popout-btn:hover { background: var(--accent); color: #fff; }
 
 /* When the preview lives in its own window, this card says so instead. */
 .popout-note {
@@ -85,19 +85,19 @@
 @keyframes pick-flash { from { box-shadow: 0 0 0 4px rgba(0, 145, 127, 0.55); } to { box-shadow: 0 0 0 4px rgba(0, 145, 127, 0); } }
 .pick-flash { animation: pick-flash 1.4s ease-out; border-radius: 6px; }
 
-.device-toggle { display: inline-flex; border: 1px solid var(--navy); border-radius: 6px; overflow: hidden; }
+.device-toggle { display: inline-flex; border: 1px solid var(--accent); border-radius: 6px; overflow: hidden; }
 .device-toggle button {
   font-family: inherit;
   cursor: pointer;
   border: none;
   background: #fff;
-  color: var(--navy);
+  color: var(--accent);
   font-weight: 600;
   font-size: 0.78rem;
   padding: 0.3rem 0.65rem;
 }
-.device-toggle button + button { border-left: 1px solid var(--navy); }
-.device-toggle button[aria-pressed="true"] { background: var(--navy); color: #fff; }
+.device-toggle button + button { border-left: 1px solid var(--accent); }
+.device-toggle button[aria-pressed="true"] { background: var(--accent); color: #fff; }
 
 /* The preview is never scaled (text is always its true size). The iframe sits in a fixed-width
    "page"; if the pane is narrower than the page, the stage scrolls sideways (see preview.js). */
@@ -143,7 +143,7 @@
   border-bottom: 3px solid transparent;
   margin-bottom: -1px;
 }
-.output-tab.active { color: var(--navy); border-bottom-color: var(--green); }
+.output-tab.active { color: var(--accent); border-bottom-color: var(--green); }
 
 .output-bodies { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .output-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }

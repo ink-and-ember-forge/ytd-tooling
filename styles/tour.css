@@ -1,0 +1,52 @@
+/* Guided tours (src/ui/tour.js) and the "What's new" lightbox (src/ui/whats-new.js). */
+.tour { position: fixed; inset: 0; z-index: 900; }
+.tour-shield { position: absolute; inset: 0; } /* catches clicks, so the page behind can't be used mid-tour */
+.tour-shield.is-dim { background: rgba(20, 28, 45, 0.55); }
+.tour-spot {
+  position: fixed;
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(20, 28, 45, 0.55), 0 0 0 3px var(--accent);
+  pointer-events: none;
+}
+.tour-card {
+  position: fixed;
+  width: 380px;
+  background: #fff;
+  color: #1a1a1a;
+  border-radius: 12px;
+  border-top: 4px solid var(--accent);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  padding: 0.9rem 1.2rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.tour-count { margin: 0; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--dark-grey); }
+.tour-title { margin: 0.2rem 0 0.5rem; font-size: 1.1rem; color: var(--accent); }
+.tour-body p { margin: 0 0 0.6rem; }
+.tour-body ul { margin: 0 0 0.6rem; padding-left: 1.2rem; }
+.tour-body kbd { font-family: inherit; font-size: 0.8rem; border: 1px solid #d7d2c8; border-bottom-width: 2px; border-radius: 4px; padding: 0 0.3rem; background: #f4f2ed; }
+.tour-nav { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-top: 0.4rem; }
+.tour-nav-end { display: flex; gap: 0.5rem; }
+.tour-skip, .tour-back {
+  font-family: inherit; cursor: pointer; font-size: 0.85rem; font-weight: 600;
+  background: none; border: 1px solid transparent; border-radius: 6px; padding: 0.4rem 0.7rem; color: var(--dark-grey);
+}
+.tour-skip { text-decoration: underline; padding-left: 0; }
+.tour-back { border-color: var(--accent); color: var(--accent); background: #fff; }
+.tour-back:hover { background: var(--accent); color: #fff; }
+
+/* "? Tour" in the header */
+.tour-btn { font-family: inherit; cursor: pointer; border: 1px solid var(--accent); border-radius: 50%; background: #fff; color: var(--accent); font-weight: 600; width: 2rem; height: 2rem; padding: 0; font-size: 0.95rem; line-height: 1; }
+.tour-btn:hover { background: var(--accent); color: #fff; }
+
+/* What's new */
+.whatsnew-lead { color: var(--dark-grey); }
+.whatsnew-release h3 { margin: 1.2rem 0 0.3rem; font-size: 1rem; color: var(--accent); }
+.whatsnew-summary { margin: 0 0 0.5rem; }
+.whatsnew-changes { margin: 0 0 0.6rem; padding-left: 1.1rem; }
+.whatsnew-changes li { margin-bottom: 0.45rem; }
+.whatsnew-more { font-style: italic; color: var(--dark-grey); }
+.whatsnew-foot { display: flex; justify-content: flex-end; gap: 0.6rem; padding: 0.8rem 1.25rem; border-top: 1px solid var(--line); }
+.guide-foot[hidden] { display: none; }
+
+@media (prefers-reduced-motion: no-preference) { .tour-card { animation: guide-in 0.15s ease-out; } }

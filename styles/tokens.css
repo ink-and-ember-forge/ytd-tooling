@@ -1,5 +1,9 @@
 :root {
   --navy: #325083;
+  /* The builder's own accent follows the preview theme (set on <html> by src/ui/theme.js), so it is
+     always clear which version is being built: burgundy for Gwella, blue for Y Tŷ Dysgu. */
+  --accent: #a3195b;
+  --accent-dark: #7d1244;
   --green: #00917f;
   --burgundy: #a3195b;
   --light-grey: #f1f1f1;
@@ -11,6 +15,11 @@
   /* Set by src/ui/layout.js: heights of the sticky header and block tab bar. */
   --topbar-h: 64px;
   --tabbar-h: 48px;
+}
+
+:root[data-theme="ytydysgu"] {
+  --accent: #325083;
+  --accent-dark: #24406b;
 }
 
 * { box-sizing: border-box; }
@@ -70,7 +79,7 @@ textarea {
   position: absolute;
   left: -999px;
   top: 0;
-  background: var(--navy);
+  background: var(--accent);
   color: #fff;
   padding: 0.6rem 1rem;
   z-index: 100;

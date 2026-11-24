@@ -135,13 +135,13 @@ textarea {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: var(--navy);
+  background: var(--accent);
   color: #fff;
   padding: 0.35rem 0.7rem;
   font-size: 0.78rem;
 }
 
-.copy-btn:hover { background: #24406b; }
+.copy-btn:hover { background: var(--accent-dark); }
 
 .copy-btn.copied { background: var(--green); }
 
@@ -155,7 +155,7 @@ textarea {
 /* ---- list item controls: move, duplicate, remove --------------------------- */
 .item-up, .item-down, .item-dup, .bullet-up, .bullet-down {
   background: none;
-  color: var(--navy);
+  color: var(--accent);
   border: 1px solid var(--line);
   padding: 0.2rem 0.5rem;
   font-size: 0.78rem;

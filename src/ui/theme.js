@@ -9,8 +9,13 @@ const listeners = [];
 export const getTheme = () => activeTheme;
 export const onThemeChange = (fn) => listeners.push(fn);
 
+// The builder's own colours follow the theme too (see --accent in styles/tokens.css).
+const paint = (theme) => document.documentElement.setAttribute("data-theme", theme);
+paint(activeTheme);
+
 export function setTheme(theme) {
   activeTheme = theme;
+  paint(theme);
   setPref("theme", theme);
   document.querySelectorAll(".theme-toggle-btn").forEach((btn) => {
     btn.setAttribute("aria-pressed", String(btn.dataset.theme === theme));
