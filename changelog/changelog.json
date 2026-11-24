@@ -1,6 +1,53 @@
 {
   "releases": [
     {
+      "version": "3.4.1",
+      "date": "2026-11-24",
+      "summary": "The public site header no longer overlays the page, so the page container no longer reserves space for it. The top margin is the app chrome's height when there is one, and none otherwise.",
+      "changes": [
+        {
+          "id": "CHG-3.4.1-01",
+          "type": "fix",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "#page-container's margin-top falls back to 0px instead of 95px when --thinqi-navbar-height is not set, so pages with no app chrome no longer get a gap above the content.",
+          "detect": {
+            "patterns": [
+              "--heading-3"
+            ]
+          },
+          "outdated": {
+            "present": [
+              "margin-top:\\s*var\\(--thinqi-navbar-height,\\s*95px\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the base JS together: the JS no longer sets --thinqi-navbar-height to a fallback height, so the old CSS fallback of 95px would apply on pages with no app chrome."
+        },
+        {
+          "id": "CHG-3.4.1-02",
+          "type": "fix",
+          "scope": "base-js",
+          "blocks": [],
+          "summary": "The base JS measures only div.app-chrome (no longer .public-site-header) and sets --thinqi-navbar-height only when it finds it, with no 95px/137px fallback.",
+          "detect": {
+            "patterns": [
+              "updateScrollOffset"
+            ]
+          },
+          "outdated": {
+            "present": [
+              "\\.public-site-header"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the base JS together."
+        }
+      ]
+    },
+    {
       "version": "3.4.0",
       "date": "2026-11-13",
       "summary": "The greys are named for what they are used for (--divider-colour, --secondary-text-colour, --hover-background, --tile-border-colour). --dark-grey, --light-grey and --mid-grey still work, as aliases, until 3.6.0. No visual change.",

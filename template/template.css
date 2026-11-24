@@ -1,4 +1,4 @@
-/* Gwella base CSS · version 3.4.0 */
+/* Gwella base CSS · version 3.4.1 */
 /* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */
 
 html {
@@ -48,7 +48,7 @@ body > main > article.plain-text {
   --bs-font-sans-serif: "Noto Sans", "Noto Sans Arabic", sans-serif;
   --bs-body-font-family: "Noto Sans", "Noto Sans Arabic", sans-serif;
 
-  margin-top: var(--thinqi-navbar-height, 95px);
+  margin-top: var(--thinqi-navbar-height, 0px);
   line-height: 160%;
   background-color: var(--page-background) !important;
   font-family: var(--bs-font-sans-serif) !important;

@@ -405,12 +405,17 @@ export function lintPage({ html, css, js = null, before = null }) {
   return { unstyledClasses, neverStyled, undefinedVars, missingFunctions: js === null ? [] : missingFunctions(html, stripScriptTags(js)), tagProblems: tagProblems(html) };
 }
 
+// Selectors an earlier base JS looked for that the current one no longer does. A page still carrying that base JS is
+// not using them for its own purposes, so they are not the author's. Add to this when a release drops a lookup.
+//   .public-site-header  3.4.1: the public header no longer overlays the page, so only div.app-chrome is measured
+const RETIRED_BASE_SELECTORS = new Set([".public-site-header"]);
+
 // The standard JS for this page (base plus its blocks) names every selector it looks for; any other selector in the
-// old JS is the author's own.
+// old JS is the author's own (apart from ones an earlier base JS used and has since retired).
 export function customJs(oldJs, standardJs) {
   const selectors = (js) => new Set([...js.matchAll(/(?:querySelector(?:All)?|getElementById|closest|matches)\(\s*(["'`])(.*?)\1/g)].map((m) => m[2]));
   const standard = selectors(standardJs);
-  return [...selectors(oldJs)].filter((s) => !standard.has(s));
+  return [...selectors(oldJs)].filter((s) => !standard.has(s) && !RETIRED_BASE_SELECTORS.has(s));
 }
 
 // ---- the whole migration ------------------------------------------------------

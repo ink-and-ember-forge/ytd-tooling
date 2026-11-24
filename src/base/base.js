@@ -4,9 +4,7 @@
 // Also offsets for an optional #subnav, if the page has one.
 function updateScrollOffset() {
   try {
-    const thinqiNavbar =
-      document.querySelector("div.app-chrome") ||
-      document.querySelector(".public-site-header");
+    const thinqiNavbar = document.querySelector("div.app-chrome");
     const customSubnav = document.querySelector("#subnav");
     const isMobile = window.innerWidth <= 768;
     const thinqiNav_height = thinqiNavbar ? thinqiNavbar.offsetHeight : null;
@@ -21,16 +19,10 @@ function updateScrollOffset() {
       "--anchor-section-offset",
       totalOffset + "px",
     );
-    const fallbackHeight = isMobile ? 137 : 95;
     if (thinqiNav_height > 0) {
       document.documentElement.style.setProperty(
         "--thinqi-navbar-height",
         thinqiNav_height + "px",
-      );
-    } else {
-      document.documentElement.style.setProperty(
-        "--thinqi-navbar-height",
-        fallbackHeight + "px",
       );
     }
   } catch (error) {
