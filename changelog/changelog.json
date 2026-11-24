@@ -30,7 +30,7 @@
           "type": "fix",
           "scope": "base-js",
           "blocks": [],
-          "summary": "The base JS measures only div.app-chrome (no longer .public-site-header) and sets --thinqi-navbar-height only when it finds it, with no 95px/137px fallback.",
+          "summary": "The base JS measures only div.app-chrome (no longer .public-site-header) and sets --thinqi-navbar-height only when it finds it, with no 95px/137px fallback. --anchor-section-offset is 0 when there is no app chrome (and no #subnav), instead of 137px/145px.",
           "detect": {
             "patterns": [
               "updateScrollOffset"

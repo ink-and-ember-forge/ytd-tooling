@@ -8,13 +8,11 @@ function updateScrollOffset() {
     const customSubnav = document.querySelector("#subnav");
     const isMobile = window.innerWidth <= 768;
     const thinqiNav_height = thinqiNavbar ? thinqiNavbar.offsetHeight : null;
-    const customSubnav_height = customSubnav ? customSubnav.offsetHeight : null;
-    let totalOffset = isMobile
-      ? thinqiNav_height
-      : thinqiNav_height + customSubnav_height;
-    if (!thinqiNav_height && !customSubnav_height) {
-      totalOffset = isMobile ? 137 : 145;
-    }
+    const customSubnav_height = customSubnav ? customSubnav.offsetHeight : 0;
+    // No app chrome and no subnav: nothing to clear, so the offset is 0.
+    const totalOffset = isMobile
+      ? thinqiNav_height || 0
+      : (thinqiNav_height || 0) + customSubnav_height;
     document.documentElement.style.setProperty(
       "--anchor-section-offset",
       totalOffset + "px",
