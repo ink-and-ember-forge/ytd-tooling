@@ -19,6 +19,8 @@ npm install     # only needed for the tests
 npm run serve   # then open http://localhost:3000
 ```
 
+**Windows:** the repo ships a `.gitattributes` that forces LF line endings, because the snapshot, baseline and template tests compare text byte-for-byte. If you cloned before it existed, or see CRLF-related failures (about 26 snapshot tests) with `core.autocrlf=true`, run `git config core.autocrlf false`, then `git rm --cached -r . && git reset --hard` to re-check-out the files. (Not verified on a Windows machine from this environment.)
+
 The builder must be served over http(s) (browsers block ES modules and `fetch` on `file://`). GitHub Pages does this for you.
 
 ## Repo map
