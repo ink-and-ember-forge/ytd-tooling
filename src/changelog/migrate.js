@@ -19,6 +19,8 @@ import { assembleCSS } from "../lib/assemble.js";
 import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
 import { retireComponents, rewriteClasses, upgradeIconToggleHtml } from "./components.js";
+import { suggestRepairs, applyRepairs } from "./repairs.js";
+import { detectSkeleton } from "./skeleton.js";
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const stripScriptTags = (t) => t.replace(/^\s*<script[^>]*>/i, "").replace(/<\/script>\s*$/i, "");
 import { OVERRIDES_START, OVERRIDES_END, ledgerComment } from "./local-edits.js";
@@ -454,6 +456,8 @@ export function customJs(oldJs, standardJs) {
 //   ledger     reasons for kept overrides, written into the overrides block as comments (see review.js)
 //   reference  an older stored baseline (lib/baseline.js): what the template used to say, so a rule that matches the
 //              OLD template is not mistaken for the author's own choice
+//   repairs    false (default): broken tags are only reported. true, or an array of ids ("R1"...) from the result's
+//              `repairSuggestions.repairs`: those repairs are applied to the author's HTML before anything else (see repairs.js)
 //   retire     true: the page's own components that are NOT kept are taken out of the HTML (see components.js): a container is
 //              replaced by a placeholder comment for the author to paste a rebuilt one over, anything else just loses the class
 // Returns {
@@ -462,11 +466,15 @@ export function customJs(oldJs, standardJs) {
 //   html, htmlChanges[], css, js, customJs[], lint, ready (false until a theme is chosen), notes[],
 //   retired { removed[], stripped[], unresolved[] } (empty unless `retire`)
 // }
-export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [], retire = false, stripClasses = DEFAULT_STRIPPED_CLASSES, renameClasses = DEFAULT_RENAMED_CLASSES, dispositions = {} } = {}) {
+export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [], retire = false, repairs = false, stripClasses = DEFAULT_STRIPPED_CLASSES, renameClasses = DEFAULT_RENAMED_CLASSES, dispositions = {} } = {}) {
   const { css = "", js = "" } = page;
   // Colour utility classes come off, and a block's older class names are renamed, BEFORE anything is analysed: the old rules for
   // them then simply match nothing (they are listed as unused) instead of turning up as components or questions.
-  const prepared0 = rewriteClasses(page.html || "", { strip: stripClasses, rename: renameClasses });
+  const suggested = suggestRepairs(page.html || "");
+  const accepted = !repairs ? [] : repairs === true ? suggested.repairs.map((r) => r.id) : repairs;
+  const applied = suggested.repairs.filter((r) => accepted.includes(r.id));
+  const inputHtml = applied.length ? applyRepairs(page.html, suggested.repairs, accepted) : page.html || "";
+  const prepared0 = rewriteClasses(inputHtml, { strip: stripClasses, rename: renameClasses });
   const html = prepared0.html;
   const detected = detectTheme(css);
   const chosen = theme === undefined ? detected : theme;
@@ -496,6 +504,8 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
       { keep: prepared.filter((g) => g.kind === "custom" && g.kept && g.name?.startsWith(".")).map((g) => g.key), dispositions })
     : { html: migrated.html, removed: [], stripped: [], unresolved: [] };
   const htmlChanges = [...migrated.changes];
+  const origLines = (page.html || "").split("\n");
+  for (const r of applied) htmlChanges.push({ id: `repair:${r.id}`, summary: `Repair (line ${r.line}): ${r.why}`, before: (origLines[r.line - 1] || "").trim() || "(blank)", after: r.action === "delete" ? "(removed)" : r.text.trim() });
   for (const s of prepared0.stripped) htmlChanges.push({ id: `class:${s.name}`, summary: `Took the colour class ${s.name} off ${s.count === 1 ? `a <${s.tag}>` : `${s.count} <${s.tag}> elements`}. Colour comes from the theme, so nothing is lost.`, before: `class="… ${s.name} …"`, after: "(class removed)" });
   for (const r of prepared0.renamed) htmlChanges.push({ id: `rename:${r.from}`, summary: `Renamed the class ${r.from} to ${r.to} on ${r.count === 1 ? `a <${r.tag}>` : `${r.count} <${r.tag}> elements`}: that is what the current block calls it, so it is now styled.`, before: `class="… ${r.from} …"`, after: `class="… ${r.to} …"` });
   for (const r of retired.removed) {
@@ -517,6 +527,8 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
     notes.push(`${plural(retired.removed.length, "component", "components")} the template has no equivalent of ${retired.removed.length === 1 ? "was" : "were"} removed and replaced by a placeholder comment (search the HTML for "REBUILD"): ${retired.removed.map((r) => r.classes.map((c) => `.${c}`).join(", ")).join("; ")}. Rebuild each however you choose and paste it over its placeholder.`);
   }
   retired.unresolved.forEach((u) => notes.push(`.${u.name} (a <${u.tag}> on line ${u.line}) was not removed: ${u.why}.`));
+  const skeleton = detectSkeleton(retired.html);
+  if (skeleton.kind === "legacy-header") notes.push(`${skeleton.issues[0]} The tool does not move it for you (no real page has shown how safely that can be done): rebuild the top of the page on the template's skeleton, or compare it with getBaseHTML().`);
   const date = dateLine(retired.html);
   if (date?.truncated) notes.push(`The "Webpage last updated on" line (line ${date.line}) looks cut off ("${date.text}"). The date was not changed; complete it.`);
   if (date?.colon) notes.push(`The date line reads "Webpage last updated on:" with a colon (line ${date.line}); the house style has none. The wording was not changed.`);
@@ -533,6 +545,9 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
     dropped,
     html: retired.html,
     htmlChanges,
+    repairSuggestions: { repairs: suggested.repairs, resolved: suggested.resolved, remaining: suggested.remaining },
+    repairsApplied: applied.map((r) => r.id),
+    skeleton: detectSkeleton(page.html || ""),
     retiring: retire,
     retired: { removed: retired.removed, stripped: retired.stripped, unresolved: retired.unresolved },
     css: outCss,
