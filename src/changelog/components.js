@@ -120,3 +120,25 @@ export function rewriteClasses(html, { strip = [], rename = {} } = {}) {
   const rows = [...counts].map(([k, count]) => { const [name, tag] = k.split("|"); return { name, tag, count }; });
   return { html: out, stripped: rows.filter((r) => drop.has(r.name)), renamed: rows.filter((r) => r.name in rename).map((r) => ({ from: r.name, to: rename[r.name], tag: r.tag, count: r.count })) };
 }
+
+// Older Icon toggle markup (a plain <div id="data-icons-grid">, tiles with an onclick="openAccordion(...)" but no .data-icon-trigger)
+// has none of the classes the current CSS styles. Adding the two classes is mechanical and changes nothing else.
+// Returns { html, changes: [{ id, summary }] }.
+export function upgradeIconToggleHtml(html) {
+  const changes = [];
+  let out = html;
+  const edits = [];
+  let grids = 0, tiles = 0;
+  for (const el of elementsOf(out)) {
+    const cls = classesOf(el.openTag);
+    const add = (name) => ({ start: el.start, end: el.openEnd, text: cls.length
+      ? el.openTag.replace(/(\sclass\s*=\s*)"[^"]*"/, `$1"${[...cls, name].join(" ")}"`)
+      : el.openTag.replace(/^<(\w+)/, `<$1 class="${name}"`) });
+    if (el.tag === "div" && /^data-icons-grid/.test(idOf(el.openTag) || "") && !cls.includes("data-icons-grid")) { edits.push(add("data-icons-grid")); grids++; }
+    else if (/\sonclick\s*=\s*["']\s*openAccordion\(/.test(el.openTag) && !cls.includes("data-icon-trigger")) { edits.push(add("data-icon-trigger")); tiles++; }
+  }
+  for (const e of edits.sort((a, b) => b.start - a.start)) out = out.slice(0, e.start) + e.text + out.slice(e.end);
+  if (grids) changes.push({ id: "icon-toggle-grid", summary: `Added the class data-icons-grid to ${grids} icon grid(s), which the current Icon toggle CSS styles.` });
+  if (tiles) changes.push({ id: "icon-toggle-tiles", summary: `Added the class data-icon-trigger to ${tiles} icon tile(s), which the current Icon toggle CSS styles.` });
+  return { html: out, changes };
+}

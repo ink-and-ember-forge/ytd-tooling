@@ -291,6 +291,17 @@ body > main > article.plain-text {
     }
   }
 
+  /* File type and size after a download link or card title, e.g. (PDF, 21.5MB). Never underlined, quieter than the link. */
+  .file-size {
+    /* inline-block, not block: a block inside a link still inherits the link's underline; an atomic inline box does not. */
+    display: inline-block;
+    width: 100%;
+    font-size: 0.9em;
+    font-weight: 400;
+    color: var(--secondary-text-colour);
+    text-decoration: none;
+  }
+
   .timestamp {
     margin-top: 2rem;
     margin-bottom: 1rem;

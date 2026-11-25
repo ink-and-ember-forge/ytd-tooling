@@ -1,6 +1,100 @@
 {
   "releases": [
     {
+      "version": "3.5.0",
+      "date": "2026-11-25",
+      "summary": "New Figure block (a full-width image with a caption), a file type and size line for Resource cards and download links, a heading level for the Accordion, and Equal columns that take buttons in the right column.",
+      "changes": [
+        {
+          "id": "CHG-3.5.0-01",
+          "type": "additive",
+          "scope": "block:figure",
+          "blocks": [
+            "figure"
+          ],
+          "summary": "New Figure block: one image at the full width of the content column, with an optional caption (<figure class=\"figure-block\">). For charts and diagrams that Text around media would float at 275px.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Pages are unaffected. Use it for an informative image that must be readable; it warns when the alt text is empty."
+        },
+        {
+          "id": "CHG-3.5.0-02",
+          "type": "additive",
+          "scope": "block:resource-cards",
+          "blocks": [
+            "resource-cards"
+          ],
+          "summary": "Resource cards get an optional 'File type and size' field, written as <span class=\"file-size\">(PDF, 21.5MB)</span> directly under the title link. The new .file-size style in the base CSS (quiet text colour, normal weight, never underlined) also works after any download link in your own HTML.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Pages are unaffected. The base CSS gains a .file-size rule; copy the base CSS to use the class in your own HTML. Rich text cannot add the span yet: write it in the HTML."
+        },
+        {
+          "id": "CHG-3.5.0-03",
+          "type": "additive",
+          "scope": "block:accordion",
+          "blocks": [
+            "accordion"
+          ],
+          "summary": "The Accordion has a heading-level option (h3 by default, or h4 or h5), so its headers sit one level below the heading above them instead of always being h3.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Default output is unchanged. Choose h4 for an accordion under an h3. Only headings are offered: a non-heading tag would drop the items out of the page outline."
+        },
+        {
+          "id": "CHG-3.5.0-04",
+          "type": "visual",
+          "scope": "block:flex-section",
+          "blocks": [
+            "flex-section"
+          ],
+          "summary": "Equal columns can hold the Buttons block in the right column ('Another content block'): the buttons column is a fixed 280px so buttons match across groups, starts level with the text (no top margin), and on phones comes after the text rather than before it.",
+          "detect": {
+            "patterns": [
+              "video-content"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "video-content:has\\(>\\s*\\.buttons\\)"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Equal columns block's CSS (inside #page-container). Only columns whose right-hand side holds .buttons look different; images and videos are unchanged."
+        },
+        {
+          "id": "CHG-3.5.0-05",
+          "type": "additive",
+          "scope": "block:icon-toggle",
+          "blocks": [
+            "icon-toggle"
+          ],
+          "summary": "Older Icon toggle markup (a plain <div id=\"data-icons-grid\"> and tiles with onclick=\"openAccordion(...)\" but no classes) is upgraded by the tool: it adds the data-icons-grid and data-icon-trigger classes the current CSS styles.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "The migration and upgrade tools do this automatically and list it. By hand: add class=\"data-icons-grid\" to the grid and class=\"data-icon-trigger\" to each tile. Panel ids (info-gov-content) can stay as they are."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.4.1",
       "date": "2026-11-25",
       "summary": "Accessibility and structure fixes found migrating real pages: no <main> inside the platform's own <main>, headings in a valid order, new-tab links say so to assistive technology, and nav-card buttons line up. No change to how a page looks.",

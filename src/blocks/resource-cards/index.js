@@ -18,7 +18,10 @@ export default {
     const cards = values.cards.filter(c => c.title.trim().length > 0);
     const cardsHTML = cards.map(c => {
       const targetAttr = newTabAttrs(c.linkUrl, c.newTab);
-      const ariaLabel = c.newTab ? ` aria-label="${escapeHTML(c.title.trim())} (opens in a new tab)"` : "";
+      // "PDF, 21.5MB" or "(PDF, 21.5MB)": shown as "(PDF, 21.5MB)" directly under the title link, without an underline.
+      const info = (c.fileInfo || "").trim().replace(/^\(\s*|\s*\)$/g, "");
+      const fileHTML = info ? `\n        <span class="file-size">(${escapeHTML(info)})</span>` : "";
+      const ariaLabel = c.newTab ? ` aria-label="${escapeHTML(c.title.trim())}${info ? ` (${escapeHTML(info)})` : ""} (opens in a new tab)"` : "";
       const durationHTML = c.duration.trim()
         ? `<span>${escapeHTML(c.duration.trim())}</span>`
         : "";
@@ -26,7 +29,7 @@ export default {
     <img src="${escapeHTML(c.imageUrl.trim())}" alt="${escapeHTML(c.imageAlt.trim())}" class="resource-card__img" />
     <div>
       <a href="${escapeHTML(c.linkUrl.trim())}" class="stretched-link"${targetAttr}${ariaLabel}>
-        <strong>${escapeHTML(c.title.trim())} <i class="fa-solid fa-up-right-from-square"></i></strong>
+        <strong>${escapeHTML(c.title.trim())} <i class="fa-solid fa-up-right-from-square"></i></strong>${fileHTML}
       </a>
       <p><strong>${escapeHTML(c.type.trim())}</strong>${durationHTML}</p>
     </div>

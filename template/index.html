@@ -13,7 +13,7 @@
 <!-- Bundle JS: Popper.js is required for tooltips -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<div id="page-container" class="gwella" data-base-version="3.4.1">
+<div id="page-container" class="gwella" data-base-version="3.5.0">
   <nav aria-label="breadcrumb" id="breadcrumb-nav">
     <ol id="breadcrumb-nav__list">
       <li><a href="/">Home</a></li>
@@ -40,6 +40,7 @@
         <li><a href="#buttons" class="toc-link">Buttons</a></li>
         <li><a href="#flex-content" class="toc-link">Flexible Content</a></li>
         <li><a href="#two-column" class="toc-link">Two-column layout</a></li>
+        <li><a href="#figure" class="toc-link">Figure</a></li>
       </ul>
     </nav>
 
@@ -194,8 +195,9 @@
             <div class="card">
               <img src="https://leadershipportal.heiw.wales/api/storage/3680ab94-dc2f-476c-9367-1fb9b841eab1/Resources%20Card%20-%20Webpages.png" alt="" class="resource-card__img" />
               <div>
-                <a href="https://www.nhsemployers.org/toolkits/people-performance-management-toolkit" class="stretched-link" target="_blank" rel="noopener noreferrer" aria-label="People Performance Management Toolkit - Make time to talk about all aspects of performance (opens in a new tab)">
+                <a href="https://www.nhsemployers.org/toolkits/people-performance-management-toolkit" class="stretched-link" target="_blank" rel="noopener noreferrer" aria-label="People Performance Management Toolkit - Make time to talk about all aspects of performance (PDF, 21.5MB) (opens in a new tab)">
                   <strong>People Performance Management Toolkit - Make time to talk about all aspects of performance <i class="fa-solid fa-up-right-from-square"></i></strong>
+                  <span class="file-size">(PDF, 21.5MB)</span>
                 </a>
                 <p><strong>Website</strong></p>
               </div>
@@ -237,6 +239,24 @@
               <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/d7385272-ff37-4560-b488-7e8b8ea4e458/CL%20Hub%20-%20Square.png" alt="" />
             </div>
           </div>
+          <h3>Text and actions</h3>
+          <div class="flex-section">
+            <div class="text-content">
+              <p>Choose "Another content block" for the right column and paste the Buttons block into it. The buttons are a fixed width and sit level with the text.</p>
+            </div>
+            <div class="video-content">
+              <div class="buttons">
+                <a href="https://example.org/first" target="_blank" rel="noopener noreferrer" aria-label="First action (opens in a new tab)">
+                  First action
+                  <i class="fa-solid fa-up-right-from-square button-icon"></i>
+                </a>
+                <a href="https://example.org/second" target="_blank" rel="noopener noreferrer" aria-label="A second, longer action (opens in a new tab)">
+                  A second, longer action
+                  <i class="fa-solid fa-up-right-from-square button-icon"></i>
+                </a>
+              </div>
+            </div>
+          </div>
         </section>
 
         <section id="two-column">
@@ -249,6 +269,14 @@
               <h3>This is a heading</h3><p>Media sits on the left by default. Use the layout option in the builder to flip it, and on mobile the media always comes first.</p>
             </div>
           </div>
+        </section>
+
+        <section id="figure">
+          <h2>Figure</h2>
+          <figure class="figure-block">
+            <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/d7385272-ff37-4560-b488-7e8b8ea4e458/CL%20Hub%20-%20Square.png" alt="A square illustration, standing in for a chart" />
+            <figcaption>A figure runs the full width of the content column, with an optional caption.</figcaption>
+          </figure>
         </section>
         <p class="timestamp">Webpage last updated on <span class="timestamp__date">[27th November 2025]</span>.</p>
 

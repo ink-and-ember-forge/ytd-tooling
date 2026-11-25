@@ -14,6 +14,8 @@ import flexSection from "./flex-section/index.js";
 import twoColumn from "./two-column/index.js";
 
 
+import figure from "./figure/index.js";
+
 export const BLOCK_LIST = [
   section,
   navCards,
@@ -26,6 +28,7 @@ export const BLOCK_LIST = [
   buttons,
   flexSection,
   twoColumn,
+  figure,
 ];
 
 export const BLOCKS = Object.fromEntries(BLOCK_LIST.map((block) => [block.id, block]));

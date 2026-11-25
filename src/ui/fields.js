@@ -343,6 +343,8 @@ export function buildField(field) {
         </label>
         <label style="margin-top:0.6rem;">Type</label>
         <input type="text" class="card-type" placeholder="e.g. Video, Publication, Course" />
+        <label style="margin-top:0.6rem;">File type and size (optional)</label>
+        <input type="text" class="card-file-info" placeholder="e.g. PDF, 21.5MB — leave blank to omit" />
         <label style="margin-top:0.6rem;">Duration / length (optional)</label>
         <input type="text" class="card-duration" placeholder="e.g. 36 Minutes, Long Read — leave blank to omit" />`;
       itemsContainer.appendChild(card);
@@ -501,7 +503,8 @@ export function collectValue(wrap, field) {
       linkUrl: card.querySelector(".card-link-url").value,
       newTab: card.querySelector(".card-new-tab").checked,
       type: card.querySelector(".card-type").value,
-      duration: card.querySelector(".card-duration").value
+      duration: card.querySelector(".card-duration").value,
+      fileInfo: card.querySelector(".card-file-info").value
     }));
   }
   if (field.type === "icon-toggle-items") {
