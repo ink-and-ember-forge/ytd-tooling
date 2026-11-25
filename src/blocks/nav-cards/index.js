@@ -35,9 +35,10 @@ export default {
       const cardsHTML = items.map((c, i) => {
         const numberSpan = autoNumber ? `<span class="nav-card__number">${i + 1}.</span> ` : "";
         const targetAttr = newTabAttrs(c.targetUrl, c.newTab);
-        const icon = c.newTab ? ` <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>` : "";
+        const icon = c.newTab ? ` <i class="fa-solid fa-up-right-from-square button-icon"></i>` : "";
+        const label = `${escapeHTML(c.heading.trim())}${c.newTab ? " (opens in a new tab)" : ""}`;
         return `  <div class="nav-card nav-card--numbered">
-    <a href="${escapeHTML(c.targetUrl.trim())}" class="stretched-link"${targetAttr} aria-label="${escapeHTML(c.heading.trim())}"></a>
+    <a href="${escapeHTML(c.targetUrl.trim())}" class="stretched-link"${targetAttr} aria-label="${label}"></a>
     <h3>${numberSpan}${escapeHTML(c.heading.trim())}${icon}</h3>
     <div class="nav-card__icon-plain">
       <img src="${escapeHTML(c.iconUrl.trim())}" alt="${escapeHTML(c.iconAlt.trim())}" />
@@ -53,13 +54,14 @@ ${cardsHTML}
     const items = cards.filter(c => c.buttonLabel.trim().length > 0);
     const cardsHTML = items.map(c => {
       const targetAttr = newTabAttrs(c.buttonUrl, c.newTab);
-      const icon = c.newTab ? ` <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>` : "";
+      const icon = c.newTab ? ` <i class="fa-solid fa-up-right-from-square button-icon"></i>` : "";
+      const ariaLabel = c.newTab ? ` aria-label="${escapeHTML(c.buttonLabel.trim())} (opens in a new tab)"` : "";
       return `  <div class="nav-card">
     <div class="nav-card__icon">
       <img src="${escapeHTML(c.iconUrl.trim())}" alt="${escapeHTML(c.iconAlt.trim())}" />
     </div>
     <p>${escapeHTML(c.description.trim())}</p>
-    <a href="${escapeHTML(c.buttonUrl.trim())}" class="nav-card__button"${targetAttr}>${escapeHTML(c.buttonLabel.trim())}${icon}</a>
+    <a href="${escapeHTML(c.buttonUrl.trim())}" class="nav-card__button"${targetAttr}${ariaLabel}>${escapeHTML(c.buttonLabel.trim())}${icon}</a>
   </div>`;
     }).join("\n");
 

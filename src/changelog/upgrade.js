@@ -10,6 +10,29 @@ import { suggestVersions } from "./sniff.js";
 import { findLocalEdits, overridesRegion, splitOverrides } from "./local-edits.js";
 import { parseCss } from "./css-tree.js";
 import { findJsEdits } from "./js-edits.js";
+import { elementsOf } from "./components.js";
+
+// Mechanical fixes to the base HTML's own structure that older pages need (changelog 3.4.1): the grid is a <div>, not a second <main>,
+// and the contents label is a <p> that names its <nav>, not an <h3> that precedes the <h1>. Only these exact shapes are touched.
+// Returns { html, changes: [{ id, summary }] }.
+export function upgradeBaseHtml(html) {
+  const changes = [];
+  let out = html;
+  const grid = elementsOf(out).find((e) => e.tag === "main" && /\sclass\s*=\s*"[^"]*\bmain-grid\b/.test(e.openTag));
+  if (grid && grid.end !== null && grid.closeStart != null) {
+    const close = out.slice(grid.closeStart, grid.end);
+    out = out.slice(0, grid.closeStart) + close.replace(/^<\/main/i, "</div") + out.slice(grid.end);
+    out = out.slice(0, grid.start) + grid.openTag.replace(/^<main/i, "<div") + out.slice(grid.openEnd);
+    changes.push({ id: "CHG-3.4.1-01", summary: "Changed <main class=\"main-grid …\"> to a <div>: the platform's page already has a <main>." });
+  }
+  const toc = /<h3(\s[^>]*\bid="table-of-contents-heading"[^>]*)>([\s\S]*?)<\/h3>/i;
+  if (toc.test(out)) {
+    out = out.replace(toc, "<p$1>$2</p>");
+    if (!/<nav\b[^>]*\baria-labelledby="table-of-contents-heading"/.test(out)) out = out.replace(/<nav(\s[^>]*\bid="table-of-contents")/, '<nav$1 aria-labelledby="table-of-contents-heading"');
+    changes.push({ id: "CHG-3.4.1-02", summary: "Changed the contents label from an <h3> to a <p> that names the <nav>, so no heading comes before the page's <h1>." });
+  }
+  return { html: out, changes };
+}
 
 const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // An attribute whose value (a space-separated list for class) contains `token` as a whole word.
@@ -81,6 +104,9 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   } else {
     notes.push(`No #page-container was found in the HTML, so set ${marker} on it yourself.`);
   }
+  const fixed = upgradeBaseHtml(outHtml);
+  outHtml = fixed.html;
+  fixed.changes.forEach((c) => notes.push(c.summary));
   if (blocks.length && !used.length) notes.push("No blocks were recognised on this page. Check the list of blocks and tick any that are used.");
 
   // CSS: the standard code for the blocks in use, then the author's kept edits in the overrides region.
@@ -134,6 +160,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
     blocks: used.map((b) => b.id),
     includeToc: toc,
     html: outHtml,
+    htmlChanges: fixed.changes,
     css: outCss,
     js: outJs,
     edits,

@@ -80,13 +80,15 @@ test("existing core rules already catch: stray </br>, a malformed alt, a missing
   assert.equal(of(v('<div id="page-container"><p>x</p>'), "html/unclosed-tag").length, 1);
 });
 
-test("the template's own page: no errors from the pack; the warnings are the ones the 3.4.1 base fixes are meant to remove", () => {
+test("the template's own page: no errors from the pack, and the structure fixes of 3.4.1 hold (no heading before the h1, no skipped level, no unlabelled new-tab link)", () => {
   const t = (f) => readFileSync(new URL(`../template/${f}`, import.meta.url), "utf8");
-  const r = v(t("index.html"));
-  const bare = validate({ html: t("index.html"), css: t("template.css"), js: t("template.js") }, { packs: [templatePack] });
-  assert.equal(bare.counts.error, 0);
-  const known = new Set(["template/heading-before-h1", "template/heading-skip", "template/blank-no-label", "template/blank-no-rel", "template/empty-href", "template/uat-host"]);
-  const unexpected = bare.findings.filter((f) => f.id.startsWith("template/") && f.severity !== "info" && !known.has(f.id));
+  const r = validate({ html: t("index.html"), css: t("template.css"), js: t("template.js") }, { packs: [templatePack] });
+  assert.equal(r.counts.error, 0);
+  // What is left is the template's sample content: placeholder links with href="" and links to the UAT portal.
+  const known = new Set(["template/empty-href", "template/uat-host"]);
+  // And one the 3.4.1 fixes did not cover: the Icon toggle block writes its tile labels as <h5>, straight under an <h2>.
+  // Left as it is (a block output change needs the owner's say, and the tiles are styled by h5); this pins it so it is noticed.
+  const iconToggle = (f) => f.id === "template/heading-skip" && /<h5>/.test(f.message);
+  const unexpected = r.findings.filter((f) => f.id.startsWith("template/") && f.severity !== "info" && !known.has(f.id) && !iconToggle(f));
   assert.deepEqual(unexpected.map((f) => `${f.id} ${f.line} ${f.message}`), []);
-  assert.ok(r.findings.length > 0);
 });

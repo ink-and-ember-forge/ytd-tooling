@@ -1,4 +1,4 @@
-/* Gwella base CSS · version 3.4.0 */
+/* Gwella base CSS · version 3.4.1 */
 /* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */
 
 html {
@@ -350,6 +350,29 @@ body > main > article.plain-text {
     border-radius: 0 0 10px 10px;
     padding: 1.75rem 1.5rem;
     text-align: left;
+    /* A column, so the button sits at the bottom of every card in a row (the grid makes them equal height)
+       however many lines the description takes. Where subgrid is supported, the icon, description and button
+       rows are shared by the cards in a row, so the buttons also start at the same height and are equally tall
+       when a label wraps. */
+    display: flex;
+    flex-direction: column;
+
+    @supports (grid-template-rows: subgrid) {
+      &:not(.nav-card--numbered) {
+        display: grid;
+        grid-template-rows: subgrid;
+        grid-row: span 3;
+        row-gap: 0;
+
+        /* The button fills its (shared) row, so every button in a row is as tall as the tallest label. */
+        .nav-card__button {
+          margin-top: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      }
+    }
 
     .nav-card__icon {
       width: 76px;
@@ -376,6 +399,7 @@ body > main > article.plain-text {
 
     .nav-card__button {
       display: block;
+      margin-top: auto;
       width: 100%;
       text-align: center;
       background: var(--primary-colour);

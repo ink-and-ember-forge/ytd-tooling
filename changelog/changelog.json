@@ -1,6 +1,157 @@
 {
   "releases": [
     {
+      "version": "3.4.1",
+      "date": "2026-11-25",
+      "summary": "Accessibility and structure fixes found migrating real pages: no <main> inside the platform's own <main>, headings in a valid order, new-tab links say so to assistive technology, and nav-card buttons line up. No change to how a page looks.",
+      "changes": [
+        {
+          "id": "CHG-3.4.1-01",
+          "type": "fix",
+          "scope": "base-html",
+          "blocks": [],
+          "summary": "The page's grid is a <div class=\"main-grid standard-container\">, not a <main>. The platform's own shell already has a <main>, and two are invalid (audit NESTED-MAIN).",
+          "detect": {
+            "patterns": [
+              "main-grid"
+            ]
+          },
+          "outdated": {
+            "present": [
+              "<main\\s[^>]*class=\"[^\"]*main-grid"
+            ]
+          },
+          "action": "hand-edit",
+          "page_rebuild": false,
+          "notes": "On the page's HTML, change <main class=\"main-grid standard-container\"> to <div class=\"main-grid standard-container\"> and its closing </main> to </div>. The CSS styles it by class, so nothing looks different."
+        },
+        {
+          "id": "CHG-3.4.1-02",
+          "type": "fix",
+          "scope": "base-html",
+          "blocks": [],
+          "summary": "The table of contents label is a <p id=\"table-of-contents-heading\"> and the <nav> is named by it (aria-labelledby), instead of an <h3> that comes before the page's <h1> in the document (audit HEADING-BEFORE-H1).",
+          "detect": {
+            "patterns": [
+              "table-of-contents-heading"
+            ]
+          },
+          "outdated": {
+            "present": [
+              "<h3\\s[^>]*id=\"table-of-contents-heading\""
+            ]
+          },
+          "action": "hand-edit",
+          "page_rebuild": false,
+          "notes": "On the page's HTML, change <h3 id=\"table-of-contents-heading\">…</h3> to <p id=\"table-of-contents-heading\">…</p> and add aria-labelledby=\"table-of-contents-heading\" to <nav id=\"table-of-contents\">. The CSS styles it by id, so nothing looks different."
+        },
+        {
+          "id": "CHG-3.4.1-03",
+          "type": "fix",
+          "scope": "block:at-a-glance",
+          "blocks": [
+            "at-a-glance"
+          ],
+          "summary": "The At a glance heading is an <h2>, not an <h3>: it follows the page's <h1> directly, so an <h3> skipped a level (audit HEADING-SKIP).",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "On the page's HTML, change <h3 id=\"at-a-glance-heading\">…</h3> to <h2 id=\"at-a-glance-heading\">…</h2>. The block's CSS styles it by id (size, weight, colour and margin are all set there), so nothing looks different. It has no page-level signature the upgrade checker can test (the stored baselines hold CSS and JS, not block HTML), so the checker does not report it; copy it from the notes."
+        },
+        {
+          "id": "CHG-3.4.1-04",
+          "type": "fix",
+          "scope": "block:nav-cards",
+          "blocks": [
+            "nav-cards"
+          ],
+          "summary": "Standard nav cards are equal-height columns with the button at the bottom; where the browser supports subgrid the cards in a row also share their icon, description and button rows, so the buttons start at the same height and are equally tall when a label wraps.",
+          "detect": {
+            "patterns": [
+              "nav-card__button"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "\\.nav-card__button\\s*\\{[^}]*margin-top:\\s*auto"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Nav cards block's CSS (inside #page-container). Adds display: flex; flex-direction: column to .nav-card and margin-top: auto to .nav-card__button (the fallback), and a @supports (grid-template-rows: subgrid) rule for standard cards. Phones (one column) are unchanged."
+        },
+        {
+          "id": "CHG-3.4.1-05",
+          "type": "fix",
+          "scope": "block:nav-cards",
+          "blocks": [
+            "nav-cards"
+          ],
+          "summary": "A Nav card that opens in a new tab says so to assistive technology: the button has aria-label=\"<label> (opens in a new tab)\" (standard style) and the numbered card's link has it too. The decorative inline-icon class is no longer written.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Only needed for cards with 'opens in a new tab' ticked. Rebuild the block in the builder, or add the aria-label by hand. Nothing a reader sees changes. The stored baselines hold no block HTML, so the checker cannot flag it; it is listed here for people reading the notes."
+        },
+        {
+          "id": "CHG-3.4.1-06",
+          "type": "fix",
+          "scope": "block:resource-cards",
+          "blocks": [
+            "resource-cards"
+          ],
+          "summary": "A Resource card that opens in a new tab has aria-label=\"<title> (opens in a new tab)\" on its link, as the Buttons block already did.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Only needed for cards with 'opens in a new tab' ticked. Rebuild the block, or add the aria-label by hand. Nothing a reader sees changes. The stored baselines hold CSS and JS, not block HTML, so the upgrade checker cannot flag it; it is listed here for people reading the release notes."
+        },
+        {
+          "id": "CHG-3.4.1-07",
+          "type": "fix",
+          "scope": "block:two-column",
+          "blocks": [
+            "two-column",
+            "hero-text",
+            "image-text-section",
+            "flex-section"
+          ],
+          "summary": "Links in rich text that open in a new tab carry a visually hidden \" (opens in a new tab)\" (Bootstrap's .visually-hidden) before the icon, and the icon is hidden from assistive technology. What a reader sees is unchanged. The decorative inline-icon class (which no CSS styled) is no longer written on these icons, nor on the Buttons block's.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Rebuild the block, or add <span class=\"visually-hidden\"> (opens in a new tab)</span> inside each target=\"_blank\" link by hand. Pages that still carry the inline-icon class are unaffected: no CSS defines it. The stored baselines hold CSS and JS, not block HTML, so the upgrade checker cannot flag it; it is listed here for people reading the release notes."
+        },
+        {
+          "id": "CHG-3.4.1-08",
+          "type": "behaviour",
+          "scope": "base-html",
+          "blocks": [],
+          "summary": "The date line in the base HTML is <p class=\"timestamp\">Webpage last updated on <span class=\"timestamp__date\">[27th November 2025]</span>.</p>: one line with the date in its own element and no <sup> (the house style is 27th November 2025). Nothing is styled by the new class.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Pages with a real date need no change. If a page's date reads 27<sup>th</sup> November 2025, remove the <sup> and its tags by hand; the migration tool does this for pages it migrates."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.4.0",
       "date": "2026-11-13",
       "summary": "The greys are named for what they are used for (--divider-colour, --secondary-text-colour, --hover-background, --tile-border-colour). --dark-grey, --light-grey and --mid-grey still work, as aliases, until 3.6.0. No visual change.",

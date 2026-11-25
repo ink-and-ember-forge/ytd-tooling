@@ -20,7 +20,7 @@ export default {
       const label = escapeHTML(b.label.trim());
       const targetAttr = newTabAttrs(b.url, b.newTab);
       const ariaSuffix = b.newTab ? " (opens in a new tab)" : "";
-      const icon = b.newTab ? `\n    <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>` : "";
+      const icon = b.newTab ? `\n    <i class="fa-solid fa-up-right-from-square button-icon"></i>` : "";
       return `  <a href="${escapeHTML(b.url.trim())}"${targetAttr} aria-label="${label}${ariaSuffix}">
     ${label}${icon}
   </a>`;
