@@ -1,6 +1,33 @@
 {
   "releases": [
     {
+      "version": "3.5.2",
+      "date": "2026-11-25",
+      "summary": "If the site sets --chrome-height on <html>, the base JS uses it instead of measuring the chrome, for both the top margin and the anchor offset.",
+      "changes": [
+        {
+          "id": "CHG-3.5.2-01",
+          "type": "behaviour",
+          "scope": "base-js",
+          "blocks": [],
+          "summary": "updateScrollOffset() checks for --chrome-height on <html>. When it is set, --thinqi-navbar-height becomes var(--chrome-height) and --anchor-section-offset becomes var(--chrome-height) (plus the #subnav height on desktop), so the site's value supersedes the measured one, in any unit.",
+          "detect": {
+            "patterns": [
+              "updateScrollOffset"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "--chrome-height"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base JS. Pages that do not have --chrome-height set behave exactly as before."
+        }
+      ]
+    },
+    {
       "version": "3.5.1",
       "date": "2026-11-25",
       "summary": "The base JS also finds the UAT site's chrome (a header with aria-label \"site header\" inside div#site-chrome), so the top margin and anchor offset work on both live and UAT.",

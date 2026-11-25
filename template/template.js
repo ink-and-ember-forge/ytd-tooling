@@ -1,7 +1,8 @@
-// Gwella base JS · version 3.5.1
+// Gwella base JS · version 3.5.2
 // The closing script tag near the end is escaped. Keep the backslash, or it ends this script early.
 // Set the top margin and anchor offset for the page container.
 // Also offsets for an optional #subnav, if the page has one.
+// A --chrome-height set on <html> takes the place of measuring the chrome.
 function updateScrollOffset() {
   try {
     // Live: div.app-chrome. UAT: a <header aria-label="site header"> inside div#site-chrome (its class is auto-generated).
@@ -12,6 +13,24 @@ function updateScrollOffset() {
     const isMobile = window.innerWidth <= 768;
     const thinqiNav_height = thinqiNavbar ? thinqiNavbar.offsetHeight : null;
     const customSubnav_height = customSubnav ? customSubnav.offsetHeight : 0;
+    // If the site sets --chrome-height on <html>, it replaces the measurement. It is passed on with var() rather than
+    // parsed, so any unit works and it stays right if the site changes it later.
+    const chromeHeight = getComputedStyle(document.documentElement)
+      .getPropertyValue("--chrome-height")
+      .trim();
+    if (chromeHeight) {
+      document.documentElement.style.setProperty(
+        "--thinqi-navbar-height",
+        "var(--chrome-height)",
+      );
+      document.documentElement.style.setProperty(
+        "--anchor-section-offset",
+        isMobile
+          ? "var(--chrome-height)"
+          : "calc(var(--chrome-height) + " + customSubnav_height + "px)",
+      );
+      return;
+    }
     // No app chrome and no subnav: nothing to clear, so the offset is 0.
     const totalOffset = isMobile
       ? thinqiNav_height || 0
