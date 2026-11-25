@@ -46,6 +46,9 @@ const MARKER = /data-base-version="[\d.]+"/;
 //             region is still carried forward, but new edits can't be detected. null means "looked up, none stored" (adds a note); undefined means "not looked up".
 //   keepEdits ids of detected edits (E1, E2...) to keep; leave out to keep every keepable one
 //   dropEdits ids of detected edits the author chose not to keep (applied on top of keepEdits)
+//             (keepEdits and dropEdits accept an edit's positional id, "E3", or its stable `key`, which does not move when other edits appear)
+//   ledger    why kept edits were kept, written into the overrides region as comments that travel with it: an array of
+//             lines, or an object { idOrKey: reason } (only edits that end up kept get a line, "<what it changes>: <reason>")
 // Returns { error } or:
 //   pageVersion, toVersion, upToDate, blocks (ids), includeToc,
 //   html, css, js   the upgraded code, ready to copy
@@ -56,7 +59,7 @@ const MARKER = /data-base-version="[\d.]+"/;
 //   check           the upgraded code run back through the checker: { ok, remaining, manualSteps }
 //   notes           things the tool could not do for the author
 //   report          the checkPage report (what changed, per change)
-export function buildUpgrade(page, { version = "auto", blockIds = null, includeToc = null, baseline, keepEdits = null, dropEdits = [], changelog = CHANGELOG, blocks = BLOCK_LIST } = {}) {
+export function buildUpgrade(page, { version = "auto", blockIds = null, includeToc = null, baseline, keepEdits = null, dropEdits = [], ledger: reasons = [], changelog = CHANGELOG, blocks = BLOCK_LIST } = {}) {
   const { html = "", css = "", js = "" } = page;
   const report = checkPage([html, css, js].join("\n"), version, changelog);
   if (report.error) return { error: report.error };
@@ -95,7 +98,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
     edits = found.edits.map((e) => {
       const why = !e.keepable ? "A removed property or rule can't be kept; the new standard applies."
         : e.blockId && !usedIds.includes(e.blockId) ? `The ${e.blockId} block is not used on this page.`
-        : (keepEdits && !keepEdits.includes(e.id)) || dropEdits.includes(e.id) ? "Not kept."
+        : (keepEdits && !keepEdits.some((k) => k === e.id || k === e.key)) || dropEdits.some((k) => k === e.id || k === e.key) ? "Not kept."
         : null;
       return { ...e, kept: !why, why };
     });
@@ -112,7 +115,9 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   } else if (css.trim() && baseline === null) { // looked up, and there is none
     notes.push(`There is no stored code for version ${report.pageVersion}, so edits made by hand to the CSS can't be detected. Any existing PAGE-SPECIFIC OVERRIDES region is kept.`);
   }
-  const region = overridesRegion(kept, carried, ledger);
+  const given = Array.isArray(reasons) ? reasons
+    : kept.filter((e) => reasons[e.id] ?? reasons[e.key]).map((e) => `${e.summary}: ${reasons[e.id] ?? reasons[e.key]}`);
+  const region = overridesRegion(kept, carried, [...ledger, ...given]);
   if (region) outCss = outCss.replace(/\n<\/style>$/, `\n\n${region}\n</style>`);
   const removed = (edits || []).filter((e) => !e.keepable);
   if (removed.length) notes.push(`${removed.length} thing(s) removed from the standard CSS were not kept: ${removed.map((e) => e.summary).join("; ")}.`);

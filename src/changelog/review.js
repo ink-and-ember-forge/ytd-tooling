@@ -6,7 +6,7 @@
 // many elements of this page it touches. Pure apart from DOMParser (the browser's, or linkedom's in the tests).
 import { BLOCK_LIST } from "../blocks/index.js";
 import { parseCss } from "./css-tree.js";
-import { namesIn, namesStyledBy } from "./migrate.js";
+import { namesIn, namesStyledBy, buildMigration } from "./migrate.js";
 
 export const REASONS = [
   ["design", "A deliberate design choice"],
@@ -250,4 +250,54 @@ export function crossDecisionLinks(steps, html) {
     }
   }
   return clashes;
+}
+
+// ---- the review without the wizard ------------------------------------------------------------------------------------
+
+// Scripted / bulk migrations: every rule takes the template's answer unless it is listed in `keep` with a reason.
+//
+//   autoReview(page, { theme, reference, retire = true, keep = {}, keepComponents = {}, policy = "template", ...migrationOptions })
+//
+//   keep            { rowKeyOrRuleKey: reason }  rows to keep. The key is a row id, or any selector key the row holds (a step's
+//                   `rows[].id` / `rows[].keys` from buildReview). A reason is a string (the note) or { reason, note } with reason
+//                   "design" | "problem" | "unsure". Keeping needs a non-empty note: it is written into the CSS as the ledger.
+//   keepComponents  { className: reason } the page's own components to keep for now (also needs a reason)
+//   policy          "template" (the only one): everything else follows the template
+//
+// Returns { migration, ledger[], decisions[{ id, title, choice, reason, note }], steps, unknown[] } where `migration` is the final
+// buildMigration() result and `unknown` lists keys in `keep`/`keepComponents` that match nothing (so a typo is not silently ignored).
+// Throws when policy is not "template" or a kept key has no reason: the wizard enforces the same.
+export function autoReview(page, { keep = {}, keepComponents = {}, policy = "template", ...options } = {}) {
+  if (policy !== "template") throw new Error(`autoReview: unknown policy "${policy}" (only "template" is supported)`);
+  const options0 = { retire: true, ...options };
+  const first = buildMigration(page, { ...options0, keepGroups: [] });
+  const steps = buildReview(first, page.html || "");
+  const rows = steps.flatMap((s) => s.rows.map((row) => ({ row, step: s })));
+  const noteOf = (key, v) => {
+    const d = typeof v === "string" ? { reason: "design", note: v } : { reason: "design", ...v };
+    if (!String(d.note || "").trim()) throw new Error(`autoReview: keeping "${key}" needs a reason`);
+    if (!REASONS.some(([id]) => id === d.reason)) throw new Error(`autoReview: "${d.reason}" is not a reason (use ${REASONS.map(([id]) => id).join(", ")})`);
+    return d;
+  };
+  const unknown = [], decisions = [], keptKeys = [], ledger = [];
+  const wanted = new Map(Object.entries(keep));
+  for (const { row, step } of rows) {
+    const key = [...wanted.keys()].find((k) => k === row.id || row.keys.includes(k));
+    if (key === undefined) { decisions.push({ id: row.id, title: row.path, choice: "template", reason: "", note: "" }); continue; }
+    const d = noteOf(key, wanted.get(key));
+    wanted.delete(key);
+    keptKeys.push(...row.keys);
+    ledger.push(ledgerLine({ ...row, title: step.title }, d));
+    decisions.push({ id: row.id, title: row.path, choice: "keep", reason: d.reason, note: d.note });
+  }
+  unknown.push(...wanted.keys());
+  const customKeys = new Set(first.groups.filter((g) => g.kind === "custom").map((g) => g.key));
+  for (const [name, v] of Object.entries(keepComponents)) {
+    if (!customKeys.has(name)) { unknown.push(name); continue; }
+    const d = noteOf(name, v);
+    keptKeys.push(name);
+    ledger.push(`Component .${name}: kept for now, to be rebuilt (${d.note.trim()})`);
+  }
+  const migration = buildMigration(page, { ...options0, keepGroups: keptKeys, ledger });
+  return { migration, ledger, decisions, steps, unknown };
 }
