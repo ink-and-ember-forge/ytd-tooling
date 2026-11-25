@@ -18,7 +18,7 @@ import { getPageCSS, getPageJS, forToc } from "../base/index.js";
 import { assembleCSS } from "../lib/assemble.js";
 import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
-import { retireComponents } from "./components.js";
+import { retireComponents, rewriteClasses } from "./components.js";
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const stripScriptTags = (t) => t.replace(/^\s*<script[^>]*>/i, "").replace(/<\/script>\s*$/i, "");
 import { OVERRIDES_START, OVERRIDES_END, ledgerComment } from "./local-edits.js";
@@ -345,6 +345,27 @@ export function tagProblems(html) {
   return problems;
 }
 
+// Colour utility classes the legacy pages put on text. Colour now comes from the theme, so they are decoration: stripped by
+// default, without a placeholder and without a question. Pass `stripClasses: []` to buildMigration to keep them.
+export const DEFAULT_STRIPPED_CLASSES = ["burgundy", "burgundy-link", "grey-text"];
+// A class an older version of a block used for something the current block names differently: a mechanical rename.
+export const DEFAULT_RENAMED_CLASSES = { "accordion-text": "accordion-button-text" };
+
+// The "Webpage last updated on <date>" line, as the real pages write it. Reported, never rewritten, apart from the <sup> form
+// (see migrateHtml): `1 <sup> st </sup> October 2026`, `Webpage last updated on: 26th June 2026` (colon), a truncated `…22`.
+// Returns null when the page has no such line, otherwise { text, line, sup, colon, truncated }.
+export function dateLine(html) {
+  const m = html.match(/last\s+updated\s+on(\s*:)?([^<]*(?:<sup>[^<]*<\/sup>[^<]*)*)/i);
+  if (!m) return null;
+  const text = m[2].replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  const clean = text.replace(/\s+(st|nd|rd|th)\b/, "$1");
+  return {
+    text: clean, line: html.slice(0, m.index).split("\n").length, sup: /<sup>/i.test(m[2]), colon: !!m[1],
+    // A real date ends in a four-digit year; "[date]" is the template's placeholder, anything else that does not is cut off.
+    placeholder: /^\[date\]\.?$/i.test(clean), truncated: !/\[date\]/i.test(clean) && !/\b(19|20)\d{2}\.?$/.test(clean),
+  };
+}
+
 // The safe fixes to a legacy page's HTML, each with what changed: { html, changes: [{ id, summary, before, after }] }.
 export function migrateHtml(html, { theme = null, version = BUILDER_VERSION } = {}) {
   const changes = [];
@@ -370,13 +391,22 @@ export function migrateHtml(html, { theme = null, version = BUILDER_VERSION } = 
     out = out.replace(button[0], button[0].replace(img, icon));
     changes.push({ id: "back-to-top", summary: "Swapped the back-to-top image for the standard Font Awesome icon, which the new CSS styles.", before: img.replace(/\s+/g, " "), after: icon });
   }
+  // The date line carries no <sup>: "27th November 2025", not "27<sup>th</sup> November 2025".
+  const sup = /(last\s+updated\s+on\s*:?[^<]{0,40}?\d{1,2})\s*<sup>\s*(st|nd|rd|th)\s*<\/sup>/i;
+  const before = out.match(sup);
+  if (before) {
+    out = out.replace(sup, "$1$2");
+    changes.push({ id: "date-sup", summary: "Took the <sup> out of the date in the \"Webpage last updated on\" line (the house style is 27th November 2025, with no superscript).", before: before[0].replace(/\s+/g, " "), after: before[0].replace(sup, "$1$2") });
+  }
   return { html: out, changes };
 }
 
 // ---- checks on the finished page --------------------------------------------
 
 // Bootstrap and Font Awesome classes: styled by their own stylesheets, not the page's.
-export const IGNORED_CLASSES = /^(fa|fa-[\w-]+|collapse|collapsed|collapsing|show|active|accordion(-[\w-]+)?|btn(-[\w-]+)?|row|col(-[\w-]+)?|container(-[\w-]+)?|d-[\w-]+|visually-hidden|stretched-link|tooltip|popover|modal(-[\w-]+)?|dropdown(-[\w-]+)?|nav(-[\w-]+)?|navbar(-[\w-]+)?|badge|alert(-[\w-]+)?|card(-[\w-]+)?|list-group(-[\w-]+)?|form-[\w-]+|table(-[\w-]+)?|img-fluid|text-(start|end|center|muted|[a-z]+)|bg-[\w-]+|border(-[\w-]+)?|rounded(-[\w-]+)?|shadow(-[\w-]+)?|[mp][tbxyse]?-\d|w-\d+|h-\d+|flex(-[\w-]+)?|justify-content-[\w-]+|align-items-[\w-]+|position-[\w-]+|float-[\w-]+)$/;
+// Families that used to be matched by prefix (accordion-…, card-…, nav-…, col-…, text-…) are now an explicit list of Bootstrap's real
+// classes: a page's own `accordion-text` or `text-content` is not Bootstrap's and must be reported (or renamed), not ignored.
+export const IGNORED_CLASSES = /^(fa|fa-[\w-]+|collapse|collapsed|collapsing|show|active|accordion(-(item|header|button|collapse|body|flush))?|btn(-[\w-]+)?|row|col(-(auto|(sm|md|lg|xl|xxl)(-(auto|\d{1,2}))?|\d{1,2}))?|container(-[\w-]+)?|d-[\w-]+|visually-hidden|stretched-link|tooltip|popover|modal(-[\w-]+)?|dropdown(-[\w-]+)?|nav(-(item|link|tabs|pills|fill|justified))?|navbar(-[\w-]+)?|badge|alert(-[\w-]+)?|card(-(body|title|subtitle|text|link|header|footer|img|img-top|img-bottom|group|columns|deck))?|list-group(-[\w-]+)?|form-[\w-]+|table(-[\w-]+)?|img-fluid|text-(start|end|center|muted|white|dark|light|body|primary|secondary|success|danger|warning|info|truncate|wrap|nowrap|break|decoration-none|decoration-underline|uppercase|lowercase|capitalize|reset|bg-[\w-]+)|bg-[\w-]+|border(-[\w-]+)?|rounded(-[\w-]+)?|shadow(-[\w-]+)?|[mp][tbxyse]?-\d|w-\d+|h-\d+|flex(-[\w-]+)?|justify-content-[\w-]+|align-items-[\w-]+|position-[\w-]+|float-[\w-]+)$/;
 const SET_BY_JS = /^--(thinqi-navbar-height|anchor-section-offset|bs-[\w-]+)$/;
 
 // Functions called from onclick="..." and the like that the page's JS does not define: clicking would do nothing (or throw).
@@ -429,8 +459,12 @@ export function customJs(oldJs, standardJs) {
 //   html, htmlChanges[], css, js, customJs[], lint, ready (false until a theme is chosen), notes[],
 //   retired { removed[], stripped[], unresolved[] } (empty unless `retire`)
 // }
-export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [], retire = false } = {}) {
-  const { html = "", css = "", js = "" } = page;
+export function buildMigration(page, { theme, keepGroups = null, reference = null, ledger = [], retire = false, stripClasses = DEFAULT_STRIPPED_CLASSES, renameClasses = DEFAULT_RENAMED_CLASSES, dispositions = {} } = {}) {
+  const { css = "", js = "" } = page;
+  // Colour utility classes come off, and a block's older class names are renamed, BEFORE anything is analysed: the old rules for
+  // them then simply match nothing (they are listed as unused) instead of turning up as components or questions.
+  const prepared0 = rewriteClasses(page.html || "", { strip: stripClasses, rename: renameClasses });
+  const html = prepared0.html;
   const detected = detectTheme(css);
   const chosen = theme === undefined ? detected : theme;
   const used = detectBlocks(html, BLOCK_LIST, js);
@@ -455,9 +489,12 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
 
   // Components the author is not keeping: out of the HTML, a placeholder where each container was.
   const retired = retire
-    ? retireComponents(migrated.html, prepared.filter((g) => g.kind === "custom" && !g.kept && g.name?.startsWith(".") && !IGNORED_CLASSES.test(g.key)).map((g) => g.key))
+    ? retireComponents(migrated.html, prepared.filter((g) => g.kind === "custom" && !g.kept && g.name?.startsWith(".") && !IGNORED_CLASSES.test(g.key)).map((g) => g.key),
+      { keep: prepared.filter((g) => g.kind === "custom" && g.kept && g.name?.startsWith(".")).map((g) => g.key), dispositions })
     : { html: migrated.html, removed: [], stripped: [], unresolved: [] };
   const htmlChanges = [...migrated.changes];
+  for (const s of prepared0.stripped) htmlChanges.push({ id: `class:${s.name}`, summary: `Took the colour class ${s.name} off ${s.count === 1 ? `a <${s.tag}>` : `${s.count} <${s.tag}> elements`}. Colour comes from the theme, so nothing is lost.`, before: `class="… ${s.name} …"`, after: "(class removed)" });
+  for (const r of prepared0.renamed) htmlChanges.push({ id: `rename:${r.from}`, summary: `Renamed the class ${r.from} to ${r.to} on ${r.count === 1 ? `a <${r.tag}>` : `${r.count} <${r.tag}> elements`}: that is what the current block calls it, so it is now styled.`, before: `class="… ${r.from} …"`, after: `class="… ${r.to} …"` });
   for (const r of retired.removed) {
     htmlChanges.push({ id: `component:${r.name}`, summary: `Removed ${r.classes.map((c) => `.${c}`).join(", ")} (line ${r.line}) and left a placeholder comment. Rebuild it and paste it over the placeholder.`, before: r.original, after: `<!-- REBUILD: ${r.classes.map((c) => `.${c}`).join(", ")} … -->` });
   }
@@ -477,6 +514,9 @@ export function buildMigration(page, { theme, keepGroups = null, reference = nul
     notes.push(`${plural(retired.removed.length, "component", "components")} the template has no equivalent of ${retired.removed.length === 1 ? "was" : "were"} removed and replaced by a placeholder comment (search the HTML for "REBUILD"): ${retired.removed.map((r) => r.classes.map((c) => `.${c}`).join(", ")).join("; ")}. Rebuild each however you choose and paste it over its placeholder.`);
   }
   retired.unresolved.forEach((u) => notes.push(`.${u.name} (a <${u.tag}> on line ${u.line}) was not removed: ${u.why}.`));
+  const date = dateLine(retired.html);
+  if (date?.truncated) notes.push(`The "Webpage last updated on" line (line ${date.line}) looks cut off ("${date.text}"). The date was not changed; complete it.`);
+  if (date?.colon) notes.push(`The date line reads "Webpage last updated on:" with a colon (line ${date.line}); the house style has none. The wording was not changed.`);
   const standardJs = getPageJS(used);
   const own = js.trim() ? customJs(js, standardJs) : [];
   if (own.length) notes.push(`Your JS also looks for ${own.join(", ")}, which the standard JS doesn't. Re-add whatever code uses it after pasting.`);

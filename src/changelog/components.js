@@ -35,8 +35,17 @@ export const elementsOf = (html) => scanHtml(html).elements;
 //               dropped classes the removed markup used (nested components go with it)
 //   stripped    [{ name, tag, count }]                          classes taken off elements that stay
 //   unresolved  [{ name, tag, line, why }]                      containers that couldn't be removed safely (class stripped instead)
-export function retireComponents(html, names) {
+//
+// options (all optional):
+//   keep          class names of components that are KEPT. An element that holds one is never removed (that would take the kept
+//                 component with it): its own class is stripped instead and it is reported as `unresolved`.
+//   dispositions  { name: "strip" | "remove" }. "strip" takes only the class off, whatever the element holds (use it for an element
+//                 that holds words, links or images). The default is "remove" for containers and media.
+// A media element inside a link or button is never replaced (a comment inside a link leaves an empty link): its class is stripped.
+// Every removed item also carries `holds` ({ words, links, images }), so a caller can see what a removal would take with it.
+export function retireComponents(html, names, { keep = [], dispositions = {} } = {}) {
   const wanted = new Set(names);
+  const kept = new Set(keep);
   if (!wanted.size) return { html, removed: [], stripped: [], unresolved: [] };
   const els = elementsOf(html);
   const carries = (el) => classesOf(el.openTag).filter((c) => wanted.has(c));
@@ -51,6 +60,9 @@ export function retireComponents(html, names) {
     if (el.end === null) { classEdits.push({ el, classes }); unresolved.push({ name: classes[0], tag: el.tag, line: lineOf(html, el.start), why: "its closing tag can't be found (the tags around it are broken), so it was not removed" }); continue; }
     const inner = html.slice(el.openEnd, el.closeStart ?? el.end);
     if (!media && !/<[a-zA-Z]/.test(inner)) { classEdits.push({ el, classes }); continue; } // nothing inside: a styled box, not a component
+    if (dispositions[classes[0]] === "strip" || classes.some((c) => dispositions[c] === "strip")) { classEdits.push({ el, classes }); continue; }
+    if (media && el.parent && /^(a|button)$/.test(el.parent.tag)) { classEdits.push({ el, classes }); unresolved.push({ name: classes[0], tag: el.tag, line: lineOf(html, el.start), why: `it sits inside a <${el.parent.tag}>, so a placeholder would leave it empty; only its class was removed` }); continue; }
+    if (kept.size && els.some((o) => o !== el && o.start >= el.openEnd && o.start < el.end && classesOf(o.openTag).some((c) => kept.has(c)))) { classEdits.push({ el, classes }); unresolved.push({ name: classes[0], tag: el.tag, line: lineOf(html, el.start), why: "it holds a component that is being kept, so it was not removed; only its class was taken off" }); continue; }
     if (SKELETON.test(html.slice(el.start, el.end))) { classEdits.push({ el, classes }); unresolved.push({ name: classes[0], tag: el.tag, line: lineOf(html, el.start), why: "it holds the page's own structure, so it was not removed" }); continue; }
     removals.push({ el, classes });
     taken = el.end;
@@ -60,7 +72,9 @@ export function retireComponents(html, names) {
   const removed = removals.map(({ el, classes }) => {
     const original = html.slice(el.start, el.end);
     const nested = [...new Set(candidates.filter((c) => c !== el && inside(c) === removals.find((r) => r.el === el)).flatMap(carries))];
-    return { name: classes[0], classes: [...new Set([...classes, ...nested])], tag: el.tag, id: idOf(el.openTag), line: lineOf(html, el.start), original, el };
+    const inner = original.replace(/<!--[\s\S]*?-->/g, "");
+    const holds = { words: inner.replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, "").replace(/<[^>]*>/g, " ").split(/\s+/).filter((w) => /\w/.test(w)).length, links: (inner.match(/<a\b/gi) || []).length, images: (inner.match(/<img\b/gi) || []).length };
+    return { name: classes[0], classes: [...new Set([...classes, ...nested])], tag: el.tag, id: idOf(el.openTag), line: lineOf(html, el.start), original, holds, el };
   });
 
   const edits = [];
@@ -84,4 +98,25 @@ export function retireComponents(html, names) {
   for (const e of edits.sort((a, b) => b.start - a.start)) out = out.slice(0, e.start) + e.text + out.slice(e.end);
   const stripped = [...stripCounts].map(([k, count]) => { const [name, tag] = k.split("|"); return { name, tag, count }; });
   return { html: out, removed: removed.map(({ el, ...r }) => r), stripped, unresolved };
+}
+
+// Class names to take off wherever they appear, or rename, without touching anything else. Pure string edits on the opening tags.
+//   strip   [names]           the class is removed; an empty class attribute goes with it
+//   rename  { from: to }      the class keeps its place in the list under its new name
+// Returns { html, stripped: [{ name, tag, count }], renamed: [{ from, to, tag, count }] }.
+export function rewriteClasses(html, { strip = [], rename = {} } = {}) {
+  const drop = new Set(strip), edits = [], counts = new Map();
+  if (!drop.size && !Object.keys(rename).length) return { html, stripped: [], renamed: [] };
+  for (const el of elementsOf(html)) {
+    const classes = classesOf(el.openTag);
+    if (!classes.some((c) => drop.has(c) || c in rename)) continue;
+    const next = classes.filter((c) => !drop.has(c)).map((c) => rename[c] ?? c);
+    const text = next.length ? el.openTag.replace(/(\sclass\s*=\s*)"[^"]*"/, `$1"${next.join(" ")}"`) : el.openTag.replace(/\sclass\s*=\s*"[^"]*"/, "");
+    edits.push({ start: el.start, end: el.openEnd, text });
+    for (const c of classes) if (drop.has(c) || c in rename) counts.set(`${c}|${el.tag}`, (counts.get(`${c}|${el.tag}`) || 0) + 1);
+  }
+  let out = html;
+  for (const e of edits.sort((a, b) => b.start - a.start)) out = out.slice(0, e.start) + e.text + out.slice(e.end);
+  const rows = [...counts].map(([k, count]) => { const [name, tag] = k.split("|"); return { name, tag, count }; });
+  return { html: out, stripped: rows.filter((r) => drop.has(r.name)), renamed: rows.filter((r) => r.name in rename).map((r) => ({ from: r.name, to: rename[r.name], tag: r.tag, count: r.count })) };
 }

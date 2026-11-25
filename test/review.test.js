@@ -171,7 +171,7 @@ test("report: totals, the reasons for what was kept, and what the page takes fro
   const { steps, r } = report("legacy2", (s, row) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Your phone and tablet layout" && row.label === ".main-grid" ? keep("problem", "the contents list must come first on phones") : tpl));
   const textRows = steps.find((s) => s.title === "Text and headings").rows.length;
   assert.equal(r.totals.decisions, steps.flatMap((s) => s.rows).length);
-  assert.deepEqual({ ...r.totals, decisions: 0, template: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, components: 4, componentsKept: 4, htmlChanges: 2 });
+  assert.deepEqual({ ...r.totals, decisions: 0, template: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, components: 3, componentsKept: 3, htmlChanges: 3 });
   assert.equal(r.totals.template, r.totals.decisions - r.totals.kept);
   assert.ok(r.kept.some((k) => k.title === "Text and headings \u203a strong" && k.reason === "A deliberate design choice" && k.note === "bold is our house style"));
   assert.ok(r.kept.some((k) => k.title === "Your phone and tablet layout \u203a .main-grid" && k.reason === "It fixes a problem (say which)"));
@@ -200,7 +200,7 @@ test("report: Markdown a person can keep, with the reasons, the changes and what
   const following = md.slice(md.indexOf("## Following the template"), md.indexOf("## Your own components"));
   assert.match(following, /### Your phone and tablet layout \u203a \.main-grid/);
   assert.match(following, /On small screens: \.main-grid — gap between items: yours `1rem`, template `0`/);
-  assert.match(md, /## Your own components \(4\)\n\n- inline-icon: carried over/);
+  assert.match(md, /## Your own components \(3\)\n\n- inline-icon: carried over/);
   assert.match(md, /## Changes to your HTML\n\n- Added the Gwella theme class/);
   assert.match(md, /## Still worth a look\n\n- Revisit "Fixes that use !important \u203a a": you kept it but weren't sure why\./);
 });
