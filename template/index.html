@@ -13,7 +13,7 @@
 <!-- Bundle JS: Popper.js is required for tooltips -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<div id="page-container" class="gwella" data-base-version="3.4.0">
+<div id="page-container" class="gwella" data-base-version="3.4.1">
   <nav aria-label="breadcrumb" id="breadcrumb-nav">
     <ol id="breadcrumb-nav__list">
       <li><a href="/">Home</a></li>
@@ -26,10 +26,10 @@
       alt="" />
   </header>
 
-  <main class="main-grid standard-container">
+  <div class="main-grid standard-container">
     <!-- Each ToC href must match a section id below -->
-    <nav id="table-of-contents">
-      <h3 id="table-of-contents-heading">Table of Contents</h3>
+    <nav id="table-of-contents" aria-labelledby="table-of-contents-heading">
+      <p id="table-of-contents-heading">Table of Contents</p>
       <ul>
         <li><a href="#hero-text-header" class="toc-link">Hero Text</a></li>
         <li><a href="#text-around-media" class="toc-link">Text around media</a></li>
@@ -48,7 +48,7 @@
       <h1 id="header-h1">Page title</h1>
       <!-- At-a-glance must be a direct child of .content-column -->
       <div id="at-a-glance">
-        <h3 id="at-a-glance-heading">At a glance</h3>
+        <h2 id="at-a-glance-heading">At a glance</h2>
         <ul>
           <li>This page is a template page</li>
           <li>All of the examples here have been built using the webpage builder</li>
@@ -194,7 +194,7 @@
             <div class="card">
               <img src="https://leadershipportal.heiw.wales/api/storage/3680ab94-dc2f-476c-9367-1fb9b841eab1/Resources%20Card%20-%20Webpages.png" alt="" class="resource-card__img" />
               <div>
-                <a href="https://www.nhsemployers.org/toolkits/people-performance-management-toolkit" class="stretched-link" target="_blank" rel="noopener noreferrer">
+                <a href="https://www.nhsemployers.org/toolkits/people-performance-management-toolkit" class="stretched-link" target="_blank" rel="noopener noreferrer" aria-label="People Performance Management Toolkit - Make time to talk about all aspects of performance (opens in a new tab)">
                   <strong>People Performance Management Toolkit - Make time to talk about all aspects of performance <i class="fa-solid fa-up-right-from-square"></i></strong>
                 </a>
                 <p><strong>Website</strong></p>
@@ -203,7 +203,7 @@
             <div class="card">
               <img src="https://leadershipportal.heiw.wales/api/storage/5e4804e1-e7ea-4d9e-a95a-cac98a3ae194/Resources%20Card%20-%20Articles.png" alt="" class="resource-card__img" />
               <div>
-                <a href="https://heiw.nhs.wales/updates/news/motivational-interviewing-to-enhance-patient-centred-care-across-wales/" class="stretched-link" target="_blank" rel="noopener noreferrer">
+                <a href="https://heiw.nhs.wales/updates/news/motivational-interviewing-to-enhance-patient-centred-care-across-wales/" class="stretched-link" target="_blank" rel="noopener noreferrer" aria-label="Motivational Interviewing to enhance patient-centred care across Wales (opens in a new tab)">
                   <strong>Motivational Interviewing to enhance patient-centred care across Wales <i class="fa-solid fa-up-right-from-square"></i></strong>
                 </a>
                 <p><strong>Article</strong><span>5 Minutes</span></p>
@@ -217,11 +217,11 @@
           <div class="buttons">
             <a href="" target="_blank" rel="noopener noreferrer" aria-label="Apply now (opens in a new tab)">
               Apply now
-              <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+              <i class="fa-solid fa-up-right-from-square button-icon"></i>
             </a>
             <a href="" target="_blank" rel="noopener noreferrer" aria-label="Don't apply now (opens in a new tab)">
               Don't apply now
-              <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i>
+              <i class="fa-solid fa-up-right-from-square button-icon"></i>
             </a>
           </div>
         </section>
@@ -231,7 +231,7 @@
           <div class="flex-section">
             <div class="text-content">
               <h3>This is a heading</h3>
-              <p>This is normal text to see how it looks. And look, how cool, you can add <a href="https://nhswalesleadershipportal.heiw.wales/" rel="noopener noreferrer" target="_blank">links <i class="fa-solid fa-up-right-from-square button-icon inline-icon"></i></a> as well!</p>
+              <p>This is normal text to see how it looks. And look, how cool, you can add <a href="https://nhswalesleadershipportal.heiw.wales/" rel="noopener noreferrer" target="_blank">links<span class="visually-hidden"> (opens in a new tab)</span> <i class="fa-solid fa-up-right-from-square button-icon" aria-hidden="true"></i></a> as well!</p>
             </div>
             <div class="video-content">
               <img src="https://nhswalesleadershipportal.heiw.wales/api/storage/d7385272-ff37-4560-b488-7e8b8ea4e458/CL%20Hub%20-%20Square.png" alt="" />
@@ -250,13 +250,11 @@
             </div>
           </div>
         </section>
-        <p class="timestamp">
-          Webpage last updated on [date].
-        </p>
+        <p class="timestamp">Webpage last updated on <span class="timestamp__date">[27th November 2025]</span>.</p>
 
       </div>
     </div>
-  </main>
+  </div>
   <button class="back-to-top" aria-label="Back to top">
     <i class="fa-solid fa-circle-chevron-up" aria-hidden="true"></i>
     <span>Back to Top</span>

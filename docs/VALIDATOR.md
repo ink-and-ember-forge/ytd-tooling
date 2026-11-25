@@ -27,6 +27,31 @@ Status: **first slice built** (see "What exists" below). Cross-file JS checks an
 | `css/unused-summary` | info | N of M rules, about X bytes and Y% of the CSS, never match anything |
 | `css/unused-variable` | info | A custom property nothing uses (no `var()`, nothing in the HTML or JS) |
 
+### The template pack (`src/validate/template-pack.js`)
+
+Optional (`validate(page, { packs: [templatePack] })`); the Validate code tab turns it on. Rules for pages built from the Gwella template. The core stays usable on any page.
+
+| Finding id | Severity | What |
+|---|---|---|
+| `template/block-css-missing` | error | A block's markup is on the page but its CSS is not, or some of its top-level rules are missing. Happens when blocks are rebuilt after the CSS and JS were assembled (the migration assembles them for the blocks found *before* the rebuild). Fix with `reassembleAssets()` (`src/changelog/reassemble.js`) |
+| `template/block-js-missing` | error | A block's markup is on the page but its script does not define the block's functions (the controls throw or do nothing) |
+| `template/block-css-outdated` | info | The block's CSS is there but differs from the current template's: an older version, or a hand edit. The page's `PAGE-SPECIFIC OVERRIDES` region is not counted |
+| `template/image-text-children` | warning | `.image-text-section` holds more than one image/media element and one `<div>`; names the extra elements. Usually the text `<div>` was closed early or never closed. No media at all is allowed |
+| `template/empty-href` | warning | `href=""` or `href="#"` |
+| `template/img-no-alt` | warning | `<img>` with no `alt` attribute (`alt=""` is fine: decorative) |
+| `template/blank-no-label` | warning | `target="_blank"` whose `aria-label` and text do not say "(opens in a new tab)" |
+| `template/blank-no-rel` | warning | `target="_blank"` to an external host without `rel="noopener noreferrer"`. Internal hosts (`INTERNAL_HOSTS` in `src/lib/links.js`) need none: the owner chose to keep the current rule |
+| `template/heading-before-h1` | warning | A heading earlier in the document than the first `<h1>` |
+| `template/heading-skip` | warning | A heading more than one level below the one before it (h2 to h4, h1 to h3) |
+| `template/accordion-header-not-heading` | warning | `.accordion-header` on something that is not h1-h6 |
+| `template/uat-host` | warning | A link to `*.thinqi-uat.co.uk` |
+| `template/mixed-portal-host` | warning | Links to both `leadershipportal.heiw.wales` and `nhswalesleadershipportal.heiw.wales`; the less used one is reported |
+| `template/duplicate-library` | error / warning | The Bootstrap script loaded twice in one field (error: every accordion handler then runs twice, so a panel cannot be closed on the second click); Bootstrap CSS or Font Awesome twice (warning) |
+
+Already covered by the core rules (no new rule needed): `</br>` (`html/void-close-tag`), a malformed `alt` such as `alt=" class="x"` (`html/unclosed-quote` / `html/duplicate-attribute`), `aria-labelledby` / `aria-controls` pointing at a missing id (`html/missing-target`), an unclosed `#page-container` (`html/unclosed-tag`).
+
+The template's own reference page has no errors from the pack. What it still reports is sample content (`href=""` placeholder links, links to the UAT portal) and the Icon toggle block's tile labels, which are `<h5>` straight under an `<h2>` (`heading-skip`). A test pins that list, so a new finding there is noticed.
+
 **One fault, reported once.** A single missing or extra end tag shifts the nesting, and a browser's recovery then closes the wrong elements, so a naive scanner reports several findings that describe the same fault from different sides (and seem to contradict each other). The scanner records each end tag that shuts an ancestor while elements inside it are still open (an "episode"), and matches later strays back to the episode they belong to, innermost first. The finding that remains is the earliest one (the element genuinely left open); the rest say what they are consequences of. Example 1 in `test/fixtures/validate/` is the test case: its `<div>` and `<ul>` left open on lines 80 and 92 are the cause, and `<main>`, `<section>` and the last `</div>` are consequences.
 
 **Unused CSS** only reports what a static page can prove. It does not report: `:hover`, `:focus`, `::before` and other states and pseudo-elements; rules on the host page's `html`, `body` and `:root`; `:not(.collapsed)`-style rules on a state class Bootstrap toggles; selectors naming a class or id that a script mentions or that Bootstrap adds at runtime (`show`, `collapsing`, `active`...); selectors the engine can't parse. It is `info`, never a warning: it is hygiene, and the template's own CSS has some (unused theme classes).

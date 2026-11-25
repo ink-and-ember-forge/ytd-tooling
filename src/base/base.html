@@ -20,11 +20,11 @@
       alt="" />
   </header>
 
-  <main class="main-grid standard-container">
+  <div class="main-grid standard-container">
 
     <!-- Each ToC href must match a section id below -->
-    <nav id="table-of-contents">
-      <h3 id="table-of-contents-heading">Table of Contents</h3>
+    <nav id="table-of-contents" aria-labelledby="table-of-contents-heading">
+      <p id="table-of-contents-heading">Table of Contents</p>
       <ul>
         <li><a href="#section-id" class="toc-link">Section label</a></li>
       </ul>
@@ -40,13 +40,11 @@
 
         <!-- Content blocks go here, one <section id> each -->
 
-        <p class="timestamp">
-          Webpage last updated on [date].
-        </p>
+        <p class="timestamp">Webpage last updated on <span class="timestamp__date">[27th November 2025]</span>.</p>
 
       </div>
     </div>
-  </main>
+  </div>
 
   <button class="back-to-top" aria-label="Back to top">
     <i class="fa-solid fa-circle-chevron-up" aria-hidden="true"></i>

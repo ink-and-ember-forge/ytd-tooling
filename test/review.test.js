@@ -171,7 +171,7 @@ test("report: totals, the reasons for what was kept, and what the page takes fro
   const { steps, r } = report("legacy2", (s, row) => (s.title === "Text and headings" ? keep("design", "bold is our house style") : s.title === "Your phone and tablet layout" && row.label === ".main-grid" ? keep("problem", "the contents list must come first on phones") : tpl));
   const textRows = steps.find((s) => s.title === "Text and headings").rows.length;
   assert.equal(r.totals.decisions, steps.flatMap((s) => s.rows).length);
-  assert.deepEqual({ ...r.totals, decisions: 0, template: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, components: 4, componentsKept: 4, htmlChanges: 2 });
+  assert.deepEqual({ ...r.totals, decisions: 0, template: 0 }, { differences: 21, decisions: 0, kept: textRows + 1, template: 0, components: 3, componentsKept: 3, htmlChanges: 3 });
   assert.equal(r.totals.template, r.totals.decisions - r.totals.kept);
   assert.ok(r.kept.some((k) => k.title === "Text and headings \u203a strong" && k.reason === "A deliberate design choice" && k.note === "bold is our house style"));
   assert.ok(r.kept.some((k) => k.title === "Your phone and tablet layout \u203a .main-grid" && k.reason === "It fixes a problem (say which)"));
@@ -200,7 +200,7 @@ test("report: Markdown a person can keep, with the reasons, the changes and what
   const following = md.slice(md.indexOf("## Following the template"), md.indexOf("## Your own components"));
   assert.match(following, /### Your phone and tablet layout \u203a \.main-grid/);
   assert.match(following, /On small screens: \.main-grid — gap between items: yours `1rem`, template `0`/);
-  assert.match(md, /## Your own components \(4\)\n\n- inline-icon: carried over/);
+  assert.match(md, /## Your own components \(3\)\n\n- inline-icon: carried over/);
   assert.match(md, /## Changes to your HTML\n\n- Added the Gwella theme class/);
   assert.match(md, /## Still worth a look\n\n- Revisit "Fixes that use !important \u203a a": you kept it but weren't sure why\./);
 });
@@ -271,4 +271,39 @@ test("rows: no two rows touch the same property of the same element", () => {
     const { p, steps } = review(dir);
     assert.deepEqual(crossDecisionLinks(steps.flatMap((s) => s.rows.map((r) => ({ title: r.path, lines: r.lines }))), p.html), [], dir);
   }
+});
+
+// ---- the review without the wizard (finding 4.7) ----
+
+test("autoReview: every rule follows the template unless kept with a reason; the ledger travels with the CSS", async () => {
+  const { autoReview } = await import("../src/changelog/review.js");
+  const p = page("legacy2");
+  const plain = autoReview(p, { reference });
+  assert.equal(plain.ledger.length, 0);
+  assert.ok(plain.decisions.length > 0 && plain.decisions.every((d) => d.choice === "template"));
+  assert.deepEqual(plain.unknown, []);
+  assert.equal(splitOverrides(plain.migration.css).ledger.length, 0);
+
+  const strongRow = plain.steps.flatMap((s) => s.rows).find((r) => r.label === "strong");
+  const r = autoReview(p, { reference, keep: { [strongRow.id]: "bold is our house style" }, keepComponents: { "inline-icon": { reason: "problem", note: "the external-link glyph" } } });
+  assert.deepEqual(r.decisions.filter((d) => d.choice === "keep").map((d) => d.note), ["bold is our house style"]);
+  assert.equal(r.ledger.length, 2);
+  assert.match(r.ledger[0], /strong: A deliberate design choice, bold is our house style/);
+  assert.match(r.ledger[1], /Component \.inline-icon: kept for now/);
+  assert.deepEqual(splitOverrides(r.migration.css).ledger.length, 2);
+  assert.ok(/font-weight: bold/.test(r.migration.css), "the kept rule is in the CSS");
+  // the same result as the wizard's own path
+  const wizard = buildMigration(p, { reference, keepGroups: ["inline-icon", ...strongRow.keys], ledger: r.ledger, retire: true });
+  assert.equal(r.migration.css, wizard.css);
+  assert.equal(r.migration.html, wizard.html);
+});
+
+test("autoReview: a key that matches nothing is reported, keeping needs a reason, and only the template policy exists", async () => {
+  const { autoReview } = await import("../src/changelog/review.js");
+  const p = page("legacy");
+  assert.deepEqual(autoReview(p, { reference, keep: { "no-such-rule": "x" } }).unknown, ["no-such-rule"]);
+  const row = autoReview(p, { reference }).steps[0].rows[0];
+  assert.throws(() => autoReview(p, { reference, keep: { [row.id]: "" } }), /needs a reason/);
+  assert.throws(() => autoReview(p, { reference, keep: { [row.id]: { reason: "whim", note: "x" } } }), /not a reason/);
+  assert.throws(() => autoReview(p, { reference, policy: "keep" }), /unknown policy/);
 });

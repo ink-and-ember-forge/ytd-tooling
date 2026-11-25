@@ -18,13 +18,14 @@ export default {
     const cards = values.cards.filter(c => c.title.trim().length > 0);
     const cardsHTML = cards.map(c => {
       const targetAttr = newTabAttrs(c.linkUrl, c.newTab);
+      const ariaLabel = c.newTab ? ` aria-label="${escapeHTML(c.title.trim())} (opens in a new tab)"` : "";
       const durationHTML = c.duration.trim()
         ? `<span>${escapeHTML(c.duration.trim())}</span>`
         : "";
       return `  <div class="card">
     <img src="${escapeHTML(c.imageUrl.trim())}" alt="${escapeHTML(c.imageAlt.trim())}" class="resource-card__img" />
     <div>
-      <a href="${escapeHTML(c.linkUrl.trim())}" class="stretched-link"${targetAttr}>
+      <a href="${escapeHTML(c.linkUrl.trim())}" class="stretched-link"${targetAttr}${ariaLabel}>
         <strong>${escapeHTML(c.title.trim())} <i class="fa-solid fa-up-right-from-square"></i></strong>
       </a>
       <p><strong>${escapeHTML(c.type.trim())}</strong>${durationHTML}</p>

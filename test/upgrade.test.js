@@ -93,10 +93,13 @@ test("upgrade: detects the blocks, keeps only those in the CSS, and bumps the ma
   assert.equal(r.upToDate, false);
   assert.match(r.html, new RegExp(`data-base-version="${BUILDER_VERSION.replace(/\./g, "\\.")}"`));
   assert.doesNotMatch(r.html, /data-base-version="3\.1\.1"/);
-  assert.equal(r.html.replace(/data-base-version="[\d.]+"/, ""), page.html.replace(/data-base-version="[\d.]+"/, ""), "nothing but the marker changed in the HTML");
+  // The marker, and the two structural fixes of 3.4.1 (the grid is a <div>, the contents label is a <p>): nothing else.
+  const undone = (h) => h.replace(/data-base-version="[\d.]+"/, "").replace(/<(\/?)main\b/g, "<$1div").replace(/<h3(\s[^>]*id="table-of-contents-heading")/, "<p$1").replace(/(id="table-of-contents-heading"[^>]*>[^<]*)<\/h3>/, "$1</p>").replace(/ aria-labelledby="table-of-contents-heading"/, "");
+  assert.equal(undone(r.html), undone(page.html), "nothing but the marker and the 3.4.1 structure fixes changed in the HTML");
+  assert.deepEqual(r.htmlChanges.map((c) => c.id), ["CHG-3.4.1-01", "CHG-3.4.1-02"]);
   assert.equal(r.css, getPageCSS(true, USED.map((id) => BLOCKS[id])), "the CSS is the standard current CSS for exactly these blocks");
   assert.doesNotMatch(r.css, /nav-cards-grid|data-icons-grid/);
-  assert.deepEqual(r.notes, []);
+  assert.equal(r.notes.length, 2, "the notes say what was changed in the HTML");
 });
 
 test("upgrade: the report lists what changed for this page", () => {

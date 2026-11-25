@@ -84,10 +84,11 @@ test("analysis: the old CSS sorts into what is replaced, what is dropped and the
   const m = buildMigration(legacy(), { reference });
   assert.deepEqual(m.groups.filter((g) => g.kind === "custom").map((g) => g.key), [
     "cta-button", "intro-text", "journey-section", "journey-image", "journey-content", "important-label",
-    "gwella-message", "burgundy-link", "desktop-image", "mobile-image", "info-section", "text",
-  ]);
-  assert.deepEqual(Object.fromEntries(Object.entries(m.dropped).map(([k, v]) => [k, v.length])), { base: 23, standard: 30, unused: 26 },
-    "dropped = rules that match the template, plus rules for classes that are not on this page");
+    "gwella-message", "desktop-image", "mobile-image", "info-section", "text",
+  ], "burgundy-link is a colour utility class: stripped by default (4.8), so it is no longer one of the page's components");
+  assert.ok(buildMigration(legacy(), { reference, stripClasses: [] }).groups.some((g) => g.key === "burgundy-link"), "and `stripClasses: []` brings it back");
+  assert.deepEqual(Object.fromEntries(Object.entries(m.dropped).map(([k, v]) => [k, v.length])), { base: 23, standard: 30, unused: 27 },
+    "dropped = rules that match the template, plus rules for classes that are not on this page (27: the 26 before, plus .burgundy-link, whose class is now stripped)");
   const unused = m.dropped.unused.map((d) => d.selector).join(" | ");
   assert.match(unused, /#at-a-glance/);
   assert.match(unused, /\.lower-image-section/);
@@ -172,12 +173,16 @@ test("choices: keep only some groups, and a different or missing theme", () => {
 
 test("html: marker, theme class and back-to-top icon, each reported with before and after", () => {
   const m = buildMigration(legacy());
-  assert.deepEqual(m.htmlChanges.map((c) => c.id), ["container", "back-to-top"]);
+  assert.deepEqual(m.htmlChanges.map((c) => c.id), ["container", "back-to-top", "date-sup", "class:burgundy-link"]);
+  assert.equal(m.html.includes("burgundy-link"), false);
+  assert.match(m.html, /last updated on[^<]*\d{1,2}(st|nd|rd|th)\s/i, "the date line has no <sup>");
   assert.equal(m.htmlChanges[0].before, '<div id="page-container">');
   assert.equal(m.htmlChanges[0].after, `<div id="page-container" class="gwella" data-base-version="${BUILDER_VERSION}">`);
   assert.match(m.html, /<button class="back-to-top"[^>]*>\s*<i class="fa-solid fa-circle-chevron-up" aria-hidden="true"><\/i>\s*<span>Back to Top<\/span>/);
   assert.doesNotMatch(m.html, /back-to-top\.png/);
-  const rest = (h) => h.replace(/<div id="page-container"[^>]*>/, "").replace(/<img[^>]*back-to-top[^>]*>|<i class="fa-solid fa-circle-chevron-up"[^>]*><\/i>/, "");
+  // The only other edits are the ones reported above: the colour class and the <sup> in the date line.
+  const rest = (h) => h.replace(/<div id="page-container"[^>]*>/, "").replace(/<img[^>]*back-to-top[^>]*>|<i class="fa-solid fa-circle-chevron-up"[^>]*><\/i>/, "")
+    .replace(/\s*<sup>\s*(st|nd|rd|th)\s*<\/sup>/g, "$1").replace(/\sclass="burgundy-link"/g, "");
   assert.equal(rest(m.html), rest(legacy().html), "nothing else in the HTML was touched");
 });
 
@@ -200,7 +205,7 @@ test("html: broken tags are reported with line numbers, and clean HTML reports n
 test("lint: a page whose custom styles were not carried shows exactly the classes that lost their styling", () => {
   const dropped = buildMigration(legacy(), { keepGroups: [] });
   assert.deepEqual(dropped.lint.unstyledClasses.sort(), [
-    "burgundy-link", "cta-button", "desktop-image", "gwella-message", "important-label", "info-section", "journey-content", "journey-image", "journey-section", "mobile-image", "text",
+    "cta-button", "desktop-image", "gwella-message", "important-label", "info-section", "journey-content", "journey-image", "journey-section", "mobile-image", "text",
   ].sort());
   assert.deepEqual(buildMigration(legacy()).lint.unstyledClasses, [], "carrying them all leaves nothing unstyled");
   assert.deepEqual(lintPage({ html: '<p class="fa-solid accordion-item mine">', css: ".mine { color: red }" }).unstyledClasses, [], "icon and framework classes are not reported");
@@ -239,7 +244,7 @@ test("deviations: the page's own overrides of the template are found, each with 
   const m = buildMigration(legacy2(), { reference });
   assert.equal(m.theme, "gwella");
   assert.deepEqual(m.blocks, ["at-a-glance", "accordion", "icon-toggle"]);
-  assert.deepEqual(m.groups.filter((g) => g.kind === "custom").map((g) => g.key), ["inline-icon", "accordion-text", "resource-card-grid", "resource-card"]);
+  assert.deepEqual(m.groups.filter((g) => g.kind === "custom").map((g) => g.key), ["inline-icon", "resource-card-grid", "resource-card"], "accordion-text is renamed to accordion-button-text (4.6b), so it is no longer an unknown class");
   const d = deviations(m);
   assert.deepEqual(d.strong, ["strong: font-weight: bold  (template: nothing)"], "a rule the template has no equivalent of");
   assert.deepEqual(d["#header-h1"], ["#header-h1: margin-block: 1.5rem 1rem  (template: 1.5rem)"], "a different value for a property the template sets");

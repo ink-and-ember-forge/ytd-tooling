@@ -19,7 +19,7 @@ export default {
       .map(b => `    <li>${escapeHTML(b.trim())}</li>`)
       .join("\n");
     return `<div id="at-a-glance">
-  <h3 id="at-a-glance-heading">At a glance</h3>
+  <h2 id="at-a-glance-heading">At a glance</h2>
   <ul>
 ${items}
   </ul>

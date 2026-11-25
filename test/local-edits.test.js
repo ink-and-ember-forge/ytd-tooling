@@ -287,3 +287,31 @@ test("a rule of the author's own says what it does, so it can be judged", () => 
   assert.equal(edit.summary, "#page-container .banner: a rule of your own — background: #fee; color: red; margin: 0 auto; padding: 1rem; +1 more, and 1 nested rule");
   assert.equal(parseCss(".a { }").children[0].decls.size, 0);
 });
+
+// ---- stable ids and the ledger (finding 4.7) ----
+
+test("edits have a stable key besides the positional id; keepEdits and dropEdits accept either", () => {
+  const all = buildUpgrade(editedPage(), { baseline: old });
+  assert.ok(all.edits.every((e) => /^(changed-decl|added-decl|removed-decl|added-rule|removed-rule):/.test(e.key)));
+  assert.equal(new Set(all.edits.map((e) => e.key)).size, all.edits.length, "keys are unique");
+  assert.deepEqual(buildUpgrade(editedPage(), { baseline: old }).edits.map((e) => e.key), all.edits.map((e) => e.key), "and the same on every run");
+  const target = all.edits[2];
+  const byKey = buildUpgrade(editedPage(), { baseline: old, keepEdits: [target.key] });
+  assert.deepEqual(byKey.edits.filter((e) => e.kept).map((e) => e.id), [target.id]);
+  const dropped = buildUpgrade(editedPage(), { baseline: old, dropEdits: [all.edits[0].key] });
+  assert.equal(dropped.edits[0].kept, false);
+});
+
+test("ledger: reasons for kept edits are written into the overrides region and survive the next upgrade", () => {
+  const first = buildUpgrade(editedPage(), { baseline: old });
+  const key = first.edits.find((e) => e.kept).key;
+  const r = buildUpgrade(editedPage(), { baseline: old, ledger: { [key]: "brand review 2026-11", [first.edits.find((e) => !e.keepable).key]: "ignored: not kept" } });
+  const { ledger } = splitOverrides(r.css);
+  assert.equal(ledger.length, 1, "only edits that end up kept get a line");
+  assert.match(ledger[0], /brand review 2026-11$/);
+  const asLines = buildUpgrade(editedPage(), { baseline: old, ledger: ["Why: house style"] });
+  assert.deepEqual(splitOverrides(asLines.css).ledger, ["Why: house style"]);
+  // carried forward by the next upgrade
+  const again = buildUpgrade({ ...editedPage(), css: r.css }, { baseline: old });
+  assert.deepEqual(splitOverrides(again.css).ledger, ledger);
+});

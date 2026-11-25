@@ -43,13 +43,24 @@ export function cleanQuillHTML(html) {
   // Add the external-link icon to any link set to open in a new tab —
   // matches the convention used across every other block. Added here,
   // at generation time, rather than kept live inside the editor, so it
-  // can never desync from Quill's own tracked content.
+  // can never desync from Quill's own tracked content. The icon is
+  // decorative; the link also says "(opens in a new tab)" in text that
+  // only assistive technology reads (Bootstrap's .visually-hidden), so
+  // what a sighted reader sees does not change.
   root.querySelectorAll('a[target="_blank"]').forEach(a => {
     if (!a.querySelector(".fa-up-right-from-square")) {
       a.appendChild(doc.createTextNode(" "));
       const icon = doc.createElement("i");
-      icon.className = "fa-solid fa-up-right-from-square button-icon inline-icon";
+      icon.className = "fa-solid fa-up-right-from-square button-icon";
+      icon.setAttribute("aria-hidden", "true");
       a.appendChild(icon);
+    }
+    if (!a.querySelector(".visually-hidden") && !/opens in a new tab/i.test(a.textContent)) {
+      const hidden = doc.createElement("span");
+      hidden.className = "visually-hidden";
+      hidden.textContent = " (opens in a new tab)";
+      const icon = a.querySelector(".fa-up-right-from-square");
+      a.insertBefore(hidden, icon);
     }
   });
 

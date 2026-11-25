@@ -108,7 +108,7 @@ test("report: the original code of every removed component is kept in it, and ke
   const { buildReport, reportMarkdown } = await import("../src/changelog/report.js");
   const page = legacy(), first = buildMigration(page, { reference, keepGroups: [] });
   const steps = buildReview(first, page.html);
-  const m = buildMigration(page, { reference, keepGroups: ["burgundy-link"], retire: true });
+  const m = buildMigration(page, { reference, keepGroups: ["burgundy-link"], retire: true, stripClasses: [] }); // burgundy-link is stripped by default; keep it as the example of a kept component
   const md = reportMarkdown(buildReport(m, steps, new Map(), { date: "2026-01-01" }));
   assert.ok(m.retired.removed.length > 0);
   for (const r of m.retired.removed) assert.ok(md.includes(r.original), `the report holds the original ${r.tag} (${r.classes[0]})`);

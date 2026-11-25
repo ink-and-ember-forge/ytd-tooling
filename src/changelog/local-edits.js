@@ -18,6 +18,9 @@ const REGION = /\n*\/\* =+ PAGE-SPECIFIC OVERRIDES:[\s\S]*?=+ \*\/\s*([\s\S]*?)\
 const LEDGER = /\/\*\s*kept:\s*([\s\S]*?)\s*\*\//g;
 export const ledgerComment = (text) => `/* kept: ${text.replace(/\*\//g, "* /").replace(/\s+/g, " ").trim()} */`;
 
+// The overrides region exactly as written (markers included), or "" when the page has none.
+export const extractOverridesRegion = (css) => { const m = css.match(REGION); return m ? m[0].trim() : ""; };
+
 // { css: the stylesheet without its overrides region, overrides: the region's rules (text) or "", ledger: the reasons }
 export function splitOverrides(css) {
   const m = css.match(REGION);
@@ -104,7 +107,10 @@ export function findLocalEdits(pageCss, baseline, { includeToc = true, currentBa
     const holder = current && !isRule ? findNode(current, e.path) : null; // the rule in the NEW standard that holds this property
     const standardChanged = !!holder && e.kind !== "removed-decl" && (holder.decls.get(e.prop) || []).join("\n") !== (e.from || []).join("\n");
     const obsolete = !!current && !isRule && !holder; // the rule no longer exists in the new standard
-    return { id: `E${n + 1}`, ...e, summary: describe(e), blockId, keepable: KEEPABLE.has(e.kind), standardChanged, obsolete };
+    // `id` is positional (E1, E2...) and changes when an earlier edit appears or goes; `key` names the edit itself (what it
+    // changes, where) and is stable across runs, so a script can refer to it.
+    const key = `${e.kind}:${[...location, ...(isRule ? [] : [e.prop])].join(" › ")}`;
+    return { id: `E${n + 1}`, key, ...e, summary: describe(e), blockId, keepable: KEEPABLE.has(e.kind), standardChanged, obsolete };
   });
   return { edits, carried: parseCss(overrides), ledger, blockIds, unbalanced: page.unbalanced, differences: edits.length, total: countDecls(page) };
 }

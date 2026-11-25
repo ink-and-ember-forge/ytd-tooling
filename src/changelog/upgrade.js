@@ -10,6 +10,29 @@ import { suggestVersions } from "./sniff.js";
 import { findLocalEdits, overridesRegion, splitOverrides } from "./local-edits.js";
 import { parseCss } from "./css-tree.js";
 import { findJsEdits } from "./js-edits.js";
+import { elementsOf } from "./components.js";
+
+// Mechanical fixes to the base HTML's own structure that older pages need (changelog 3.4.1): the grid is a <div>, not a second <main>,
+// and the contents label is a <p> that names its <nav>, not an <h3> that precedes the <h1>. Only these exact shapes are touched.
+// Returns { html, changes: [{ id, summary }] }.
+export function upgradeBaseHtml(html) {
+  const changes = [];
+  let out = html;
+  const grid = elementsOf(out).find((e) => e.tag === "main" && /\sclass\s*=\s*"[^"]*\bmain-grid\b/.test(e.openTag));
+  if (grid && grid.end !== null && grid.closeStart != null) {
+    const close = out.slice(grid.closeStart, grid.end);
+    out = out.slice(0, grid.closeStart) + close.replace(/^<\/main/i, "</div") + out.slice(grid.end);
+    out = out.slice(0, grid.start) + grid.openTag.replace(/^<main/i, "<div") + out.slice(grid.openEnd);
+    changes.push({ id: "CHG-3.4.1-01", summary: "Changed <main class=\"main-grid …\"> to a <div>: the platform's page already has a <main>." });
+  }
+  const toc = /<h3(\s[^>]*\bid="table-of-contents-heading"[^>]*)>([\s\S]*?)<\/h3>/i;
+  if (toc.test(out)) {
+    out = out.replace(toc, "<p$1>$2</p>");
+    if (!/<nav\b[^>]*\baria-labelledby="table-of-contents-heading"/.test(out)) out = out.replace(/<nav(\s[^>]*\bid="table-of-contents")/, '<nav$1 aria-labelledby="table-of-contents-heading"');
+    changes.push({ id: "CHG-3.4.1-02", summary: "Changed the contents label from an <h3> to a <p> that names the <nav>, so no heading comes before the page's <h1>." });
+  }
+  return { html: out, changes };
+}
 
 const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // An attribute whose value (a space-separated list for class) contains `token` as a whole word.
@@ -46,6 +69,9 @@ const MARKER = /data-base-version="[\d.]+"/;
 //             region is still carried forward, but new edits can't be detected. null means "looked up, none stored" (adds a note); undefined means "not looked up".
 //   keepEdits ids of detected edits (E1, E2...) to keep; leave out to keep every keepable one
 //   dropEdits ids of detected edits the author chose not to keep (applied on top of keepEdits)
+//             (keepEdits and dropEdits accept an edit's positional id, "E3", or its stable `key`, which does not move when other edits appear)
+//   ledger    why kept edits were kept, written into the overrides region as comments that travel with it: an array of
+//             lines, or an object { idOrKey: reason } (only edits that end up kept get a line, "<what it changes>: <reason>")
 // Returns { error } or:
 //   pageVersion, toVersion, upToDate, blocks (ids), includeToc,
 //   html, css, js   the upgraded code, ready to copy
@@ -56,7 +82,7 @@ const MARKER = /data-base-version="[\d.]+"/;
 //   check           the upgraded code run back through the checker: { ok, remaining, manualSteps }
 //   notes           things the tool could not do for the author
 //   report          the checkPage report (what changed, per change)
-export function buildUpgrade(page, { version = "auto", blockIds = null, includeToc = null, baseline, keepEdits = null, dropEdits = [], changelog = CHANGELOG, blocks = BLOCK_LIST } = {}) {
+export function buildUpgrade(page, { version = "auto", blockIds = null, includeToc = null, baseline, keepEdits = null, dropEdits = [], ledger: reasons = [], changelog = CHANGELOG, blocks = BLOCK_LIST } = {}) {
   const { html = "", css = "", js = "" } = page;
   const report = checkPage([html, css, js].join("\n"), version, changelog);
   if (report.error) return { error: report.error };
@@ -78,6 +104,9 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   } else {
     notes.push(`No #page-container was found in the HTML, so set ${marker} on it yourself.`);
   }
+  const fixed = upgradeBaseHtml(outHtml);
+  outHtml = fixed.html;
+  fixed.changes.forEach((c) => notes.push(c.summary));
   if (blocks.length && !used.length) notes.push("No blocks were recognised on this page. Check the list of blocks and tick any that are used.");
 
   // CSS: the standard code for the blocks in use, then the author's kept edits in the overrides region.
@@ -95,7 +124,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
     edits = found.edits.map((e) => {
       const why = !e.keepable ? "A removed property or rule can't be kept; the new standard applies."
         : e.blockId && !usedIds.includes(e.blockId) ? `The ${e.blockId} block is not used on this page.`
-        : (keepEdits && !keepEdits.includes(e.id)) || dropEdits.includes(e.id) ? "Not kept."
+        : (keepEdits && !keepEdits.some((k) => k === e.id || k === e.key)) || dropEdits.some((k) => k === e.id || k === e.key) ? "Not kept."
         : null;
       return { ...e, kept: !why, why };
     });
@@ -112,7 +141,9 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   } else if (css.trim() && baseline === null) { // looked up, and there is none
     notes.push(`There is no stored code for version ${report.pageVersion}, so edits made by hand to the CSS can't be detected. Any existing PAGE-SPECIFIC OVERRIDES region is kept.`);
   }
-  const region = overridesRegion(kept, carried, ledger);
+  const given = Array.isArray(reasons) ? reasons
+    : kept.filter((e) => reasons[e.id] ?? reasons[e.key]).map((e) => `${e.summary}: ${reasons[e.id] ?? reasons[e.key]}`);
+  const region = overridesRegion(kept, carried, [...ledger, ...given]);
   if (region) outCss = outCss.replace(/\n<\/style>$/, `\n\n${region}\n</style>`);
   const removed = (edits || []).filter((e) => !e.keepable);
   if (removed.length) notes.push(`${removed.length} thing(s) removed from the standard CSS were not kept: ${removed.map((e) => e.summary).join("; ")}.`);
@@ -129,6 +160,7 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
     blocks: used.map((b) => b.id),
     includeToc: toc,
     html: outHtml,
+    htmlChanges: fixed.changes,
     css: outCss,
     js: outJs,
     edits,
