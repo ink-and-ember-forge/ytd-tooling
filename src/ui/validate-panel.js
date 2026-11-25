@@ -7,6 +7,7 @@
 // marked line in the code chooses the first finding on it, and again goes on to the next.
 import { makeEl } from "../lib/dom.js";
 import { validate, SEVERITIES } from "../validate/index.js";
+import { templatePack } from "../validate/template-pack.js";
 import { associateLabels } from "./a11y.js";
 
 const LANGS = [["html", "HTML"], ["css", "CSS"], ["js", "JS"]];
@@ -248,7 +249,7 @@ export function buildValidatePanel() {
 
   run.addEventListener("click", () => {
     state.source = { html: inputs.html.value, css: inputs.css.value, js: inputs.js.value };
-    state.result = validate(state.source);
+    state.result = validate(state.source, { packs: [templatePack] });
     state.selected = null;
     state.cycle.clear();
     state.show = { error: true, warning: true, info: true };
