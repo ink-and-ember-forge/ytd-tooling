@@ -1,4 +1,4 @@
-/* Gwella base CSS · version 3.4.1 */
+/* Gwella base CSS · version 3.5.0 */
 /* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */
 
 html {
@@ -289,6 +289,17 @@ body > main > article.plain-text {
         text-decoration: none;
       }
     }
+  }
+
+  /* File type and size after a download link or card title, e.g. (PDF, 21.5MB). Never underlined, quieter than the link. */
+  .file-size {
+    /* inline-block, not block: a block inside a link still inherits the link's underline; an atomic inline box does not. */
+    display: inline-block;
+    width: 100%;
+    font-size: 0.9em;
+    font-weight: 400;
+    color: var(--secondary-text-colour);
+    text-decoration: none;
   }
 
   .timestamp {
@@ -869,6 +880,28 @@ body > main > article.plain-text {
     }
   }
 
+  /* "Text and actions": paste the Buttons block into the right column (choose "Another content block"). The buttons
+     column has a fixed width, so the buttons are the same width in every group, starts level with the text, and on
+     phones comes after the text (the media column goes first, buttons do not). */
+  .flex-section .video-content:has(> .buttons) {
+    justify-content: flex-end;
+    align-items: flex-start;
+
+    @media (max-width: 768px) {
+      order: 0;
+      justify-content: stretch;
+    }
+
+    > .buttons {
+      flex: 0 1 280px;
+      margin-top: 0;
+
+      @media (max-width: 768px) {
+        flex: 1;
+      }
+    }
+  }
+
   .two-column {
     display: flex;
     align-items: flex-start;
@@ -922,6 +955,22 @@ body > main > article.plain-text {
       object-fit: cover;
       object-position: top;
       margin: 0 auto;
+    }
+  }
+
+  .figure-block {
+    margin: 1rem 0;
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    figcaption {
+      margin-top: 0.5rem;
+      font-size: 0.9em;
+      color: var(--secondary-text-colour);
     }
   }
 

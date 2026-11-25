@@ -1,0 +1,72 @@
+  .flex-section {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+    }
+  }
+
+  .text-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .video-content {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+
+    @media (max-width: 768px) {
+      justify-content: center;
+      order: -1;
+    }
+
+    img {
+      width: 100%;
+      max-width: 320px;
+      height: auto;
+      display: block;
+      border-radius: 16px;
+
+      @media (max-width: 768px) {
+        aspect-ratio: 3 / 2;
+        object-fit: cover;
+        object-position: top;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+    }
+
+    iframe {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      height: auto;
+      border-radius: 16px;
+      border: none;
+    }
+  }
+
+  /* "Text and actions": paste the Buttons block into the right column (choose "Another content block"). The buttons
+     column has a fixed width, so the buttons are the same width in every group, starts level with the text, and on
+     phones comes after the text (the media column goes first, buttons do not). */
+  .flex-section .video-content:has(> .buttons) {
+    justify-content: flex-end;
+    align-items: flex-start;
+
+    @media (max-width: 768px) {
+      order: 0;
+      justify-content: stretch;
+    }
+
+    > .buttons {
+      flex: 0 1 280px;
+      margin-top: 0;
+
+      @media (max-width: 768px) {
+        flex: 1;
+      }
+    }
+  }

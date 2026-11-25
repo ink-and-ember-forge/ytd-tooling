@@ -45,6 +45,14 @@ export const FIXTURES = {
   accordion: {
     named: { groupName: "Digital literacy resources", titles: ["Topic one", "Idea two", "Topic one", ""] },
     unnamed: { groupName: "", titles: ["Only item"] },
+    "under-an-h3": { groupName: "Details", level: "h4", titles: ["One", "Two"] },
+    "unknown-level": { groupName: "", level: "h1", titles: ["Falls back to h3"] },
+  },
+  figure: {
+    captioned: { imageUrl: "https://example.org/chart.png", imageAlt: "Radar chart of \"six\" domains", caption: "The six <domains>" },
+    plain: { imageUrl: "https://example.org/chart.png", imageAlt: "A chart", caption: "" },
+    "no-alt": { imageUrl: "https://example.org/chart.png", imageAlt: "", caption: "" },
+    empty: { imageUrl: "", imageAlt: "", caption: "" },
   },
   "icon-toggle": {
     named: { groupName: "Communication scenarios", items: [
@@ -61,6 +69,11 @@ export const FIXTURES = {
       { imageUrl: "https://example.org/a.png", imageAlt: "Alt", title: "An article", linkUrl: "https://ytydysgu.heiw.wales/article", newTab: true, type: "Article", duration: "5 Minutes" },
       { imageUrl: "https://example.org/a.png", imageAlt: "", title: "Same tab", linkUrl: "/local", newTab: false, type: "Page", duration: "2 Minutes" },
       { imageUrl: "", imageAlt: "", title: "", linkUrl: "", newTab: false, type: "", duration: "" },
+    ] },
+    "file-size": { cards: [
+      { imageUrl: "https://example.org/p.png", imageAlt: "", title: "A guide", linkUrl: "https://example.org/g.pdf", newTab: true, type: "Publication", duration: "", fileInfo: "PDF, 21.5MB" },
+      { imageUrl: "https://example.org/p.png", imageAlt: "", title: "Already bracketed", linkUrl: "/g.pdf", newTab: false, type: "Publication", duration: "", fileInfo: "(PDF, 1 page, 1MB)" },
+      { imageUrl: "https://example.org/p.png", imageAlt: "", title: "Needs <escaping>", linkUrl: "/h", newTab: false, type: "Page", duration: "2 Minutes", fileInfo: "  " },
     ] },
   },
   buttons: {

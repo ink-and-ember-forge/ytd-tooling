@@ -48,3 +48,25 @@
       border: none;
     }
   }
+
+  /* "Text and actions": paste the Buttons block into the right column (choose "Another content block"). The buttons
+     column has a fixed width, so the buttons are the same width in every group, starts level with the text, and on
+     phones comes after the text (the media column goes first, buttons do not). */
+  .flex-section .video-content:has(> .buttons) {
+    justify-content: flex-end;
+    align-items: flex-start;
+
+    @media (max-width: 768px) {
+      order: 0;
+      justify-content: stretch;
+    }
+
+    > .buttons {
+      flex: 0 1 280px;
+      margin-top: 0;
+
+      @media (max-width: 768px) {
+        flex: 1;
+      }
+    }
+  }

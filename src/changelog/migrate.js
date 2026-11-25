@@ -18,7 +18,7 @@ import { getPageCSS, getPageJS, forToc } from "../base/index.js";
 import { assembleCSS } from "../lib/assemble.js";
 import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
-import { retireComponents, rewriteClasses } from "./components.js";
+import { retireComponents, rewriteClasses, upgradeIconToggleHtml } from "./components.js";
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 const stripScriptTags = (t) => t.replace(/^\s*<script[^>]*>/i, "").replace(/<\/script>\s*$/i, "");
 import { OVERRIDES_START, OVERRIDES_END, ledgerComment } from "./local-edits.js";
@@ -398,6 +398,9 @@ export function migrateHtml(html, { theme = null, version = BUILDER_VERSION } = 
     out = out.replace(sup, "$1$2");
     changes.push({ id: "date-sup", summary: "Took the <sup> out of the date in the \"Webpage last updated on\" line (the house style is 27th November 2025, with no superscript).", before: before[0].replace(/\s+/g, " "), after: before[0].replace(sup, "$1$2") });
   }
+  const icons = upgradeIconToggleHtml(out);
+  out = icons.html;
+  changes.push(...icons.changes);
   return { html: out, changes };
 }
 

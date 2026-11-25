@@ -1,0 +1,14 @@
+<div class="guide-tldr"><strong>In 30 seconds:</strong> one image at the full width of the content column, with an optional caption underneath. Use it for charts, diagrams and tables that have to be read.</div>
+<h4>Why not Text around media?</h4>
+<p>That block floats its picture small (about 275px) beside the text, which makes a chart unreadable. This one is a block of its own: the image is as wide as the column and as tall as it needs to be.</p>
+<h4>Alt text</h4>
+<p>A figure carries information, so its alt text should say what it shows (for a chart, the main point). The tab warns you if it is empty. If a picture is only decoration, use Text around media instead and leave its alt blank.</p>
+<h4>Caption</h4>
+<p>Optional. It is a real <code>&lt;figcaption&gt;</code>, so assistive technology connects it to the image.</p>
+<details><summary>Deep dive: the code</summary>
+<pre><code>&lt;figure class="figure-block"&gt;
+  &lt;img src="…" alt="…" /&gt;
+  &lt;figcaption&gt;…&lt;/figcaption&gt;
+&lt;/figure&gt;</code></pre>
+<p>The class is <code>figure-block</code> rather than <code>figure</code>, which Bootstrap already uses.</p>
+</details>

@@ -18,7 +18,7 @@
     {
       "selector": ".accordion-header",
       "label": "The heading",
-      "what": "Wraps the title in a real heading (`h3`), so screen readers can jump from title to title.",
+      "what": "Wraps the title in a real heading (`h3` unless you chose another level), so screen readers can jump from title to title.",
       "how": "The heading has its own `id`. The panel points back to it (`aria-labelledby`), so a screen reader announces the panel together with its title.",
       "deep": "Using a real heading element rather than styled text keeps the page's structure correct for assistive technology."
     },
