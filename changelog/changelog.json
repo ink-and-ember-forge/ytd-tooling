@@ -1,6 +1,116 @@
 {
   "releases": [
     {
+      "version": "3.5.1",
+      "date": "2026-11-26",
+      "summary": "Keyboard and motion fixes: a visible focus ring on icon tiles and clickable cards, icon tiles that announce open/closed and open with Space, no motion for people who ask for less, and Accordion ids that cannot clash between two accordions. No change to how a page looks.",
+      "changes": [
+        {
+          "id": "CHG-3.5.1-01",
+          "type": "fix",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "People whose system asks for reduced motion get none: no smooth scrolling, and no card lift or arrow turn (transitions and animations are off inside #page-container). The back-to-top button and icon tiles scroll instantly for them.",
+          "detect": {
+            "patterns": [
+              "scroll-behavior"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "prefers-reduced-motion:\\s*reduce"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS and the base JS. Nothing changes for anyone who has not asked for reduced motion."
+        },
+        {
+          "id": "CHG-3.5.1-02",
+          "type": "fix",
+          "scope": "block:icon-toggle",
+          "blocks": [
+            "icon-toggle"
+          ],
+          "summary": "Icon toggle tiles show a focus ring when reached with the keyboard (a div has none of its own), announce themselves as buttons that are expanded or collapsed (role=button, aria-expanded, aria-controls), and open with Space as well as Enter.",
+          "detect": {
+            "patterns": [
+              "data-icon-trigger"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "data-icon-trigger:focus-visible|&:focus-visible\\s*\\{[^}]*outline:\\s*none"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Icon toggle block's CSS and JS. The tile markup gains role=\"button\" aria-expanded=\"false\" aria-controls=\"<panel id>\"; rebuild the block or add them by hand. Pages with the old markup still work and get the focus ring and Space key; they just don't announce open or closed."
+        },
+        {
+          "id": "CHG-3.5.1-03",
+          "type": "fix",
+          "scope": "block:nav-cards",
+          "blocks": [
+            "nav-cards"
+          ],
+          "summary": "A numbered nav card (a whole-card link) shows a focus ring around the card when reached with the keyboard.",
+          "detect": {
+            "patterns": [
+              "nav-cards-grid--numbered"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "stretched-link:focus-visible"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Nav cards block's CSS (inside #page-container)."
+        },
+        {
+          "id": "CHG-3.5.1-04",
+          "type": "fix",
+          "scope": "block:resource-cards",
+          "blocks": [
+            "resource-cards"
+          ],
+          "summary": "A resource card (a whole-card link) shows a focus ring around the card when reached with the keyboard.",
+          "detect": {
+            "patterns": [
+              "cards-grid"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "stretched-link:focus-visible"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the Resource cards block's CSS (inside #page-container)."
+        },
+        {
+          "id": "CHG-3.5.1-05",
+          "type": "fix",
+          "scope": "block:accordion",
+          "blocks": [
+            "accordion"
+          ],
+          "summary": "Accordion item ids start with the accordion's own id (accordion-<group>-heading-<title>), so two accordions on one page with an item of the same name no longer share ids (the second used to toggle the first).",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Only matters for pages with two accordions that share an item title. Rebuild the second one in the builder, or rename its ids by hand (the heading id, the panel id, and the three attributes that point at them: data-bs-target, aria-controls, aria-labelledby). The stored baselines hold no block HTML, so the checker cannot flag it."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.5.0",
       "date": "2026-11-25",
       "summary": "New Figure block (a full-width image with a caption), a file type and size line for Resource cards and download links, a heading level for the Accordion, and Equal columns that take buttons in the right column.",

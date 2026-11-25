@@ -27,6 +27,12 @@
         max-width: 300px;
       }
 
+      /* The whole card is the link (a stretched link), so ring the card. */
+      &:has(.stretched-link:focus-visible) {
+        outline: 3px solid var(--focus-ring-colour);
+        outline-offset: 3px;
+      }
+
       > div {
         flex: 1;
         padding: 1rem 1rem 0 1rem;

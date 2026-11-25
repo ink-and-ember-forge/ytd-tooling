@@ -89,6 +89,12 @@
       }
     }
 
+    /* The whole numbered card is the link (a stretched link), so ring the card, not the empty link. */
+    &:has(> .stretched-link:focus-visible) {
+      outline: 3px solid var(--focus-ring-colour);
+      outline-offset: 3px;
+    }
+
     &.nav-card--numbered {
       display: flex;
       flex-direction: column;

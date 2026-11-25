@@ -18,6 +18,16 @@
 
   .data-icon-trigger {
     cursor: pointer;
+
+    /* The tile is a div, so the browser's own focus ring is not enough: ring the card the keyboard is on. */
+    &:focus-visible {
+      outline: none;
+
+      .data-icon-card {
+        outline: 3px solid var(--focus-ring-colour);
+        outline-offset: 3px;
+      }
+    }
   }
 
   .data-icon-card {

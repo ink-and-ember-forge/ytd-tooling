@@ -54,7 +54,7 @@ test("every block's output maps 1:1 onto the DOM (same elements, same order)", (
 test("sameValue links ids that must match, ignoring the leading #", () => {
   const html = BLOCKS.accordion.generateHTML(FIXTURES.accordion.named);
   const map = mapHTML(html);
-  const hits = sameValue(map, "#collapse-topic-one");
+  const hits = sameValue(map, "#accordion-digital-literacy-resources-collapse-topic-one");
   const attrs = hits.map((h) => map.tokens[h.token].pieces[h.piece - 2]?.text); // the attribute name two pieces before the value
   assert.ok(hits.length >= 3, `expected the id, data-bs-target and aria-controls, got ${hits.length}`);
   assert.ok(attrs.includes("data-bs-target") && attrs.includes("id") && attrs.includes("aria-controls"), attrs.join());

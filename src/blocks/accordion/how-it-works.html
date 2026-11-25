@@ -11,9 +11,9 @@
 <h4>The idea: a button that knows its panel by name</h4>
 <p>Think of a filing cabinet: each drawer has a label, you click the label to slide the drawer open, and, because this is a well-behaved cabinet, opening one drawer closes whichever one was already open.</p>
 <p>The button doesn't know what "Digital literacy" means. It only knows a name to look for, like dialling a phone number:</p>
-<pre><code>&lt;button data-bs-target="#collapse-digital-literacy" ...&gt;Digital literacy&lt;/button&gt;
+<pre><code>&lt;button data-bs-target="#accordion-digital-literacy-collapse-digital-literacy" ...&gt;Digital literacy&lt;/button&gt;
 
-&lt;div id="collapse-digital-literacy" ...&gt;(your content goes here)&lt;/div&gt;</code></pre>
+&lt;div id="accordion-digital-literacy-collapse-digital-literacy" ...&gt;(your content goes here)&lt;/div&gt;</code></pre>
 <p>The <code>#</code> means "the element with this id". Bootstrap's script (already loaded by the base HTML) finds the panel with that id and opens it.</p>
 
 <h4>What goes wrong when the names don't match</h4>

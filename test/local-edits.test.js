@@ -30,7 +30,7 @@ const pageOf = (css, ids = USED) => {
 test("parser: reads the whole template, and its output reads back the same", () => {
   const tree = parseCss(readFileSync(new URL("../template/template.css", import.meta.url), "utf8"));
   assert.equal(tree.unbalanced, false);
-  assert.deepEqual(tree.children.map((c) => c.selector), ["html", ".gwella", ".ytydysgu", "body > main > article.plain-text", "#page-container"]);
+  assert.deepEqual(tree.children.map((c) => c.selector), ["html", "@media (prefers-reduced-motion: reduce)", ".gwella", ".ytydysgu", "body > main > article.plain-text", "#page-container"]);
   const again = parseCss(serializeCss(tree));
   assert.equal(serializeCss(again), serializeCss(tree));
   assert.equal(countDecls(again), countDecls(tree));
