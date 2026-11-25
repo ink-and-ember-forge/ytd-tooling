@@ -35,9 +35,11 @@ test("links: empty and # hrefs, missing alt, new tabs need the label and the rel
   assert.equal(blank.length, 1);
   assert.equal(only('<a href="https://x.org" target="_blank" aria-label="Plain (opens in a new tab)">Plain</a>', "template/blank-no-label").length, 0);
   assert.equal(only('<a href="/x" target="_blank">Plain (opens in a new tab)</a>', "template/blank-no-label").length, 0, "visible text counts");
-  assert.equal(only('<a href="/x" target="_blank">x</a>', "template/blank-no-rel").length, 1, "internal links too");
-  assert.equal(only('<a href="/x" target="_blank" rel="noopener noreferrer">x</a>', "template/blank-no-rel").length, 0);
-  assert.equal(only('<a href="/x" target="_blank" rel="noopener">x</a>', "template/blank-no-rel").length, 1, "both words are needed");
+  assert.equal(only('<a href="https://other.org/x" target="_blank">x</a>', "template/blank-no-rel").length, 1, "an external link needs the rel");
+  assert.equal(only('<a href="/x" target="_blank">x</a>', "template/blank-no-rel").length, 0, "internal links do not (owner's decision)");
+  assert.equal(only('<a href="https://leadershipportal.heiw.wales/x" target="_blank">x</a>', "template/blank-no-rel").length, 0, "nor do the platform's own hosts");
+  assert.equal(only('<a href="https://other.org/x" target="_blank" rel="noopener noreferrer">x</a>', "template/blank-no-rel").length, 0);
+  assert.equal(only('<a href="https://other.org/x" target="_blank" rel="noopener">x</a>', "template/blank-no-rel").length, 1, "both words are needed");
 });
 
 test("hosts: UAT links and a mix of the two portal hosts", () => {

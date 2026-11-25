@@ -117,7 +117,7 @@ Landing pages (no table of contents): `getBaseHTML(false, theme)` gives the temp
 - A link that opens a new tab says so to assistive technology and the visible text does not change: `aria-label="<text> (opens in a new tab)"` on buttons and cards, a visually hidden `<span class="visually-hidden">` in rich text. The icon is decorative.
 - One `<h1>`; nothing before it; no skipped levels. The contents label is a `<p>` that names its `<nav>`; At a glance is an `<h2>`. Accordion headers are headings one level below the section they sit in (the block emits `<h3>`).
 - The page grid is a `<div>`: the platform's own shell already has a `<main>`.
-- `target="_blank"`: external hosts get `rel="noopener noreferrer"` (see `src/lib/links.js`); whether internal hosts do too is an open owner decision.
+- `target="_blank"`: external hosts get `rel="noopener noreferrer"` (see `src/lib/links.js`); internal hosts need none (owner's decision).
 - Bootstrap's JS must appear **once** in the field. Loaded twice, every accordion handler runs twice and a panel opens and closes in one click (`template/duplicate-library`).
 
 **Windows:** the repo has a `.gitattributes` forcing LF, because the snapshot, baseline and template tests compare text byte for byte; a checkout with `core.autocrlf=true` and no such file failed 26 tests.

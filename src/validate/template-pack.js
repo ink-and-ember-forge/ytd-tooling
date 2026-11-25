@@ -10,7 +10,7 @@
 //   template/empty-href            warning  href="" or href="#"
 //   template/img-no-alt            warning  <img> with no alt attribute at all
 //   template/blank-no-label        warning  target="_blank" with no "(opens in a new tab)" in its name or text
-//   template/blank-no-rel          warning  target="_blank" without rel="noopener noreferrer"
+//   template/blank-no-rel          warning  target="_blank" to an external host without rel="noopener noreferrer" (internal hosts: not required)
 //   template/heading-before-h1     warning  a heading earlier in the document than the page's first <h1>
 //   template/heading-skip          warning  a heading more than one level deeper than the one before it (h2 -> h4)
 //   template/accordion-header-not-heading  warning  .accordion-header on something that is not an h1-h6
@@ -21,6 +21,7 @@ import { makeFinding, relatedAt } from "./locate.js";
 import { attrOf } from "./html-scan.js";
 import { BLOCK_LIST } from "../blocks/index.js";
 import { getPageCSS } from "../base/index.js";
+import { linkIsExternal } from "../lib/links.js";
 import { hasCurrentMarkup } from "../changelog/upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "../changelog/css-tree.js";
 import { splitOverrides } from "../changelog/local-edits.js";
@@ -93,7 +94,8 @@ export function templatePack({ html, css, js, htmlScan }, { blocks = BLOCK_LIST 
         const name = `${attrOf(el, "aria-label")?.value || ""} ${textOf(html, el)}`;
         if (!/opens in a new (tab|window)/i.test(name)) add("template/blank-no-label", "warning", target.start, target.end, 'This link opens a new tab but does not say so (no "(opens in a new tab)" in its aria-label or text).', { why: "Screen reader users are not told the page they are on will be left behind." });
         const rel = (attrOf(el, "rel")?.value || "").split(/\s+/);
-        if (!(rel.includes("noopener") && rel.includes("noreferrer"))) add("template/blank-no-rel", "warning", target.start, target.end, 'This link opens a new tab without rel="noopener noreferrer".', { why: "The new page gets a handle on this one (window.opener). Always add the rel with target=\"_blank\", internal links included." });
+        // External hosts only (owner's decision): the platform's own hosts are trusted (INTERNAL_HOSTS in src/lib/links.js).
+        if (href?.value && linkIsExternal(href.value) && !(rel.includes("noopener") && rel.includes("noreferrer"))) add("template/blank-no-rel", "warning", target.start, target.end, 'This link to another site opens a new tab without rel="noopener noreferrer".', { why: "The new page gets a handle on this one (window.opener) and is told where the reader came from." });
       }
       const host = hostOf(href?.value);
       if (host && /(^|\.)thinqi-uat\.co\.uk$/.test(host)) add("template/uat-host", "warning", href.valueStart, href.valueEnd, `This link goes to ${host}, a test (UAT) host.`, { why: "Readers on the live site would be sent to a system they cannot use." });

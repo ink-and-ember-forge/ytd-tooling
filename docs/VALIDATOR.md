@@ -40,7 +40,7 @@ Optional (`validate(page, { packs: [templatePack] })`); the Validate code tab tu
 | `template/empty-href` | warning | `href=""` or `href="#"` |
 | `template/img-no-alt` | warning | `<img>` with no `alt` attribute (`alt=""` is fine: decorative) |
 | `template/blank-no-label` | warning | `target="_blank"` whose `aria-label` and text do not say "(opens in a new tab)" |
-| `template/blank-no-rel` | warning | `target="_blank"` without `rel="noopener noreferrer"` (internal links too) |
+| `template/blank-no-rel` | warning | `target="_blank"` to an external host without `rel="noopener noreferrer"`. Internal hosts (`INTERNAL_HOSTS` in `src/lib/links.js`) need none: the owner chose to keep the current rule |
 | `template/heading-before-h1` | warning | A heading earlier in the document than the first `<h1>` |
 | `template/heading-skip` | warning | A heading more than one level below the one before it (h2 to h4, h1 to h3) |
 | `template/accordion-header-not-heading` | warning | `.accordion-header` on something that is not h1-h6 |
