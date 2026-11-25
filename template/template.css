@@ -1,8 +1,22 @@
-/* Gwella base CSS · version 3.5.0 */
+/* Gwella base CSS · version 3.5.1 */
 /* Base styles. Block CSS goes inside #page-container. The Base JS sets --thinqi-navbar-height and --anchor-section-offset; read them, never redeclare them. */
 
 html {
   scroll-behavior: smooth;
+}
+
+/* Anyone who asks their system for less motion gets none: no smooth scrolling, no lifting cards, no sliding arrows. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  #page-container *,
+  #page-container *::before,
+  #page-container *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 .gwella {
@@ -426,6 +440,12 @@ body > main > article.plain-text {
       }
     }
 
+    /* The whole numbered card is the link (a stretched link), so ring the card, not the empty link. */
+    &:has(> .stretched-link:focus-visible) {
+      outline: 3px solid var(--focus-ring-colour);
+      outline-offset: 3px;
+    }
+
     &.nav-card--numbered {
       display: flex;
       flex-direction: column;
@@ -666,6 +686,16 @@ body > main > article.plain-text {
 
   .data-icon-trigger {
     cursor: pointer;
+
+    /* The tile is a div, so the browser's own focus ring is not enough: ring the card the keyboard is on. */
+    &:focus-visible {
+      outline: none;
+
+      .data-icon-card {
+        outline: 3px solid var(--focus-ring-colour);
+        outline-offset: 3px;
+      }
+    }
   }
 
   .data-icon-card {
@@ -759,6 +789,12 @@ body > main > article.plain-text {
 
       @media (max-width: 576px) {
         max-width: 300px;
+      }
+
+      /* The whole card is the link (a stretched link), so ring the card. */
+      &:has(.stretched-link:focus-visible) {
+        outline: 3px solid var(--focus-ring-colour);
+        outline-offset: 3px;
       }
 
       > div {

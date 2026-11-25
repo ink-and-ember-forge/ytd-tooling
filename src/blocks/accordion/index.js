@@ -31,8 +31,9 @@ export default {
 
     const itemsHTML = titles.map(title => {
       const slug = uniqueSlug(slugify(title), usedSlugs);
-      const headingId = `heading-${slug}`;
-      const collapseId = `collapse-${slug}`;
+      // Scoped by the accordion's own id, so two accordions on one page with an item of the same name never share an id.
+      const headingId = `${accordionId}-heading-${slug}`;
+      const collapseId = `${accordionId}-collapse-${slug}`;
       return `  <div class="accordion-item">
     <${level} class="accordion-header" id="${headingId}">
       <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">

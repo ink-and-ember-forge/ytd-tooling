@@ -5,6 +5,20 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Anyone who asks their system for less motion gets none: no smooth scrolling, no lifting cards, no sliding arrows. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  #page-container *,
+  #page-container *::before,
+  #page-container *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 .gwella {
   --primary-colour: #a3195b;
   --secondary-colour: #faf3f7;

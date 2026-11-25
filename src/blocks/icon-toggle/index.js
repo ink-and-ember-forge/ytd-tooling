@@ -25,7 +25,7 @@ export default {
 
     const triggersHTML = items.map((item, i) => {
       const contentId = contentIds[i];
-      return `  <div class="data-icon-trigger" onclick="openAccordion(this, '${contentId}')" onkeydown="openAccordionKey(event, this, '${contentId}')" tabindex="0">
+      return `  <div class="data-icon-trigger" onclick="openAccordion(this, '${contentId}')" onkeydown="openAccordionKey(event, this, '${contentId}')" tabindex="0" role="button" aria-expanded="false" aria-controls="${contentId}">
     <div class="data-icon-card">
       <img src="${escapeHTML(item.iconUrl.trim())}" alt="${escapeHTML(item.iconAlt.trim())}" />
       <h5>${escapeHTML(item.label.trim())}</h5>
