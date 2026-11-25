@@ -1,6 +1,33 @@
 {
   "releases": [
     {
+      "version": "3.5.1",
+      "date": "2026-11-25",
+      "summary": "The base JS also finds the UAT site's chrome (a header with aria-label \"site header\" inside div#site-chrome), so the top margin and anchor offset work on both live and UAT.",
+      "changes": [
+        {
+          "id": "CHG-3.5.1-01",
+          "type": "behaviour",
+          "scope": "base-js",
+          "blocks": [],
+          "summary": "updateScrollOffset() measures div.app-chrome (live) or, if there is none, the header[aria-label=\"site header\"] inside #site-chrome (UAT), whose class is auto-generated.",
+          "detect": {
+            "patterns": [
+              "updateScrollOffset"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "#site-chrome header\\[aria-label="
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base JS. A hand edit is also possible: in updateScrollOffset(), the thinqiNavbar lookup gains a second querySelector for the UAT header."
+        }
+      ]
+    },
+    {
       "version": "3.5.0",
       "date": "2026-11-24",
       "summary": "The public site header no longer overlays the page, so the page container no longer reserves space for it: the top margin and the anchor offset are the app chrome's height when there is one, and none otherwise. Anchored headings now stop 50px below the top, instead of flush against it.",

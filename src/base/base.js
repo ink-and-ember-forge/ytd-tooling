@@ -4,7 +4,10 @@
 // Also offsets for an optional #subnav, if the page has one.
 function updateScrollOffset() {
   try {
-    const thinqiNavbar = document.querySelector("div.app-chrome");
+    // Live: div.app-chrome. UAT: a <header aria-label="site header"> inside div#site-chrome (its class is auto-generated).
+    const thinqiNavbar =
+      document.querySelector("div.app-chrome") ||
+      document.querySelector('#site-chrome header[aria-label="site header"]');
     const customSubnav = document.querySelector("#subnav");
     const isMobile = window.innerWidth <= 768;
     const thinqiNav_height = thinqiNavbar ? thinqiNavbar.offsetHeight : null;
