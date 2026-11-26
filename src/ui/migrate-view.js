@@ -28,6 +28,7 @@ const STEPS = [["found", "What we found"], ["components", "Components to rebuild
 export function createMigrationView(els, { code, onUpgradeInstead }) {
   const state = {
     theme: undefined, reference: null, result: null,
+    repairs: new Set(),       // suggested tag repairs the author accepted (ids "R1"...; none unless ticked)
     keep: new Set(),          // the page's own components to keep for now (none, unless the author ticks one)
     steps: [], rules: [],     // the review: groups, and the flat list of rules (one slide each)
     decisions: new Map(), reviewed: new Set(), // by rule id
@@ -55,7 +56,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
   const ledger = () => [...state.keep].map((k) => `Component .${k}: kept for now, to be rebuilt`).concat(keptRows().map((r) => ledgerLine(r, decisionOf(r))));
   const reviewLeft = () => state.rules.filter((r) => !state.reviewed.has(r.row.id)).length;
   const reviewDone = () => reviewLeft() === 0;
-  const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [], retire: true });
+  const migrate = (keys, withLedger) => buildMigration(code(), { theme: state.theme, keepGroups: keys, reference: state.reference, ledger: withLedger ? ledger() : [], retire: true, repairs: [...state.repairs] });
   const recompute = () => { state.result = migrate([...state.keep, ...keptKeys()], true); };
 
   // ---- the order of the slides ----------------------------------------------------------------------------
@@ -414,6 +415,31 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       : "The old CSS doesn't say which theme this is, so choose one. The theme decides the page's colours."));
     els.changes.appendChild(fieldset);
 
+    // Suggested repairs for broken tags: offered, never applied unless ticked (the author's HTML stays as written otherwise).
+    const sug = r.repairSuggestions;
+    if (sug && sug.repairs.length) {
+      const repairs = document.createElement("fieldset");
+      repairs.className = "upgrade-theme";
+      repairs.appendChild(makeEl("legend", "", `Suggested repairs for your tags (${sug.repairs.length})`));
+      repairs.appendChild(makeEl("p", "upgrade-hint", `Nothing is changed unless you tick it. Where a missing end tag goes is decided by how you indented the page. ${sug.resolved ? "With all of these, your tags open and close properly." : `Even with all of these, ${plural(sug.remaining, "problem", "problems")} would be left for you to look at.`}`));
+      sug.repairs.forEach((rep) => {
+        const label = makeEl("label", "upgrade-theme-option");
+        const box = document.createElement("input");
+        box.type = "checkbox";
+        box.checked = state.repairs.has(rep.id);
+        box.addEventListener("change", () => {
+          if (box.checked) state.repairs.add(rep.id); else state.repairs.delete(rep.id);
+          recompute();
+          renderHtmlList();
+          renderChecksAndCopy();
+          renderNav();
+        });
+        label.append(box, ` Line ${rep.line}: ${rep.why}`);
+        repairs.appendChild(label);
+      });
+      els.changes.appendChild(repairs);
+    }
+
     htmlList = makeEl("div", "upgrade-html-changes");
     els.changes.appendChild(htmlList);
     renderHtmlList();
@@ -596,6 +622,7 @@ export function createMigrationView(els, { code, onUpgradeInstead }) {
       // What the template said when it was first stored: a rule that matches that is the OLD template, not the author's choice.
       state.reference ||= await loadBaseline("3.1.1");
       const first = buildMigration(code(), { reference: state.reference, keepGroups: [] });
+      state.repairs = new Set();
       state.keep = new Set(); // the template is the default: nothing of the page's own is carried unless the author chooses
       state.decisions = new Map();
       state.reviewed = new Set();
