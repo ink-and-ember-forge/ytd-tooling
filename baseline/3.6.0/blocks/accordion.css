@@ -1,0 +1,61 @@
+  .accordion {
+    margin-block: 1rem 1.5rem;
+
+    .accordion-header {
+      margin: 0;
+    }
+
+    .accordion-item {
+      border: none !important;
+    }
+
+    .accordion-button {
+      color: var(--primary-colour) !important;
+      background-color: transparent !important;
+      padding: 0.5rem 0 !important;
+      box-shadow: none !important;
+      font-weight: 600;
+
+      .accordion-button-text {
+        text-decoration: underline;
+      }
+
+      &:hover .accordion-button-text {
+        text-decoration: none;
+      }
+
+      /* The block removes Bootstrap's focus shadow, so keyboard focus needs its own ring. */
+      &:focus-visible {
+        outline: 3px solid var(--focus-ring-colour);
+        outline-offset: 4px;
+        position: relative;
+        z-index: 2;
+      }
+
+      &::after {
+        display: none;
+      }
+
+      &::before {
+        content: "▸";
+        scale: 2;
+        margin-right: 8px;
+        transition: transform 0.2s ease-in-out;
+        color: var(--primary-colour);
+      }
+
+      &:not(.collapsed) {
+        background-color: transparent !important;
+        color: var(--primary-colour) !important;
+        box-shadow: none !important;
+
+        &::before {
+          transform: rotate(90deg);
+        }
+      }
+    }
+
+    .accordion-body {
+      padding: 1rem 0;
+    }
+  }
