@@ -142,6 +142,10 @@ body > main > article.plain-text {
   }
 
   .content-column {
+    /* A grid item is as wide as its widest unbreakable content unless told otherwise, so a wide table (or a long address)
+       would widen the whole page. min-width: 0 lets a scrolling box inside it do its job. */
+    min-width: 0;
+
     h2 {
       font-size: var(--heading-2);
       font-weight: bold;
@@ -156,6 +160,46 @@ body > main > article.plain-text {
 
     @media (max-width: 768px) {
       display: contents;
+    }
+  }
+
+  /* A plain <table> is themed too: a header row in the primary colour and thin dividers. Add class="table--striped" for
+     striped rows. Wrap it in <div class="table-scroll"> (the Table block does) so it scrolls instead of widening the page. */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-block: 1rem;
+    font-size: 0.95rem;
+
+    caption {
+      caption-side: top;
+      text-align: left;
+      font-weight: 600;
+      padding-bottom: 0.5rem;
+      color: var(--subheading-colour);
+    }
+
+    th,
+    td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--divider-colour);
+    }
+
+    thead th {
+      background-color: var(--primary-colour);
+      color: var(--text-on-primary);
+      font-weight: 600;
+      border-bottom: 0;
+    }
+
+    tbody th {
+      font-weight: 600;
+    }
+
+    &.table--striped tbody tr:nth-child(even) {
+      background-color: var(--secondary-colour);
     }
   }
 
@@ -245,6 +289,7 @@ body > main > article.plain-text {
 
   .content-body {
     margin-top: 1rem;
+    min-width: 0; /* see .content-column: on phones this is the grid item */
 
     /* The order belongs on .content-body, the grid item on mobile. */
     @media (max-width: 768px) {

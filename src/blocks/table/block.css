@@ -1,0 +1,21 @@
+  .table-scroll {
+    /* The scrolling box. The table styling itself (header, dividers, striped rows) is in the base CSS, so a table that is
+       not made by this block looks the same. A wide table scrolls here, sideways, instead of widening the page. */
+    overflow-x: auto;
+    max-width: 100%;
+    margin-block: 1rem;
+
+    &:focus-visible {
+      outline: 3px solid var(--focus-ring-colour);
+      outline-offset: 2px;
+    }
+
+    table {
+      margin-block: 0;
+    }
+
+    th,
+    td {
+      min-width: 9rem;
+    }
+  }

@@ -16,6 +16,7 @@
 //   template/accordion-header-not-heading  warning  .accordion-header on something that is not an h1-h6
 //   template/uat-host              warning  a link to a non-production host (*.thinqi-uat.co.uk)
 //   template/mixed-portal-host     warning  links to both leadershipportal.heiw.wales and nhswalesleadershipportal.heiw.wales
+//   template/table-no-scroll-wrapper  warning  a <table> that is not inside the scrolling box (class table-scroll), so a wide one widens the page on a phone
 //   template/duplicate-library     error / warning  the Bootstrap JS (error) or CSS / Font Awesome (warning) is loaded twice
 import { makeFinding, relatedAt } from "./locate.js";
 import { attrOf } from "./html-scan.js";
@@ -131,6 +132,14 @@ export function templatePack({ html, css, js, htmlScan }, { blocks = BLOCK_LIST 
   for (const el of elements) {
     const cls = (attrOf(el, "class")?.value || "").split(/\s+/);
     if (cls.includes("accordion-header") && !/^h[1-6]$/.test(el.tag)) add("template/accordion-header-not-heading", "warning", el.start, el.openEnd, `This .accordion-header is a <${el.tag}>, not a heading.`, { why: "The accordion's sections do not appear in the page outline." });
+  }
+
+  // ---- tables scroll inside their own box ----
+  for (const el of elements) {
+    if (el.tag !== "table") continue;
+    let boxed = false;
+    for (let p = el.parent; p && !boxed; p = p.parent) if (p.tag === "table" || (attrOf(p, "class")?.value || "").split(/\s+/).includes("table-scroll")) boxed = true;
+    if (!boxed) add("template/table-no-scroll-wrapper", "warning", el.start, el.openEnd, "This table is not inside a scrolling box (<div class=\"table-scroll\">).", { why: "A table wider than a phone widens the whole page. The Table block's box scrolls it sideways instead; the migration wraps tables for you." });
   }
 
   // ---- libraries loaded twice (the field is pasted into a page that may already load them) ----

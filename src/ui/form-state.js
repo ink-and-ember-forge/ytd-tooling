@@ -14,6 +14,7 @@ export function snapshotField(wrap) {
   const state = { c: controlsOf(wrap).map((el) => (el.type === "checkbox" ? { k: el.checked } : { v: el.value })) };
   if (wrap.querySelector(".item-add, .bullet-add")) state.n = itemsOf(wrap).length;
   if (wrap._quillInstance) state.q = wrap._quillInstance.getContents().ops;
+  if (wrap._tableGrid) state.g = wrap._tableGrid.size(); // a grid is restored to its saved size before its cells
   return state;
 }
 
@@ -42,6 +43,7 @@ export function restoreField(wrap, state) {
     items = itemsOf(wrap);
     for (let i = items.length - 1; i >= state.n; i--) items[i].remove();
   }
+  if (state.g && wrap._tableGrid) wrap._tableGrid.resize(state.g.r, state.g.c);
   const controls = controlsOf(wrap);
   (state.c || []).forEach((saved, i) => controls[i] && setControl(controls[i], saved));
   if (wrap._quillInstance && state.q) wrap._quillInstance.setContents(state.q, "silent");

@@ -46,6 +46,7 @@ Optional (`validate(page, { packs: [templatePack] })`); the Validate code tab tu
 | `template/accordion-header-not-heading` | warning | `.accordion-header` on something that is not h1-h6 |
 | `template/uat-host` | warning | A link to `*.thinqi-uat.co.uk` |
 | `template/mixed-portal-host` | warning | Links to both `leadershipportal.heiw.wales` and `nhswalesleadershipportal.heiw.wales`; the less used one is reported |
+| `template/table-no-scroll-wrapper` | warning | A `<table>` not inside the scrolling box (`class="table-scroll"`): a table wider than a phone widens the whole page. The migration and upgrade wrap tables for you |
 | `template/duplicate-library` | error / warning | The Bootstrap script loaded twice in one field (error: every accordion handler then runs twice, so a panel cannot be closed on the second click); Bootstrap CSS or Font Awesome twice (warning) |
 
 Already covered by the core rules (no new rule needed): `</br>` (`html/void-close-tag`), a malformed `alt` such as `alt=" class="x"` (`html/unclosed-quote` / `html/duplicate-attribute`), `aria-labelledby` / `aria-controls` pointing at a missing id (`html/missing-target`), an unclosed `#page-container` (`html/unclosed-tag`).

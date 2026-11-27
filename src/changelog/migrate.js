@@ -18,7 +18,7 @@ import { getPageCSS, getPageJS, forToc } from "../base/index.js";
 import { assembleCSS } from "../lib/assemble.js";
 import { detectBlocks, hasCurrentMarkup } from "./upgrade.js";
 import { parseCss, findNode, serializeCss, stripStyleTags } from "./css-tree.js";
-import { retireComponents, rewriteClasses, upgradeIconToggleHtml } from "./components.js";
+import { retireComponents, rewriteClasses, upgradeIconToggleHtml, upgradeTablesHtml } from "./components.js";
 import { suggestRepairs, applyRepairs } from "./repairs.js";
 import { detectSkeleton } from "./skeleton.js";
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -403,6 +403,9 @@ export function migrateHtml(html, { theme = null, version = BUILDER_VERSION } = 
   const icons = upgradeIconToggleHtml(out);
   out = icons.html;
   changes.push(...icons.changes);
+  const tables = upgradeTablesHtml(out);
+  out = tables.html;
+  changes.push(...tables.changes);
   return { html: out, changes };
 }
 
