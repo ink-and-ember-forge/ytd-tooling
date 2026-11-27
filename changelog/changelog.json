@@ -1,6 +1,64 @@
 {
   "releases": [
     {
+      "version": "3.6.0",
+      "date": "2026-11-27",
+      "summary": "Tables get a default look (themed header, light or striped rows) and a new Table block with an editable grid that scrolls sideways on a phone.",
+      "changes": [
+        {
+          "id": "CHG-3.6.0-01",
+          "type": "additive",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "A plain <table> in the content column is themed: a header row in the primary colour, thin dividers between rows, a bold caption. Add class=\"table--striped\" for striped rows (every other row tinted with the theme's pale colour).",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Pages are unaffected unless they contain a table, which then picks up the look when the base CSS is replaced. Tables that already carry Bootstrap's table classes get both."
+        },
+        {
+          "id": "CHG-3.6.0-02",
+          "type": "additive",
+          "scope": "block:table",
+          "blocks": [
+            "table"
+          ],
+          "summary": "New Table block: type the table into an editable grid (add or remove rows and columns), choose light or striped rows, header row and header column, and a caption. It is wrapped in a focusable, named box (class table-scroll) that scrolls sideways on a phone.",
+          "detect": {
+            "patterns": []
+          },
+          "outdated": {},
+          "action": "none",
+          "page_rebuild": false,
+          "notes": "Pages are unaffected. Replace the base CSS for the table look, and add the Table block's CSS (the scrolling box) to use the block. A table that is not made by the block can be wrapped by hand: <div class=\"table-scroll\" role=\"region\" aria-label=\"...\" tabindex=\"0\">."
+        },
+        {
+          "id": "CHG-3.6.0-03",
+          "type": "fix",
+          "scope": "base-css",
+          "blocks": [],
+          "summary": "The content column and content body can shrink below their widest unbreakable content (min-width: 0), so a wide table or a very long address no longer widens the whole page; a scrolling box inside them does its job.",
+          "detect": {
+            "patterns": [
+              "content-column"
+            ]
+          },
+          "outdated": {
+            "missing": [
+              "content-column\\s*\\{\\s*(?:/\\*[\\s\\S]*?\\*/\\s*)?min-width:\\s*0"
+            ]
+          },
+          "action": "copy",
+          "page_rebuild": false,
+          "notes": "Replace the base CSS. Only pages with content wider than the column change: it now overflows (or scrolls, inside a table box) instead of pushing the grid wider."
+        }
+      ],
+      "deprecations": []
+    },
+    {
       "version": "3.5.1",
       "date": "2026-11-26",
       "summary": "Keyboard and motion fixes: a visible focus ring on icon tiles and clickable cards, icon tiles that announce open/closed and open with Space, no motion for people who ask for less, and Accordion ids that cannot clash between two accordions. No change to how a page looks.",

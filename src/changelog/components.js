@@ -142,3 +142,20 @@ export function upgradeIconToggleHtml(html) {
   if (tiles) changes.push({ id: "icon-toggle-tiles", summary: `Added the class data-icon-trigger to ${tiles} icon tile(s), which the current Icon toggle CSS styles.` });
   return { html: out, changes };
 }
+
+// A bare <table> widens the page on a phone. Wrapping it in the Table block's scrolling box (class table-scroll) fixes that without
+// touching the table. The box is focusable and named (the caption, else "Table") so a keyboard user can scroll it. Tables already in
+// a box, and tables inside another table, are left alone. Returns { html, changes: [{ id, summary }] }.
+export function upgradeTablesHtml(html) {
+  const els = elementsOf(html);
+  const inBox = (el) => { for (let p = el.parent; p; p = p.parent) if (p.tag === "table" || classesOf(p.openTag).includes("table-scroll")) return true; return false; };
+  const todo = els.filter((el) => el.tag === "table" && el.end !== null && !inBox(el));
+  let out = html;
+  for (const el of todo.sort((a, b) => b.start - a.start)) {
+    const inner = html.slice(el.openEnd, el.closeStart ?? el.end);
+    const cap = (inner.match(/<caption\b[^>]*>([\s\S]*?)<\/caption>/i) || [])[1];
+    const name = (cap || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().replace(/"/g, "&quot;") || "Table";
+    out = out.slice(0, el.start) + `<div class="table-scroll" role="region" aria-label="${name}" tabindex="0">\n` + out.slice(el.start, el.end) + "\n</div>" + out.slice(el.end);
+  }
+  return { html: out, changes: todo.length ? [{ id: "table-scroll", summary: `Wrapped ${todo.length} table(s) in the scrolling box (class table-scroll), so a wide table scrolls sideways on a phone instead of widening the page.` }] : [] };
+}

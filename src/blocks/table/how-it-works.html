@@ -1,0 +1,19 @@
+<div class="guide-tldr"><strong>In 30 seconds:</strong> type your table into the grid, add rows and columns as you need them, choose light or striped rows, and give it a caption. It works on a phone: a wide table scrolls sideways inside its own box.</div>
+<h4>The grid</h4>
+<p>Each box is a cell. <strong>+ Add row</strong> and <strong>+ Add column</strong> add to the end; the × beside a row and above a column removes it. Empty rows at the bottom and empty columns on the right are left out of the page.</p>
+<h4>Headers</h4>
+<p>Tick <em>The first row is a header</em> for column titles, and <em>The first column is a header</em> when each row starts with a label (a name, a year). They are real header cells, so a screen reader reads "Band 5, Preceptorship" with each value.</p>
+<h4>Caption</h4>
+<p>Say what the table is. It is shown above the table and it is the name a screen reader gives the scrolling box. The tab warns you if it is empty.</p>
+<h4>Light or striped</h4>
+<p>Light has a themed header and thin lines between rows. Striped also tints every other row in the theme's pale colour, which helps the eye on wide tables.</p>
+<details><summary>Deep dive: the code</summary>
+<pre><code>&lt;div class="table-scroll" role="region" aria-label="Caption" tabindex="0"&gt;
+  &lt;table class="table--striped"&gt;
+    &lt;caption&gt;Caption&lt;/caption&gt;
+    &lt;thead&gt;&lt;tr&gt;&lt;th scope="col"&gt;…&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+    &lt;tbody&gt;&lt;tr&gt;&lt;td&gt;…&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;
+  &lt;/table&gt;
+&lt;/div&gt;</code></pre>
+<p>The box is focusable (<code>tabindex="0"</code>) and named (<code>role="region"</code> with <code>aria-label</code>) so someone using only a keyboard can scroll it. Any plain <code>&lt;table&gt;</code> in the content column gets the same look from the base CSS; wrap it in this box to make it scroll.</p>
+</details>

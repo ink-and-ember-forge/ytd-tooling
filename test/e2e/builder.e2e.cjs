@@ -62,7 +62,7 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
 
   // 2. grouped, accessible tabs
   const tabs = await page.$$eval("#tabbar .tab-btn", b => b.map(x => x.textContent));
-  ok("2 12 tabs (Figure was added in 3.5.0)", tabs.length === 12, tabs.join(" | "));
+  ok("2 13 tabs (Figure was added in 3.5.0, Table in 3.6.0)", tabs.length === 13, tabs.join(" | "));
   ok("2 groups", (await page.$$eval(".tab-group-label", l => l.map(x => x.textContent))).join() === "Structure,Content,Interactive,Links");
   ok("2 roles", (await page.$eval("#tabbar .tab-btn", b => b.getAttribute("role"))) === "tab" && (await page.$eval("#panels .panel:not([hidden])", p => p.getAttribute("role"))) === "tabpanel");
   await page.focus("#tabbar .tab-btn[aria-selected=true]");
@@ -118,6 +118,29 @@ const ok = (name, cond, extra = "") => { if (!cond) failures++; console.log((con
   ok("6 removed", (await page.$$(rows)).length === 2);
   await page.click(".toast-action");
   ok("6 undo restores", (await page.$$(rows)).length === 3);
+  // table: the editable grid (type, add and remove rows and columns, keyboard-labelled buttons) and its autosave
+  await page.click('#tabbar .tab-btn:has-text("Table")');
+  const cells = '#panel-table .table-grid-cells tbody input';
+  ok("table: the grid starts as 3 by 3", (await page.$$(cells)).length === 9);
+  ok("table: nothing typed means no output and a warning", (await page.inputValue("#out-table-html textarea")) === "");
+  await (await page.$$(cells))[0].fill("Band");
+  await (await page.$$(cells))[1].fill("Support");
+  await (await page.$$(cells))[3].fill("5");
+  await (await page.$$(cells))[4].fill("Preceptor");
+  await page.fill('#panel-table .text-field-input', "Support by band");
+  ok("table: typing makes the table, with a header row and a caption", /<th scope="col">Band<\/th><th scope="col">Support<\/th>/.test(await page.inputValue("#out-table-html textarea")) && (await page.inputValue("#out-table-html textarea")).includes("<caption>Support by band</caption>"));
+  await page.click("#panel-table .table-grid-add-row");
+  await page.click("#panel-table .table-grid-add-col");
+  ok("table: add row and add column make a 4 by 4 grid", (await page.$$(cells)).length === 16);
+  ok("table: the remove buttons say which row or column they remove", (await page.getAttribute("#panel-table .table-grid-cells tbody tr:nth-child(2) .table-grid-remove", "aria-label")) === "Remove row 2" && (await page.getAttribute("#panel-table .table-grid-cells thead .table-grid-remove >> nth=0", "aria-label")) === "Remove column 1");
+  await page.click("#panel-table .table-grid-cells tbody tr:nth-child(4) .table-grid-remove");
+  await page.click("#panel-table .table-grid-cells thead th:nth-child(4) .table-grid-remove");
+  ok("table: removing a row and a column goes back to 3 by 3, and the words are kept", (await page.$$(cells)).length === 9 && (await page.inputValue("#out-table-html textarea")).includes("<td>Preceptor</td>"));
+  await page.click("#panel-table .table-grid-add-row");
+  await page.waitForTimeout(700); // autosave is debounced (400 ms); reloading sooner would lose the last edits of every block
+  await page.reload({ waitUntil: "networkidle" });
+  await page.click('#tabbar .tab-btn:has-text("Table")');
+  ok("table: the grid's size and cells are remembered after a reload", (await page.$$(cells)).length === 12 && (await page.$$eval(cells, (l) => l[4].value)) === "Preceptor");
   // resource cards: duplicate + validation + empty hint
   await page.click('#tabbar .tab-btn:has-text("Resource cards")');
   const c0 = '#panel-resource-cards .item-card:nth-child(1)';

@@ -48,6 +48,14 @@ export const FIXTURES = {
     "under-an-h3": { groupName: "Details", level: "h4", titles: ["One", "Two"] },
     "unknown-level": { groupName: "", level: "h1", titles: ["Falls back to h3"] },
   },
+  table: {
+    light: { caption: "Support by band", style: "light", headerRow: true, headerCol: false, cells: [["Band", "Support", "Length"], ["5", "Preceptor & buddy", "12 months"], ["6", "Preceptor", "6 months"]] },
+    striped: { caption: "Support by band", style: "striped", headerRow: true, headerCol: true, cells: [["Band", "Support"], ["5", "Preceptor"], ["6", "<b>Mentor</b>"], ["", ""]] },
+    "no-header": { caption: "", style: "light", headerRow: false, headerCol: false, cells: [["a", "b"], ["c", ""], ["", ""]] },
+    "ragged-and-padded": { caption: "Ragged", style: "light", headerRow: true, headerCol: false, cells: [["A", "B", "", ""], ["1", "", "", ""], ["", "", "", ""], ["", "", "", ""]] },
+    "one-row": { caption: "One row", style: "light", headerRow: true, headerCol: false, cells: [["only", "row"]] },
+    empty: { caption: "Empty", style: "light", headerRow: true, headerCol: false, cells: [["", ""], ["", ""]] },
+  },
   figure: {
     captioned: { imageUrl: "https://example.org/chart.png", imageAlt: "Radar chart of \"six\" domains", caption: "The six <domains>" },
     plain: { imageUrl: "https://example.org/chart.png", imageAlt: "A chart", caption: "" },

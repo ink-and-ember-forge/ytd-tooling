@@ -43,7 +43,7 @@ textarea {
 
 .bullet-row input { flex: 1; }
 
-.bullet-remove, .bullet-add, .copy-btn, .generate-btn, .primary-btn, .item-remove, .item-add,
+.bullet-remove, .bullet-add, .table-grid-add, .copy-btn, .generate-btn, .primary-btn, .item-remove, .item-add,
 .item-up, .item-down, .item-dup, .bullet-up, .bullet-down {
   font-family: inherit;
   cursor: pointer;
@@ -60,7 +60,7 @@ textarea {
   flex-shrink: 0;
 }
 
-.bullet-add, .item-add {
+.bullet-add, .item-add, .table-grid-add {
   background: none;
   border: 1px dashed #b9b2a4;
   color: var(--dark-grey);
@@ -68,7 +68,7 @@ textarea {
   font-size: 0.85rem;
 }
 
-.bullet-add:hover, .item-add:hover { border-color: var(--green); color: var(--green); }
+.bullet-add:hover, .item-add:hover, .table-grid-add:hover { border-color: var(--green); color: var(--green); }
 
 .generate-btn, .primary-btn {
   background: var(--green);
@@ -206,3 +206,11 @@ textarea {
 /* ---- inline validation ---------------------------------------------------- */
 .is-invalid { border-color: var(--burgundy) !important; }
 .field-error { color: var(--burgundy); font-size: 0.78rem; margin: 0.3rem 0 0; font-weight: 600; }
+
+/* Table block: the editable grid. */
+.table-grid { overflow-x: auto; margin-bottom: 0.5rem; }
+.table-grid-cells { border-collapse: separate; border-spacing: 0.25rem; }
+.table-grid-cells input { width: 8rem; min-width: 0; }
+.table-grid-remove { border: 1px solid var(--tile-border-colour, #ccc); background: transparent; border-radius: 6px; width: 1.8rem; height: 1.8rem; cursor: pointer; line-height: 1; }
+.table-grid-remove:hover, .table-grid-remove:focus-visible { border-color: var(--green); color: var(--green); }
+.table-grid-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }

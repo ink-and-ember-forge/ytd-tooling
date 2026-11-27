@@ -58,4 +58,4 @@ Give the block a `detect` signature in `index.js`, using the class names or ids 
 
 If no existing field type fits, add one to **both** `buildField` and `collectValue` in `src/ui/fields.js`, and add its value shape to a fixture.
 
-Existing simple types: `text`, `select`, and `checkbox` (`{ type: "checkbox", id, label, help?, default? }`; the label is the checkbox's own text, the value is `true`/`false`, and a project saved before the field existed reads as `undefined`, so treat missing as off).
+`table-grid` (`{ type: "table-grid", id, label, defaultRows, defaultCols }`; an editable grid whose value is an array of rows of cell text; `form-state.js` restores it to its saved size before its cells, so autosave, reset and undo work). Existing simple types: `text`, `select`, and `checkbox` (`{ type: "checkbox", id, label, help?, default? }`; the label is the checkbox's own text, the value is `true`/`false`, and a project saved before the field existed reads as `undefined`, so treat missing as off).

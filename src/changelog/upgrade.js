@@ -10,7 +10,7 @@ import { suggestVersions } from "./sniff.js";
 import { findLocalEdits, overridesRegion, splitOverrides } from "./local-edits.js";
 import { parseCss } from "./css-tree.js";
 import { findJsEdits } from "./js-edits.js";
-import { elementsOf, upgradeIconToggleHtml } from "./components.js";
+import { elementsOf, upgradeIconToggleHtml, upgradeTablesHtml } from "./components.js";
 
 // Mechanical fixes to the base HTML's own structure that older pages need (changelog 3.4.1): the grid is a <div>, not a second <main>,
 // and the contents label is a <p> that names its <nav>, not an <h3> that precedes the <h1>. Only these exact shapes are touched.
@@ -106,8 +106,9 @@ export function buildUpgrade(page, { version = "auto", blockIds = null, includeT
   }
   const fixed = upgradeBaseHtml(outHtml);
   const icons = upgradeIconToggleHtml(fixed.html);
-  fixed.changes.push(...icons.changes);
-  outHtml = icons.html;
+  const tables = upgradeTablesHtml(icons.html);
+  fixed.changes.push(...icons.changes, ...tables.changes);
+  outHtml = tables.html;
   fixed.changes.forEach((c) => notes.push(c.summary));
   if (blocks.length && !used.length) notes.push("No blocks were recognised on this page. Check the list of blocks and tick any that are used.");
 

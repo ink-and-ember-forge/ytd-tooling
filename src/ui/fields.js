@@ -67,6 +67,101 @@ export function buildField(field) {
     wrap.appendChild(addBtn);
   }
 
+  else if (field.type === "table-grid") {
+    // An editable grid: type into the cells, add or remove rows and columns. The cells are plain text inputs in row-major
+    // order, so autosave, reset and undo (form-state.js) restore them generically once the grid has the saved size.
+    const grid = document.createElement("div");
+    grid.className = "table-grid";
+    const table = document.createElement("table");
+    table.className = "table-grid-cells";
+    const head = document.createElement("thead");
+    const body = document.createElement("tbody");
+    table.append(head, body);
+    grid.appendChild(table);
+    wrap.appendChild(grid);
+    const notify = () => wrap.dispatchEvent(new Event("input", { bubbles: true }));
+    const cols = () => (head.rows[0] ? head.rows[0].cells.length - 1 : 0); // the header strip always has one cell per column, plus the corner
+
+    function removeButton(label, handler) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "table-grid-remove";
+      b.textContent = "×";
+      b.setAttribute("aria-label", label);
+      b.title = label;
+      b.onclick = handler;
+      return b;
+    }
+    function renumber() { // labels follow the current order, so a screen reader hears "Remove row 2", not a stale number
+      Array.from(body.rows).forEach((tr, r) => {
+        tr.lastElementChild.firstChild.setAttribute("aria-label", `Remove row ${r + 1}`);
+        Array.from(tr.cells).slice(0, -1).forEach((td, c) => td.firstChild.setAttribute("aria-label", `Row ${r + 1}, column ${c + 1}`));
+      });
+      Array.from(head.rows[0].cells).slice(0, -1).forEach((th, c) => th.firstChild.setAttribute("aria-label", `Remove column ${c + 1}`));
+    }
+    function cell() {
+      const td = document.createElement("td");
+      const input = document.createElement("input");
+      input.type = "text";
+      td.appendChild(input);
+      return td;
+    }
+    function addColumn() {
+      const at = cols();
+      const th = document.createElement("th");
+      th.appendChild(removeButton("Remove column", () => {
+        const i = Array.from(head.rows[0].cells).indexOf(th);
+        if (cols() <= 1) return;
+        head.rows[0].deleteCell(i);
+        Array.from(body.rows).forEach((tr) => tr.deleteCell(i));
+        renumber();
+        notify();
+      }));
+      head.rows[0].insertBefore(th, head.rows[0].lastElementChild);
+      Array.from(body.rows).forEach((tr) => tr.insertBefore(cell(), tr.lastElementChild));
+      return at;
+    }
+    function addRow() {
+      const tr = body.insertRow();
+      for (let c = 0; c < cols(); c++) tr.appendChild(cell());
+      const td = document.createElement("td");
+      td.appendChild(removeButton("Remove row", () => {
+        if (body.rows.length <= 1) return;
+        tr.remove();
+        renumber();
+        notify();
+      }));
+      tr.appendChild(td);
+    }
+    // Header strip: one remove button per column, then an empty corner above the row buttons.
+    const strip = head.insertRow();
+    strip.appendChild(document.createElement("th")).className = "table-grid-corner"; // empty corner above the row buttons; columns are inserted before it
+    function resize(rows, columns) {
+      while (cols() < columns) addColumn();
+      while (cols() > columns && cols() > 1) { const i = cols() - 1; head.rows[0].deleteCell(i); Array.from(body.rows).forEach((tr) => tr.deleteCell(i)); }
+      while (body.rows.length < rows) addRow();
+      while (body.rows.length > rows && body.rows.length > 1) body.deleteRow(body.rows.length - 1);
+      renumber();
+    }
+    wrap._tableGrid = { resize, size: () => ({ r: body.rows.length, c: cols() }) };
+    resize(field.defaultRows || 3, field.defaultCols || 3);
+
+    const actions = document.createElement("div");
+    actions.className = "table-grid-actions";
+    const addRowBtn = document.createElement("button");
+    addRowBtn.type = "button";
+    addRowBtn.className = "table-grid-add table-grid-add-row";
+    addRowBtn.textContent = "+ Add row";
+    addRowBtn.onclick = () => { addRow(); renumber(); notify(); };
+    const addColBtn = document.createElement("button");
+    addColBtn.type = "button";
+    addColBtn.className = "table-grid-add table-grid-add-col";
+    addColBtn.textContent = "+ Add column";
+    addColBtn.onclick = () => { addColumn(); renumber(); notify(); };
+    actions.append(addRowBtn, addColBtn);
+    wrap.appendChild(actions);
+  }
+
   else if (field.type === "checkbox") {
     const label = document.createElement("label");
     label.className = "checkbox-field";
@@ -450,6 +545,9 @@ export function collectValue(wrap, field) {
   }
   if (field.type === "bullet-list") {
     return Array.from(wrap.querySelectorAll(".bullet-row input")).map(i => i.value);
+  }
+  if (field.type === "table-grid") {
+    return Array.from(wrap.querySelectorAll(".table-grid-cells tbody tr")).map((tr) => Array.from(tr.querySelectorAll("input")).map((i) => i.value));
   }
   if (field.type === "checkbox") {
     return wrap.querySelector(".checkbox-field-input").checked;
